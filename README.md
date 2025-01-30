@@ -29,7 +29,7 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 ### 1. Project Goals
 - Monitor and predict indoor air quality (CO2, humidity, temperature)
 - Provide real-time insights through visualizations
-- Enable predictive maintenance and alerts
+- Enable air quality prediction and alerts
 
 #### Core Features
 1. **Real-Time Monitoring**
@@ -53,7 +53,7 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 
 | Requirements Type | Description | Specifications |
 |-|-|-|
-| **Functional** | Real-time Monitoring | • Sensor data collection every 5min<br>• Live dashboard updates<br>• Historical data view |
+| **Functional** | Real-time Monitoring | • Sensor data collection every 30s<br>• Live dashboard updates<br>• Historical data view |
 | | Predictions | • 24h forecasting window<br>• Multiple model support<br>• Accuracy metrics display |
 | | Alerts | • Threshold configuration<br>• Email/SMS notifications<br>• Alert history |
 | **Non-Functional** | Performance | • Data latency < 1s<br>• API response < 500ms<br>• 95% uptime |
@@ -64,7 +64,7 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 ### 3. System Components
 | Component | Description | Key Features |
 |-|-|-|
-| **Sensor Module** | Data collection unit | • CO2/humidity sensors<br>• Batch API<br>• Secure transmission <br>• 72h backend-independency |
+| **Sensor Module** | Data collection unit | • CO2/humidity sensors<br>• Batch API<br>• Secure transmission <br>• 72h backend-server independency |
 | **Backend Server** | Computation Backend | • Handles communication to sensor module<br>• Orchestrates **Data Pipeline**, **ML System** and **Web Interface**<br>|
 | **Data Pipeline** | Data processing system | • Real-time ingestion<br>• Data validation<br>• Feature engineering |
 | **ML System** | Prediction engine | • Model training<br>• Automated retraining|
@@ -136,7 +136,7 @@ Every folder should have a README providing an overview and describing specific 
 Sphix is used to automatically generate a docstring documentation as well as dedicated pages in marksdown.
 
 ## Version Control
-A guideline for version control in this project
+A guideline for version control in this project.
 ### Link GitHub to WSL
 
 ```bash
