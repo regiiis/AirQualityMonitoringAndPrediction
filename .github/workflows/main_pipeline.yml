@@ -1,35 +1,26 @@
 name: Code Quality Checks
 
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-
+on: [push]
 jobs:
   pre-check:
     runs-on: ubuntu-latest
     container:
       image: python:3.10-slim
     steps:
-      - uses: actions/checkout@v4
+
       - name: Install system dependencies
         run: |
           apt-get update
           apt-get install -y --no-install-recommends make gcc curl git nodejs npm
+
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
+
       - name: Run linting
         run: make lint
+
       - name: Run type checking
         run: make type_check
-      # - name: Run CDK tests
-      #   run: |
-      #     echo "${{ secrets.AWS_REGION }}" > .env
-      #     make test_cdk
-      #   continue-on-error: true
-      # - name: Run logic tests
-      #   run: make test_logic

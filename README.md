@@ -88,7 +88,7 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 ```plaintext
 app
 |
-├── 
+├──
 ```
 
 
@@ -102,9 +102,13 @@ Following the Cloud ressource system diagram  - [Generate System Diagram](#gener
 <br>
 
 ## Setup for Development
+Use Linux. If you have windows, use WSL.
 
 ### Python Virtual Environment
 ```bash
+# Install proper venv lib for linux
+sudo apt install python3.12-venv
+
 # Create new virtual environment
 python3 -m venv .venv
 
@@ -172,7 +176,7 @@ ssh -T git@github.com
 ```bash
 # 8. Set remote URL
 # Use SSH URL
-git remote set-url origin 
+git remote set-url origin
 
 ```
 

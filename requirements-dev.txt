@@ -1,0 +1,5 @@
+pre-commit==3.7.*
+pytest==8.2.*
+sphinx==7.4.*
+sphinx-rtd-theme==2.0.*
+types-requests==2.32.*

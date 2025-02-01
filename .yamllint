@@ -1,0 +1,12 @@
+# This configuration file controls YAML linting rules for the pre-commit hook yamllint
+extends: default
+
+ignore:
+  - .github/workflows/main_pipeline.yml
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  document-start:
+    present: false
