@@ -171,8 +171,12 @@ ssh -T git@github.com
 ```
 ```bash
 # 8. Set remote URL
+# Use SSH URL
 git remote set-url origin 
+
 ```
+
+
 
 ### Commit naming rules
 
