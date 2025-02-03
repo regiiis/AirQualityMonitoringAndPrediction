@@ -7,8 +7,11 @@ runs:
     - name: Setup Python Environment
       shell: bash
       run: |
+        # System deps
         apt-get update
         apt-get install -y --no-install-recommends make gcc curl git nodejs npm
-        python -m pip install --upgrade pip
+
+        # Python deps
+        pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
