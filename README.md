@@ -17,9 +17,9 @@ The goal of this project is to learn and apply MLOps best practices to an air qu
 | Component | Tools & Technologies |
 |-|-|
 | **Development** | • Git - Version Control<br>• GitHub Actions - CI/CD<br>• pre-commit - Code Quality |
-| **Data** | • InfluxDB - Time Series DB<br>• DVC - Data Version Control<br>• Feast - Feature Store |
-| **ML & Deploy** | • scikit-learn, MLflow - Training<br>• FastAPI, Docker - Serving<br>• Kubernetes - Orchestration |
-| **Infrastructure** | • AWS - Cloud Platform<br>• Terraform - IaC<br>• Prometheus/Grafana - Monitoring |
+| **Data** | • Data Version Control<br>|
+| **ML & Deploy** | • Docker|
+| **Infrastructure** | • AWS - Cloud Platform<br>• CDK - IaC<br>|
 
 ## Solution Design
 
@@ -81,6 +81,8 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 
 ## Sensor Module
 Idea: https://www.researchgate.net/figure/Circuit-design-of-the-Solar-Power-Monitoring-and-Data-Logger-System_fig1_371709290
+
+https://link.springer.com/article/10.1007/s42452-020-2997-4
 
 ## System Architecture
 
