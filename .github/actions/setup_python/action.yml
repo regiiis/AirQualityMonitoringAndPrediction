@@ -1,0 +1,14 @@
+name: 'Setup Python Environment'
+description: 'Installs Python dependencies and tools'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python Environment
+      shell: bash
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends make gcc curl git nodejs npm
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
