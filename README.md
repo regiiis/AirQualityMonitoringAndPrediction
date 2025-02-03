@@ -80,6 +80,7 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 <br>
 
 ## Sensor Module
+Idea: https://www.researchgate.net/figure/Circuit-design-of-the-Solar-Power-Monitoring-and-Data-Logger-System_fig1_371709290
 
 ## System Architecture
 
