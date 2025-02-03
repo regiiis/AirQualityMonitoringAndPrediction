@@ -7,6 +7,7 @@ jobs:
     container:
       image: python:3.10-slim
     steps:
+      - uses: actions/checkout@v4
 
       - name: Install system dependencies
         run: |
@@ -16,7 +17,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements-dev
+          pip install -r requirements-dev.txt
 
       - name: Run linting
         run: make lint
