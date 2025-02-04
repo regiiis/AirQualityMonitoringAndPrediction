@@ -9,7 +9,13 @@ jobs:
       image: python:3.10-slim
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/actions/setup-python
+      - name: Configure Git
+      shell: bash
+      run: |
+        git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
       - name: Run linting
         run: make lint
