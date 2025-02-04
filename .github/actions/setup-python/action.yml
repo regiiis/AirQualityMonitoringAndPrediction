@@ -15,3 +15,21 @@ runs:
         pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
+
+    - name: Configure Git and Repository
+      shell: bash
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+        git init
+        git add .
+        git commit -m "Initial commit for pre-commit checks"
+
+    - name: Debug Repository Status
+      shell: bash
+      run: |
+        git status
+        git rev-parse --git-dir
+        pwd
+        ls -la
