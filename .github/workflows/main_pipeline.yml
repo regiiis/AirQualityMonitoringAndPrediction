@@ -15,7 +15,13 @@ jobs:
       - name: Configure Git
         shell: bash
         run: |
-        git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+      - name: Debug Git Installation
+        shell: bash
+        run: |
+          git --version
+          which git
 
       - name: Run linting
         run: make lint
