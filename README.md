@@ -35,12 +35,16 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 1. **Real-Time Monitoring**
    - Live CO2, humidity and temperature measurements
    - Interactive dashboards
-   - Alert system for detectd events
+   - Alert system for detected events
 
 2. **Predictive Analytics**
    - 24-hour forecasts for CO2, humidity and temperature
-   - Trend analysis and pattern detection
-   - Multiple prediction models comparison
+   - Multiple prediction model:
+   - Time Series
+   - Polynomial Regression
+   - DNN
+   - DNN with enriched Data
+   - Models comparison & benchmarking
 
 3. **Data Management**
    - Historical data storage and retrieval
@@ -72,15 +76,37 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 
 
 
-### Development Roadmap
+## Project Roadmap
+### MVP
+- Web page with CO2 and Humidity TS Dashboard
+
+### 1st Feature Implementation
+- Add first model to dashboard
+
+### 2nd Feature Implementation
+- Add brightness sensor
+- Add Wattmeter for PV and Battery
+- Add battery charge status monitoring
+- Add PV Power monitoring
+- Add brightness monitoring
+
+### 3rd Feature Implementation
+- Add two additional models
+- Add model benchmarking
+
+### 4th Feature Implementation
+- Add model with meteo data enrichment
+- Add battery charging prediction
 
 
-<br>
+
 <br>
 <br>
 
 ## Sensor Module
-Idea: https://www.researchgate.net/figure/Circuit-design-of-the-Solar-Power-Monitoring-and-Data-Logger-System_fig1_371709290
+Inspiration:
+<br>
+https://www.researchgate.net/figure/Circuit-design-of-the-Solar-Power-Monitoring-and-Data-Logger-System_fig1_371709290
 
 https://link.springer.com/article/10.1007/s42452-020-2997-4
 
@@ -105,7 +131,7 @@ Following the Cloud ressource system diagram  - [Generate System Diagram](#gener
 <br>
 
 ## Setup for Development
-Use Linux. If you have windows, use WSL.
+Use Linux. If you have windows, use Ubuntu-based WSL.
 
 ### Python Virtual Environment
 ```bash
@@ -140,10 +166,10 @@ The project is documented by means of a wiki and README's.
 Every folder should have a README providing an overview and describing specific aspect of the substructure.
 
 ### Wiki - Sphinx
-Sphix is used to automatically generate a docstring documentation as well as dedicated pages in marksdown.
+Sphix is used to automatically generate a code docstring documentation as well as dedicated pages in marksdown.
 
 ## Version Control
-A guideline for version control in this project.
+A guideline for version control in this project - Work on main except for larger parallel feature devs or experimentations.
 ### Link GitHub to WSL
 
 ```bash
