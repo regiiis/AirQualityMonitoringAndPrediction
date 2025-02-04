@@ -12,18 +12,23 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-python
-      - name: Configure Git
+      - name: Configure Git and Repository
         shell: bash
         run: |
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          git init
+          git add .
+          git commit -m "Initial commit for pre-commit checks"
 
-      - name: Debug Git Installation
+      - name: Debug Repository Status
         shell: bash
         run: |
-          git --version
-          which git
+          git status
+          git rev-parse --git-dir
+          pwd
+          ls -la
 
       - name: Run linting
         run: make lint
