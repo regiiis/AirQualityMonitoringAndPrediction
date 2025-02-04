@@ -13,8 +13,8 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-python
       - name: Configure Git
-      shell: bash
-      run: |
+        shell: bash
+        run: |
         git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
       - name: Run linting
