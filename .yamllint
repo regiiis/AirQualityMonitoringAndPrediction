@@ -1,4 +1,5 @@
-# This configuration file controls YAML linting rules for the pre-commit hook yamllint
+# Configuration file for linting. Defines rules for the pre-commit hook yamllint in .pre-commit-config.yaml
+
 extends: default
 
 ignore:

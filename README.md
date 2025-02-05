@@ -58,10 +58,10 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 | Requirements Type | Description | Specifications |
 |-|-|-|
 | **Functional** | Real-time Monitoring | • Sensor data collection every 30s<br>• Live dashboard updates<br>• Historical data view |
-| | Predictions | • 24h forecasting window<br>• Multiple model support<br>• Accuracy metrics display |
+| | Predictions | • 24h forecasting window<br>• Benchmarking|
 | | Alerts | • Threshold configuration<br>• Email/SMS notifications<br>• Alert history |
 | **Non-Functional** | Performance | • Data latency < 1s<br>• API response < 500ms<br>• 95% uptime |
-| | Scalability | • Multi-sensor support<br>• Concurrent users<br>• Data retention policy |
+| | Scalability | • Multi-sensor<br>• Multi-model<br>• Concurrent users|
 | | Security | • Encrypted transmission<br>• Access control<br>• Secure API endpoints |
 
 
@@ -75,17 +75,37 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 | **Web Interface** | User dashboard | • Live monitoring<br>• Predictions view<br>• Alert management |
 
 
+<br>
 
 ## Project Roadmap
-### MVP
-- Web page with CO2 and Humidity TS Dashboard
+### **MVP**
+A web page with CO2 and Humidity TS Dashboard, consisting of the following componenets:
+<br>
+
+| Sensor Modul | Backend | Frontend |
+|-|-|-|
+| • Sensors<br>• PV & Battery<br>• MC<br>• MC Logic | • Data Pipeline <br>• Database <br>• Frontend Host | • Webpage <br>• Login <br>• Dashboard (static)
+
+- The **Sensor Module** is assembled and runned by software that collects and sends data to the backend.<br>
+- The **Backend** hosts and serves the frontend. The backend receives and stores data from the sensor module.<br>
+- The **Frontend** is a static webpage with login. A dashboard is loaded with the most recent data on the database.
+
+**Data Pipeline**<br>
+Logic: Data Collection -> Data Quality Gate -> Data Storage<br>
+Infrastructure: API Gateway (Data Collection) -> Lambda Function (Data Quality Gate) -> S3 Bucket (Data Storage: main_db or anomaly_db)
+
+**Frontend**<br>
+Logic:
+
+**MC Logic**<br>
+Logic: Collects Data -> Sends Data
 
 ### 1st Feature Implementation
 - Add first model to dashboard
 
 ### 2nd Feature Implementation
 - Add brightness sensor
-- Add Wattmeter for PV and Battery
+- Add V & I meter for PV and battery
 - Add battery charge status monitoring
 - Add PV Power monitoring
 - Add brightness monitoring
@@ -93,16 +113,18 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 ### 3rd Feature Implementation
 - Add two additional models
 - Add model benchmarking
+- Build Sensor module chassis
 
 ### 4th Feature Implementation
 - Add model with meteo data enrichment
 - Add battery charging prediction
 
+### 5th Feature Implementation
+- Make Dashboard interactive
+- Make Dashboard Dynamic (Live)
 
 
 <br>
-<br>
-
 ## Sensor Module
 Inspiration:
 <br>
