@@ -150,9 +150,10 @@ The sensor module is composed of the following components:
 
 #### Sensor Module Wiring Schema
 
-<p align="center">
-  <img src="./docs/graphics/wiring_diagram.png" width="600" alt="Wiring Diagram">
-</p>
+<div align="center">
+<img src="docs/graphics/wiring_diagram.png" width="600" alt="Wiring Diagram">
+</div>
+
 <br>
 
 
