@@ -125,12 +125,6 @@ Logic: Collects Data -> Sends Data
 
 
 <br>
-## Sensor Module
-Inspiration:
-<br>
-https://www.researchgate.net/figure/Circuit-design-of-the-Solar-Power-Monitoring-and-Data-Logger-System_fig1_371709290
-
-https://link.springer.com/article/10.1007/s42452-020-2997-4
 
 ## System Design
 
@@ -150,9 +144,7 @@ The sensor module is composed of the following components:
 
 #### Sensor Module Wiring Schema
 
-<div align="center">
-<img src="docs/graphics/wiring_diagram.png" width="600" alt="Wiring Diagram">
-</div>
+[Wiring Diagram](docs/graphics/wiring_diagram.png | width=600)
 
 <br>
 
