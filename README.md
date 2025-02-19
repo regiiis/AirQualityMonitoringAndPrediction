@@ -82,7 +82,7 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 A web page with CO2 and Humidity TS Dashboard, consisting of the following componenets:
 <br>
 
-| Sensor Modul | Backend | Frontend |
+| Sensor module| Backend | Frontend |
 |-|-|-|
 | • Sensors<br>• PV & Battery<br>• MC<br>• MC Logic | • Data Pipeline <br>• Database <br>• Frontend Host | • Webpage <br>• Login <br>• Dashboard (static)
 
@@ -132,7 +132,28 @@ https://www.researchgate.net/figure/Circuit-design-of-the-Solar-Power-Monitoring
 
 https://link.springer.com/article/10.1007/s42452-020-2997-4
 
-## System Architecture
+## System Design
+
+### Sensor Module
+The sensor module is composed of the following components:
+
+| Function | Module | Links
+|-|-|-|
+| MC Dev Board | Arduino Nano ESP32 | https://docs.arduino.cc/tutorials/nano-esp32/cheat-sheet/ |
+| Humidity Sensor | HYT 221 | |
+| CO2 Sensor | MH-Z19C-PC | |
+| Power MGMT | DFRobot Solar Power Manager 5V | |
+| V/I Monitor | INA219 | |
+| V Step-Up | MT3608 | |
+| Solar Power | PV Panel 4.5-6V, max 1A | |
+| Battery | Li-Po 3.7V | |
+
+#### Sensor Module Wiring Schema
+
+<p align="center">
+  <img src="docs/graphics/wiring_diagram.png" width="600" alt="Wiring Diagram">
+</p>
+<br>
 
 
 ## Logic Directory Structure
@@ -146,10 +167,6 @@ app
 ### Infrastructure System Diagram
 Following the Cloud ressource system diagram  - [Generate System Diagram](#generate-system-diagram):
 
-<br>
-<p align="center">
-  <img src="diagram.png" width="600" alt="System Diagram">
-</p>
 <br>
 
 ## Setup for Development
