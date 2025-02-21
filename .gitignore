@@ -1,7 +1,8 @@
 # Custom
 xdev.sh
-.ruff_cache
-.vscode
+*.ruff_cache
+*.vscode
+*.bin
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
