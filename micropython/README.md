@@ -6,7 +6,7 @@
 - Arduino Nano ESP32-S3
 - MicroPython firmware for ESP32-S3
 - Python 3.x
-
+- lab-micropython-installer - https://github.com/arduino/lab-micropython-installer
 ## Prerequisites
 
 1. **Install Python**:

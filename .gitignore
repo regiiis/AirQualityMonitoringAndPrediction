@@ -4,6 +4,7 @@ xdev.sh
 *.vscode
 *.bin
 CP210*
+*micropython*installer*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
