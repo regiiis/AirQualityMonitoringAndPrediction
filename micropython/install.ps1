@@ -1,6 +1,6 @@
 # Configuration
-$FIRMWARE_URL = "https://micropython.org/resources/firmware/ESP32_GENERIC-20240105-v1.22.1.bin"
-$FIRMWARE_FILE = "ESP32_GENERIC.bin"
+$FIRMWARE_BASE_URL = "https://micropython.org/download/ESP32_GENERIC_S3/"
+$FIRMWARE_FILE = "esp32s3_latest.bin"
 $DRIVER_URL = "https://www.silabs.com/documents/public/software/CP210x_Universal_Windows_Driver.zip"
 $DRIVER_ZIP = "CP210x_Universal_Windows_Driver.zip"
 $DRIVER_FOLDER = "CP210x_Universal_Windows_Driver"
@@ -77,21 +77,30 @@ function Initialize-Python {
 }
 
 function Get-Firmware {
-    Write-Host "Downloading MicroPython firmware..." -ForegroundColor Blue
-    Invoke-WebRequest -Uri $FIRMWARE_URL -OutFile $FIRMWARE_FILE
+    Write-Host "Fetching latest MicroPython firmware URL..." -ForegroundColor Blue
+    $html = Invoke-WebRequest -Uri $FIRMWARE_BASE_URL
+    $firmwareUrl = ($html.Links | Where-Object { $_.href -match ".*\.bin$" }).href
+    if (-not $firmwareUrl) {
+        Write-Host "Error: Could not find firmware URL." -ForegroundColor Red
+        exit 1
+    }
+    $firmwareUrl = "https://micropython.org" + $firmwareUrl
+    Write-Host "Downloading MicroPython firmware from $firmwareUrl..." -ForegroundColor Blue
+    Invoke-WebRequest -Uri $firmwareUrl -OutFile $FIRMWARE_FILE
 }
 
 function Update-Device {
     param($port)
-    Write-Host "Flashing ESP32..." -ForegroundColor Blue
+    Write-Host "Erasing flash memory..." -ForegroundColor Blue
     Start-Sleep -Seconds 2  # Add a delay before flashing
-    python -m esptool --chip esp32 --port $port erase_flash
+    python -m esptool.py --chip esp32s3 --port $port erase_flash
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error erasing flash!" -ForegroundColor Red
         exit 1
     }
 
-    python -m esptool --chip esp32 --port $port --baud 460800 write_flash -z 0x1000 $FIRMWARE_FILE
+    Write-Host "Writing firmware to flash memory..." -ForegroundColor Blue
+    python -m esptool.py --chip esp32s3 --port $port --baud 460800 write_flash -z 0x1000 $FIRMWARE_FILE
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error writing firmware!" -ForegroundColor Red
         exit 1
@@ -109,7 +118,7 @@ function Flash-Code {
     Write-Host "Uploading main.py..." -ForegroundColor Blue
     $env:WIFI_SSID = $ssid
     $env:WIFI_PASSWORD = $wifi_password
-    python -m ampy --port $port put sensor/main.py
+    python -m ampy --port $port put ./micropython/main.py /main.py
 }
 
 function Cleanup {
@@ -121,7 +130,7 @@ function Cleanup {
 # Main installation process
 try {
     Check-Admin
-    Check-Driver
+    #Check-Driver
     $port = Get-ESP32Port
     Initialize-Python
     Get-Firmware
@@ -134,5 +143,5 @@ catch {
     Write-Host "An error occurred: $_" -ForegroundColor Red
 }
 
-# Wait for user input before closing
-Read-Host -Prompt "Press Enter to exit"
+# Keep the script window open
+pause
