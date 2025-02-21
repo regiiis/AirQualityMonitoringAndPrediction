@@ -1,6 +1,6 @@
 import network
 import time
-import os
+from secure_storage import SecureStorage
 
 
 def check_wifi_status(wlan):
@@ -26,15 +26,19 @@ def check_wifi_status(wlan):
     return f"WiFi unknown status: {status}"
 
 
-def connect_wifi(ssid: str, password: str):
+def connect_wifi():
+    # Get credentials from secure storage
+    storage = SecureStorage()
+    ssid, password = storage.get_credentials()
+
     if not ssid or not password:
-        raise Exception("WiFi credentials not found in environment variables")
+        raise Exception("WiFi credentials not found in secure storage")
 
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
 
     if not wlan.isconnected():
-        print("Connecting to network...")
+        print(f"Connecting to network: {ssid}...")
         wlan.connect(ssid, password)
 
         # Wait for connection with timeout
@@ -47,34 +51,40 @@ def connect_wifi(ssid: str, password: str):
             max_wait -= 1
             time.sleep(1)
 
-    return wlan
+        if not wlan.isconnected():
+            raise Exception("Failed to connect to WiFi")
+
+    return wlan, ssid
 
 
 def main():
-    try:
-        # Get credentials from environment variables
-        ssid = os.getenv("WIFI_SSID")
-        password = os.getenv("WIFI_PASSWORD")
-        if not ssid or not password:
-            raise Exception("WiFi credentials not found in environment variables")
+    wlan = None
+    ssid = None
 
-        # Connect to WiFi
-        wlan = connect_wifi(ssid, password)
+    try:
+        # Connect to WiFi using secure storage
+        wlan, ssid = connect_wifi()
+        if not wlan or not ssid:
+            raise Exception("Failed to get WiFi connection details")
 
         # Main monitoring loop
         print("Starting WiFi monitoring...")
         while True:
             status = check_wifi_status(wlan)
             print(status)
-            print(f"SSID - {ssid}")
+            if wlan.isconnected():
+                print(f"Connected to: {ssid}")
+            else:
+                print("Not connected to any network")
             time.sleep(5)
 
     except Exception as e:
         print(f"Error: {e}")
+        if wlan:
+            wlan.disconnect()
         while True:
             print("Error state - WiFi configuration failed")
-            print(f"SSID - {ssid}")
-            time.sleep(5)
+            time.sleep(10)
 
 
 if __name__ == "__main__":
