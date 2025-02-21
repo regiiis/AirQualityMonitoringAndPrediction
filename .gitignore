@@ -3,6 +3,7 @@ xdev.sh
 *.ruff_cache
 *.vscode
 *.bin
+CP210*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

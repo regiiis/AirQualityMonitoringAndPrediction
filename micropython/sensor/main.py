@@ -26,20 +26,13 @@ def connect_wifi():
     print("Network config:", wlan.ifconfig())
 
 
-def __main__():
-    # Connect to Wifi
+def main():
+    # Connect to WiFi
     try:
-        try:
-            check_wifi()
-        except Exception as e:
-            print(e)
-
-        try:
-            connect_wifi()
-        except Exception as e:
-            print(e)
+        check_wifi()
+        connect_wifi()
     except Exception as e:
-        print(f"Wifi connection failed: {e}")
+        print(f"WiFi connection failed: {e}")
 
     # Collect data
     # Implement data collection logic
@@ -49,4 +42,4 @@ def __main__():
 
 
 if __name__ == "__main__":
-    __main__()
+    main()

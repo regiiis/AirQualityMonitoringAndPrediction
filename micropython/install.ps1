@@ -1,6 +1,60 @@
 # Configuration
 $FIRMWARE_URL = "https://micropython.org/resources/firmware/ESP32_GENERIC-20240105-v1.22.1.bin"
 $FIRMWARE_FILE = "ESP32_GENERIC.bin"
+$DRIVER_URL = "https://www.silabs.com/documents/public/software/CP210x_Universal_Windows_Driver.zip"
+$DRIVER_ZIP = "CP210x_Universal_Windows_Driver.zip"
+$DRIVER_FOLDER = "CP210x_Universal_Windows_Driver"
+
+function Check-Admin {
+    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Host "This script must be run as an administrator. Restarting with elevated privileges..." -ForegroundColor Yellow
+        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+        exit
+    }
+}
+
+function Check-Driver {
+    Write-Host "Checking for CP210x driver..." -ForegroundColor Blue
+    $driver = Get-WmiObject Win32_PnPSignedDriver | Where-Object { $_.DeviceName -like '*CP210*' }
+    if (-not $driver) {
+        Write-Host "CP210x driver not found." -ForegroundColor Red
+        $install = Read-Host "Would you like to download and install the driver now? (y/n)"
+        if ($install -eq 'y') {
+            Write-Host "Downloading CP210x driver..." -ForegroundColor Blue
+            Invoke-WebRequest -Uri $DRIVER_URL -OutFile $DRIVER_ZIP
+            Write-Host "Extracting CP210x driver..." -ForegroundColor Blue
+            Expand-Archive -Path $DRIVER_ZIP -DestinationPath $DRIVER_FOLDER -Force
+            Write-Host "Listing contents of extracted directory for debugging..." -ForegroundColor Blue
+            Get-ChildItem -Path $DRIVER_FOLDER -Recurse
+            Write-Host "Installing CP210x driver..." -ForegroundColor Blue
+            $infPath = Join-Path -Path $DRIVER_FOLDER -ChildPath "silabser.inf"
+            if (Test-Path $infPath) {
+                pnputil /add-driver $infPath /install
+                Write-Host "Driver installation command executed." -ForegroundColor Green
+                Start-Sleep -Seconds 10  # Wait for the system to recognize the driver
+                Write-Host "Re-checking for CP210x driver..." -ForegroundColor Blue
+                $driver = Get-WmiObject Win32_PnPSignedDriver | Where-Object { $_.DeviceName -like '*CP210*' }
+                if (-not $driver) {
+                    Write-Host "CP210x driver still not found. Please try the following steps:" -ForegroundColor Red
+                    Write-Host "1. Disconnect and reconnect your device." -ForegroundColor Red
+                    Write-Host "2. Restart your computer." -ForegroundColor Red
+                    Write-Host "3. Install the driver manually from: https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" -ForegroundColor Red
+                    exit 1
+                }
+                Write-Host "CP210x driver found after re-check." -ForegroundColor Green
+            } else {
+                Write-Host "Installer not found. Please install the driver manually from: https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" -ForegroundColor Red
+                exit 1
+            }
+        } else {
+            Write-Host "Please install the driver from: https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" -ForegroundColor Red
+            exit 1
+        }
+    }
+    Write-Host "CP210x driver found." -ForegroundColor Green
+}
 
 function Get-ESP32Port {
     Write-Host "Getting ESP32..." -ForegroundColor Blue
@@ -19,8 +73,7 @@ function Get-ESP32Port {
 function Initialize-Python {
     Write-Host "Setting up Python environment..." -ForegroundColor Blue
     python -m pip install --upgrade pip --user
-    python -m pip install setuptools --user
-    python -m pip install esptool ampy --user
+    python -m pip install -r requirements.txt --user
 }
 
 function Get-Firmware {
@@ -31,6 +84,7 @@ function Get-Firmware {
 function Update-Device {
     param($port)
     Write-Host "Flashing ESP32..." -ForegroundColor Blue
+    Start-Sleep -Seconds 2  # Add a delay before flashing
     python -m esptool --chip esp32 --port $port erase_flash
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error erasing flash!" -ForegroundColor Red
@@ -66,6 +120,8 @@ function Cleanup {
 
 # Main installation process
 try {
+    Check-Admin
+    Check-Driver
     $port = Get-ESP32Port
     Initialize-Python
     Get-Firmware
@@ -76,5 +132,7 @@ try {
 }
 catch {
     Write-Host "An error occurred: $_" -ForegroundColor Red
-    exit 1
 }
+
+# Wait for user input before closing
+Read-Host -Prompt "Press Enter to exit"
