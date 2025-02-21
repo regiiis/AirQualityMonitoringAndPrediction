@@ -1,6 +1,6 @@
 # Configuration
-$FIRMWARE_BASE_URL = "https://micropython.org/download/ESP32_GENERIC_S3/"
-$FIRMWARE_FILE = "esp32s3_latest.bin"
+$FIRMWARE_BASE_URL = "https://micropython.org/download/ARDUINO_NANO_ESP32/"
+$FIRMWARE_FILE = "arduino_nano_esp32_latest.bin"
 $DRIVER_URL = "https://www.silabs.com/documents/public/software/CP210x_Universal_Windows_Driver.zip"
 $DRIVER_ZIP = "CP210x_Universal_Windows_Driver.zip"
 $DRIVER_FOLDER = "CP210x_Universal_Windows_Driver"
@@ -56,6 +56,28 @@ function Check-Driver {
     Write-Host "CP210x driver found." -ForegroundColor Green
 }
 
+function Reset-SerialPort {
+    param($port)
+    Write-Host "Resetting serial port $port..." -ForegroundColor Blue
+    try {
+        $serial = New-Object System.IO.Ports.SerialPort $port
+        if ($serial.IsOpen) {
+            $serial.Close()
+        }
+        # Kill any process that might be using the port
+        Get-Process | Where-Object { $_.Name -match "putty|terminal|arduino|screen" } | Stop-Process -Force
+        Start-Sleep -Seconds 2
+    }
+    catch {
+        Write-Host "Warning: Could not reset serial port: $_" -ForegroundColor Yellow
+    }
+    finally {
+        if ($serial) {
+            $serial.Dispose()
+        }
+    }
+}
+
 function Get-ESP32Port {
     Write-Host "Getting ESP32..." -ForegroundColor Blue
     $port = Get-CimInstance -ClassName Win32_SerialPort |
@@ -64,6 +86,8 @@ function Get-ESP32Port {
 
     if ($port) {
         Write-Host "Found ESP32 at: $port" -ForegroundColor Green
+        Reset-SerialPort $port
+        Start-Sleep -Seconds 3  # Add delay after port reset
         return $port
     }
     Write-Host "No ESP32 found! Please check connection." -ForegroundColor Red
@@ -73,38 +97,112 @@ function Get-ESP32Port {
 function Initialize-Python {
     Write-Host "Setting up Python environment..." -ForegroundColor Blue
     python -m pip install --upgrade pip --user
+    # Explicitly install esptool
+    python -m pip install esptool --user
     python -m pip install -r requirements.txt --user
+
+    # Verify esptool installation
+    python -m pip show esptool
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: esptool not properly installed!" -ForegroundColor Red
+        exit 1
+    }
 }
 
 function Get-Firmware {
     Write-Host "Fetching latest MicroPython firmware URL..." -ForegroundColor Blue
     $html = Invoke-WebRequest -Uri $FIRMWARE_BASE_URL
-    $firmwareUrl = ($html.Links | Where-Object { $_.href -match ".*\.bin$" }).href
+    # Get all firmware links and select the first stable version (non-preview)
+    $firmwareLinks = $html.Links |
+        Where-Object { $_.href -match ".*\.bin$" -and $_.href -notmatch "preview" } |
+        Sort-Object href -Descending
+    $firmwareUrl = $firmwareLinks[0].href
+
     if (-not $firmwareUrl) {
         Write-Host "Error: Could not find firmware URL." -ForegroundColor Red
         exit 1
     }
-    $firmwareUrl = "https://micropython.org" + $firmwareUrl
-    Write-Host "Downloading MicroPython firmware from $firmwareUrl..." -ForegroundColor Blue
-    Invoke-WebRequest -Uri $firmwareUrl -OutFile $FIRMWARE_FILE
+
+    # Extract the filename from the URL
+    $firmwareFileName = $firmwareUrl -replace "^.*?([^/]+)$", '$1'
+    Write-Host "Using firmware: $firmwareFileName" -ForegroundColor Blue
+
+    # Construct the full download URL
+    $downloadUrl = "https://micropython.org/resources/firmware/$firmwareFileName"
+    Write-Host "Downloading MicroPython firmware from $downloadUrl..." -ForegroundColor Blue
+
+    try {
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $FIRMWARE_FILE
+        if (-not (Test-Path $FIRMWARE_FILE)) {
+            throw "Downloaded file not found"
+        }
+    }
+    catch {
+        Write-Host "Error downloading firmware: $_" -ForegroundColor Red
+        exit 1
+    }
 }
 
 function Update-Device {
     param($port)
-    Write-Host "Erasing flash memory..." -ForegroundColor Blue
-    Start-Sleep -Seconds 2  # Add a delay before flashing
-    python -m esptool.py --chip esp32s3 --port $port erase_flash
+    Write-Host "Preparing to flash Arduino Nano ESP32..." -ForegroundColor Blue
+
+    # Reset port before operations
+    Reset-SerialPort $port
+    Start-Sleep -Seconds 2
+
+    Write-Host "`nEntering Download Mode - Follow these steps carefully:" -ForegroundColor Yellow
+    Write-Host "1. Press and HOLD the BOOT button (hold it down)" -ForegroundColor Yellow
+    Read-Host "Press Enter when you're holding the BOOT button"
+
+    Write-Host "2. While HOLDING the BOOT button:" -ForegroundColor Yellow
+    Write-Host "   a. Press and hold the RESET button for 1 second" -ForegroundColor Yellow
+    Write-Host "   b. Release the RESET button" -ForegroundColor Yellow
+    Write-Host "   c. Wait 1 more second" -ForegroundColor Yellow
+    Write-Host "   d. Now release the BOOT button" -ForegroundColor Yellow
+    Read-Host "Press Enter after completing ALL steps above"
+
+    Write-Host "`nVerifying device is in download mode..." -ForegroundColor Blue
+    try {
+        # Test connection
+        $testResult = python -m esptool --chip esp32 --port $port --baud 115200 chip_id
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "`nDevice not detected in download mode. Let's try again:" -ForegroundColor Red
+            Write-Host "1. Unplug the USB cable" -ForegroundColor Yellow
+            Write-Host "2. Wait 5 seconds" -ForegroundColor Yellow
+            Write-Host "3. Plug the USB cable back in" -ForegroundColor Yellow
+            Read-Host "Press Enter after reconnecting the device"
+            return Update-Device $port  # Recursive call to try again
+        }
+    }
+    catch {
+        Write-Host "Error detecting device: $_" -ForegroundColor Red
+        return Update-Device $port  # Recursive call to try again
+    }
+
+    Write-Host "`nDevice successfully entered download mode!" -ForegroundColor Green
+    Start-Sleep -Seconds 2
+
+    Write-Host "`nErasing flash memory..." -ForegroundColor Blue
+    python -m esptool --chip esp32 --port $port --baud 921600 erase_flash
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error erasing flash!" -ForegroundColor Red
         exit 1
     }
 
-    Write-Host "Writing firmware to flash memory..." -ForegroundColor Blue
-    python -m esptool.py --chip esp32s3 --port $port --baud 460800 write_flash -z 0x1000 $FIRMWARE_FILE
+    Write-Host "`nWriting MicroPython firmware..." -ForegroundColor Blue
+    python -m esptool --chip esp32 --port $port --baud 921600 write_flash -z 0x1000 $FIRMWARE_FILE
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error writing firmware!" -ForegroundColor Red
         exit 1
     }
+
+    Write-Host "`nFirmware flashed successfully." -ForegroundColor Green
+    Write-Host "Final Steps:" -ForegroundColor Yellow
+    Write-Host "1. Press the RESET button once" -ForegroundColor Yellow
+    Write-Host "2. Wait 3 seconds for the device to initialize" -ForegroundColor Yellow
+    Read-Host "Press Enter after completing these steps"
+    Start-Sleep -Seconds 3
 }
 
 function Flash-Code {
@@ -135,9 +233,11 @@ try {
     Initialize-Python
     Get-Firmware
     Update-Device $port
+    Start-Sleep -Seconds 3  # Wait for device to reset
     Flash-Code $port
     Cleanup
     Write-Host "Installation complete!" -ForegroundColor Green
+    Write-Host "Note: If the device doesn't respond, press the RESET button." -ForegroundColor Yellow
 }
 catch {
     Write-Host "An error occurred: $_" -ForegroundColor Red
