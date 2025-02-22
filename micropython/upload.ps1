@@ -31,22 +31,43 @@ function Get-ESP32Port {
     exit 1
 }
 
+function Execute-Ampy {
+    param($port, $arguments)
+    # Use python -m ampy to execute ampy commands
+    $output = & python -m ampy.cli --port $port $arguments 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Command failed: ampy --port $port $arguments" -ForegroundColor Red
+        return $false
+    }
+    return $output
+}
+
 function Upload-Code {
     param($port)
 
     # First upload the secure storage module
     Write-Host "Uploading secure storage module..." -ForegroundColor Blue
     $storagePath = Join-Path $LOGIC_DIR "secure_storage.py"
-
-    # Fixed ampy command execution using python -m
-    Start-Process -FilePath $AMPY_CMD -ArgumentList "-m", "ampy", "--port", $port, "put", $storagePath, "/secure_storage.py" -NoNewWindow -Wait
+    Execute-Ampy -port $port -arguments @("put", $storagePath, "/secure_storage.py")
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to upload secure_storage.py" -ForegroundColor Red
         exit 1
     }
 
+    # Upload main script
+    Write-Host "Uploading main.py..." -ForegroundColor Blue
+    $mainPyPath = Join-Path $LOGIC_DIR $MAIN_SCRIPT
+    Execute-Ampy -port $port -arguments @("put", $mainPyPath, "/main.py")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to upload main.py" -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host "Code uploaded. Please press the RESET button on your ESP32 NOW." -ForegroundColor Yellow
+    Read-Host "Press Enter to continue after rebooting the ESP32"
+
     # Get WiFi credentials securely
-Write-Host "Getting WiFi credentials..." -ForegroundColor Blue
+    Write-Host "Getting WiFi credentials..." -ForegroundColor Blue
     $ssid = Read-Host "Enter WiFi SSID"
     $password = Read-Host "Enter WiFi Password" -AsSecureString
     $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
@@ -58,27 +79,30 @@ Write-Host "Getting WiFi credentials..." -ForegroundColor Blue
 from secure_storage import SecureStorage
 storage = SecureStorage()
 storage.store_credentials('$ssid', '$wifi_password')
-print("Verifying stored credentials...")
-stored_ssid, _ = storage.get_credentials()
-if stored_ssid == '$ssid':
-    print("Credentials stored successfully!")
-else:
-    print("Error: Credential verification failed!")
+print("WiFi credentials stored.")
 "@
     $tempFile = Join-Path $env:TEMP "store_creds.py"
     Set-Content -Path $tempFile -Value $tempScript
 
-    # Upload and execute credential storage - fix these calls too
-    Start-Process -FilePath $AMPY_CMD -ArgumentList "-m", "ampy", "--port", $port, "put", $tempFile, "/store_creds.py" -NoNewWindow -Wait
-    Start-Process -FilePath $AMPY_CMD -ArgumentList "-m", "ampy", "--port", $port, "run", "/store_creds.py" -NoNewWindow -Wait
+    # Upload credential storage
+    Write-Host "Uploading credential storage script..." -ForegroundColor Blue
+    $putResult = Execute-Ampy -port $port -arguments @("put", $tempFile, "/store_creds.py")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to upload /store_creds.py" -ForegroundColor Red
+        exit 1
+    }
+
+    # Execute credential storage
+    Write-Host "Executing credential storage script..." -ForegroundColor Blue
+    $runResult = Execute-Ampy -port $port -arguments @("run", "/store_creds.py")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to run /store_creds.py" -ForegroundColor Red
+        exit 1
+    }
+
     Remove-Item $tempFile
 
-    # Upload main script - fix this call too
-    Write-Host "Uploading main.py..." -ForegroundColor Blue
-    $mainPyPath = Join-Path $LOGIC_DIR $MAIN_SCRIPT
-    Start-Process -FilePath $AMPY_CMD -ArgumentList "-m", "ampy", "--port", $port, "put", $mainPyPath, "/main.py" -NoNewWindow -Wait
-
-    Write-Host "Code uploaded successfully!" -ForegroundColor Green
+    Write-Host "Credentials uploaded." -ForegroundColor Green
 }
 
 # Main upload process
@@ -86,7 +110,7 @@ try {
     Initialize-Python
     $port = Get-ESP32Port
     Upload-Code $port
-    Write-Host "Press the RESET button to start running the code." -ForegroundColor Yellow
+    Write-Host "Upload successful. Please RESET the ESP32 before use." -ForegroundColor Yellow
 }
 catch {
     Write-Host "An error occurred: $_" -ForegroundColor Red
