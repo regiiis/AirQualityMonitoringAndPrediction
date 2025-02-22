@@ -84,7 +84,7 @@ def main():
             wlan.disconnect()
         while True:
             print("Error state - WiFi configuration failed")
-            time.sleep(10)
+            time.sleep(5)
 
 
 if __name__ == "__main__":

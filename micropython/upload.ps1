@@ -45,19 +45,19 @@ function Execute-Ampy {
 function Upload-Code {
     param($port)
 
-    # First upload the secure storage module
+    # Upload secure_storage.py
     Write-Host "Uploading secure storage module..." -ForegroundColor Blue
     $storagePath = Join-Path $LOGIC_DIR "secure_storage.py"
-    Execute-Ampy -port $port -arguments @("put", $storagePath, "/secure_storage.py")
+    $result = Execute-Ampy -port $port -arguments @("put", $storagePath, "/secure_storage.py")
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to upload secure_storage.py" -ForegroundColor Red
         exit 1
     }
 
-    # Upload main script
+    # Upload main.py
     Write-Host "Uploading main.py..." -ForegroundColor Blue
     $mainPyPath = Join-Path $LOGIC_DIR $MAIN_SCRIPT
-    Execute-Ampy -port $port -arguments @("put", $mainPyPath, "/main.py")
+    $result = Execute-Ampy -port $port -arguments @("put", $mainPyPath, "/main.py")
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to upload main.py" -ForegroundColor Red
         exit 1
@@ -66,43 +66,21 @@ function Upload-Code {
     Write-Host "Code uploaded. Please press the RESET button on your ESP32 NOW." -ForegroundColor Yellow
     Read-Host "Press Enter to continue after rebooting the ESP32"
 
-    # Get WiFi credentials securely
+    # Get WiFi credentials
     Write-Host "Getting WiFi credentials..." -ForegroundColor Blue
     $ssid = Read-Host "Enter WiFi SSID"
     $password = Read-Host "Enter WiFi Password" -AsSecureString
     $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
     $wifi_password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
 
-    # Create and run script to store credentials in NVS
-    Write-Host "Storing WiFi credentials in secure storage..." -ForegroundColor Blue
-    $tempScript = @"
-from secure_storage import SecureStorage
-storage = SecureStorage()
-storage.store_credentials('$ssid', '$wifi_password')
-print("WiFi credentials stored.")
-"@
-    $tempFile = Join-Path $env:TEMP "store_creds.py"
-    Set-Content -Path $tempFile -Value $tempScript
+    # Construct the Python command to store credentials
+    $pythonCommand = "from secure_storage import SecureStorage; storage = SecureStorage(); storage.store_credentials('$ssid', '$wifi_password')"
 
-    # Upload credential storage
-    Write-Host "Uploading credential storage script..." -ForegroundColor Blue
-    $putResult = Execute-Ampy -port $port -arguments @("put", $tempFile, "/store_creds.py")
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to upload /store_creds.py" -ForegroundColor Red
-        exit 1
-    }
-
-    # Execute credential storage
-    Write-Host "Executing credential storage script..." -ForegroundColor Blue
-    $runResult = Execute-Ampy -port $port -arguments @("run", "/store_creds.py")
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to run /store_creds.py" -ForegroundColor Red
-        exit 1
-    }
-
-    Remove-Item $tempFile
-
-    Write-Host "Credentials uploaded." -ForegroundColor Green
+    # Connect to REPL using miniterm
+    Write-Host "Connecting to REPL using miniterm..." -ForegroundColor Blue
+    Write-Host "Please enter the following command in the miniterm window:" -ForegroundColor Yellow
+    Write-Host "$pythonCommand" -ForegroundColor Yellow
+    python -m serial.tools.miniterm $port 115200
 }
 
 # Main upload process
@@ -110,7 +88,7 @@ try {
     Initialize-Python
     $port = Get-ESP32Port
     Upload-Code $port
-    Write-Host "Upload successful. Please RESET the ESP32 before use." -ForegroundColor Yellow
+    Write-Host "Upload successful. Please RESET the ESP32 before use!" -ForegroundColor Yellow
 }
 catch {
     Write-Host "An error occurred: $_" -ForegroundColor Red

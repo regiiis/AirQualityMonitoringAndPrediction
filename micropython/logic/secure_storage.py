@@ -16,7 +16,7 @@ class SecureStorage:
             # set_blob stores binary data in the specified namespace
             self._nvs.set_blob("ssid", ssid.encode())  # Store under 'ssid' key
             self._nvs.set_blob("pwd", password.encode())  # Store under 'pwd' key
-            self._nvs.commit()  # Actually write to flash memory
+            self._nvs.commit()  # Write to flash memory
             return True
         except Exception as e:
             print(f"Error storing credentials: {e}")
