@@ -1,8 +1,27 @@
+# Configuration
+$LOGIC_DIR = "./logic"
+$MAIN_SCRIPT = "main.py"
+# Remove direct ampy command and use python -m ampy instead
+$AMPY_CMD = "python"
+
 # Serial Connection Configuration
 $BAUD_RATE = 115200
 $DATA_BITS = 8
 $STOP_BITS = [System.IO.Ports.StopBits]::One
 $PARITY = [System.IO.Ports.Parity]::None
+
+function Initialize-Python {
+    Write-Host "Setting up Python environment..." -ForegroundColor Blue
+    python -m pip install --upgrade pip --quiet
+    python -m pip install adafruit-ampy --quiet
+
+    # Verify ampy installation
+    python -m pip show adafruit-ampy
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: adafruit-ampy not properly installed!" -ForegroundColor Red
+        exit 1
+    }
+}
 
 function Get-AvailablePorts {
     Write-Host "Available COM ports:" -ForegroundColor Blue
@@ -37,34 +56,37 @@ function Connect-ToESP32 {
     }
 }
 
+function Execute-Ampy {
+    param($port, $arguments)
+    # Use python -m ampy to execute ampy commands
+    $output = & python -m ampy.cli --port $port $arguments 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Command failed: ampy --port $port $arguments" -ForegroundColor Red
+        return $false
+    }
+    return $output
+}
+
 function Send-Command {
     param (
         [Parameter(Mandatory=$true)]
-        [string]$Command
+        [string]$Command,
+        [Parameter(Mandatory=$true)]
+        [string]$Port
     )
 
-    if (-not $script:port -or -not $script:port.IsOpen) {
-        Write-Host "Error: Not connected to any port" -ForegroundColor Red
-        return
-    }
+    # Construct the ampy command to execute the given command
+    $ampyCommand = "repl -c `"$Command`""
 
-    try {
-        $script:port.WriteLine($Command)
-        Start-Sleep -Milliseconds 100
+    # Execute the ampy command
+    $result = Execute-Ampy -port $Port -arguments $ampyCommand.Split(" ")
 
-        # Read response
-        $response = ""
-        while ($script:port.BytesToRead -gt 0) {
-            $response += $script:port.ReadExisting()
-        }
-
-        if ($response) {
-            Write-Host "Response:" -ForegroundColor Green
-            Write-Host $response
-        }
-    }
-    catch {
-        Write-Host "Error sending command: $_" -ForegroundColor Red
+    # Output the result
+    if ($result) {
+        Write-Host "Response:" -ForegroundColor Green
+        Write-Host $result
+    } else {
+        Write-Host "No response or error occurred." -ForegroundColor Red
     }
 }
 
@@ -77,20 +99,17 @@ function Disconnect-FromESP32 {
 }
 
 function Get-ESP32Port {
-    Write-Host "Detecting ESP32..." -ForegroundColor Blue
-    $ports = Get-CimInstance -ClassName Win32_SerialPort |
-            Where-Object { $_.Name -like '*Arduino*' -or $_.Name -like '*USB*' -or $_.Name -like '*CP210*' }
+    Write-Host "Getting ESP32..." -ForegroundColor Blue
+    $port = Get-CimInstance -ClassName Win32_SerialPort |
+            Where-Object { $_.Name -like '*Arduino*' -or $_.Name -like '*USB*' -or $_.Name -like '*CP210*' } |
+            Select-Object -First 1 -ExpandProperty DeviceID
 
-    if (-not $ports) {
-        Write-Host "No ESP32 found! Available ports:" -ForegroundColor Red
-        [System.IO.Ports.SerialPort]::GetPortNames() | ForEach-Object { Write-Host "  $_" }
-        exit 1
+    if ($port) {
+        Write-Host "Found ESP32 at: $port" -ForegroundColor Green
+        return $port
     }
-
-    # Take the first matching port
-    $port = $ports[0].DeviceID
-    Write-Host "Found ESP32 at: $port" -ForegroundColor Green
-    return $port
+    Write-Host "No ESP32 found! Please check connection." -ForegroundColor Red
+    exit 1
 }
 
 function Start-InteractiveSession {
@@ -101,20 +120,23 @@ function Start-InteractiveSession {
     }
 
     $portName = Get-ESP32Port
-    if (Connect-ToESP32 $portName) {
-        Write-Host "`nInteractive Session Started" -ForegroundColor Green
-        Write-Host "Enter commands to send to ESP32 (type 'exit' to quit)`n" -ForegroundColor Yellow
-
-        while ($true) {
-            $command = Read-Host "ESP32>"
-            if ($command -eq "exit") {
-                break
-            }
-            Send-Command $command
-        }
-
-        Disconnect-FromESP32
+    if (!$portName) {
+        Write-Host "No ESP32 port found. Exiting." -ForegroundColor Red
+        return
     }
+
+    Write-Host "`nInteractive Session Started" -ForegroundColor Green
+    Write-Host "Enter commands to send to ESP32 (type 'exit' to quit)`n" -ForegroundColor Yellow
+
+    while ($true) {
+        $command = Read-Host "ESP32>"
+        if ($command -eq "exit") {
+            break
+        }
+        Send-Command -Command $command -Port $portName
+    }
+
+    Disconnect-FromESP32
 }
 
 # Clean up on script exit
@@ -122,7 +144,11 @@ Register-EngineEvent PowerShell.Exiting -Action {
     Disconnect-FromESP32
 } | Out-Null
 
-# Start interactive session if script is run directly
-if ($MyInvocation.InvocationName -ne ".") {
+# Main execution
+try {
+    Initialize-Python
     Start-InteractiveSession
+}
+catch {
+    Write-Host "An error occurred: $_" -ForegroundColor Red
 }

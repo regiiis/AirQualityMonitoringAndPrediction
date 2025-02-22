@@ -1,4 +1,3 @@
-import esp
 import esp32 as nvs
 
 
@@ -22,29 +21,21 @@ class SecureStorage:
             print(f"Error storing credentials: {e}")
             return False
 
+    def prompt_and_store_credentials(self):
+        try:
+            ssid = input("Enter WiFi SSID: ")
+            password = input("Enter WiFi Password: ")
+            self.store_credentials(ssid, password)
+            print("WiFi credentials stored successfully.")
+        except Exception as e:
+            print(f"Error prompting and storing credentials: {e}")
+
     def get_credentials(self):
         try:
             # Retrieve bytes from NVS flash and convert back to strings
             ssid = self._nvs.get_blob("ssid").decode()
             password = self._nvs.get_blob("pwd").decode()
-            return ssid, password
+            return {"credentials": [ssid, password]}
         except Exception as e:
             print(f"Error retreiving credentials: {e}")
-            return None, None
-
-    @staticmethod
-    def print_storage_info():
-        """Print information about NVS storage"""
-        try:
-            # Get NVS partition info
-            partition = esp.nvs_get_info()
-            print("NVS Storage Info:")
-            print(f"Total size: {partition['total_size']} bytes")
-            print(f"Used size: {partition['used_size']} bytes")
-            print(
-                f"Free size: {partition['total_size'] - partition['used_size']} bytes"
-            )
-            return True
-        except Exception as e:
-            print("Error getting NVS storage info:", e)
-            return False
+            return {"credentials": False}

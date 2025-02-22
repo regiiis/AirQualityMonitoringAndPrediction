@@ -1,73 +1,62 @@
-import network
 import time
+import network
 from secure_storage import SecureStorage
-
-
-def check_wifi_status(wlan):
-    if not wlan.active():
-        return "WiFi interface inactive"
-    if not wlan.isconnected():
-        return "WiFi disconnected"
-
-    status = wlan.status()
-    if status == network.STAT_IDLE:
-        return "WiFi idle"
-    elif status == network.STAT_CONNECTING:
-        return "WiFi connecting..."
-    elif status == network.STAT_WRONG_PASSWORD:
-        return "WiFi wrong password"
-    elif status == network.STAT_NO_AP_FOUND:
-        return "WiFi no access point found"
-    elif status == network.STAT_CONNECT_FAIL:
-        return "WiFi connection failed"
-    elif status == network.STAT_GOT_IP:
-        return f"WiFi connected - IP: {wlan.ifconfig()[0]}"
-
-    return f"WiFi unknown status: {status}"
-
-
-def connect_wifi():
-    # Get credentials from secure storage
-    storage = SecureStorage()
-    ssid, password = storage.get_credentials()
-
-    if not ssid or not password:
-        raise Exception("WiFi credentials not found in secure storage")
-
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-
-    if not wlan.isconnected():
-        print(f"Connecting to network: {ssid}...")
-        wlan.connect(ssid, password)
-
-        # Wait for connection with timeout
-        max_wait = 10
-        while max_wait > 0:
-            status = check_wifi_status(wlan)
-            print(status)
-            if wlan.isconnected():
-                break
-            max_wait -= 1
-            time.sleep(1)
-
-        if not wlan.isconnected():
-            raise Exception("Failed to connect to WiFi")
-
-    return wlan, ssid
+from wifi import check_wifi_status, connect_wifi
 
 
 def main():
-    wlan = None
+    # Initialize wlan
+    wlan = network.WLAN(network.STA_IF)
     ssid = None
+    password = None
 
+    # Wifi setup
+    if not wlan.isconnected():
+        print("Not connected to any network")
+        try:
+            # Create an instance of SecureStorage
+            storage = SecureStorage()
+            # Retrieve WiFi credentials from secure storage
+            credentials_dict = storage.get_credentials()
+            if credentials_dict and credentials_dict["credentials"]:
+                # If credentials are found, try to connect to WiFi
+                try:
+                    ssid, password = credentials_dict["credentials"]
+                    wlan, ssid = connect_wifi(ssid, password)
+                    time.sleep(3)
+                    if not wlan.isconnected():
+                        raise Exception("Failed to get WiFi connection details")
+                except Exception as e:
+                    print(f"Error: {e}")
+            else:
+                # If credentials are not found, prompt user to enter them trying to connect to wifi
+                print("WiFi credentials not found in secure storage")
+                try:
+                    # Prompt user to enter WiFi credentials
+                    storage.prompt_and_store_credentials()
+                    credentials_dict = storage.get_credentials()
+                    if credentials_dict and credentials_dict["credentials"]:
+                        try:
+                            # If credentials are found, try to connect to WiFi
+                            ssid, password = credentials_dict["credentials"]
+                            wlan, ssid = connect_wifi(ssid, password)
+                            time.sleep(3)
+                            if not wlan.isconnected():
+                                raise Exception("Failed to get WiFi connection details")
+                        except Exception as e:
+                            print(f"Error trying to connect to wifi: {e}")
+                    else:
+                        raise Exception(
+                            "Failed to get WiFi credentials from secure storage"
+                        )
+                except Exception as e:
+                    print(f"Error trying to set credentials and connect to wifi: {e}")
+
+        except Exception as e:
+            print(f"Error in the wifi process: {e}")
+
+    # Main monitoring loop
     try:
-        # Connect to WiFi using secure storage
-        wlan, ssid = connect_wifi()
-        if not wlan or not ssid:
-            raise Exception("Failed to get WiFi connection details")
-
-        # Main monitoring loop
         print("Starting WiFi monitoring...")
         while True:
             status = check_wifi_status(wlan)

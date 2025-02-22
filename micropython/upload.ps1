@@ -54,6 +54,15 @@ function Upload-Code {
         exit 1
     }
 
+    # Upload wifi.py
+    Write-Host "Uploading wifi module..." -ForegroundColor Blue
+    $wifiPath = Join-Path $LOGIC_DIR "wifi.py"
+    $result = Execute-Ampy -port $port -arguments @("put", $wifiPath, "/wifi.py")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to upload wifi.py" -ForegroundColor Red
+        exit 1
+    }
+
     # Upload main.py
     Write-Host "Uploading main.py..." -ForegroundColor Blue
     $mainPyPath = Join-Path $LOGIC_DIR $MAIN_SCRIPT
@@ -65,16 +74,6 @@ function Upload-Code {
 
     Write-Host "Code uploaded. Please press the RESET button on your ESP32 NOW." -ForegroundColor Yellow
     Read-Host "Press Enter to continue after rebooting the ESP32"
-
-    # Get WiFi credentials
-    Write-Host "Getting WiFi credentials..." -ForegroundColor Blue
-    $ssid = Read-Host "Enter WiFi SSID"
-    $password = Read-Host "Enter WiFi Password" -AsSecureString
-    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
-    $wifi_password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-
-    # Construct the Python command to store credentials
-    $pythonCommand = "from secure_storage import SecureStorage; storage = SecureStorage(); storage.store_credentials('$ssid', '$wifi_password')"
 
     # Connect to REPL using miniterm
     Write-Host "Connecting to REPL using miniterm..." -ForegroundColor Blue
