@@ -1,10 +1,12 @@
 import time
-import network
-from secure_storage import SecureStorage
-from wifi import check_wifi_status, connect_wifi
+import network  # type: ignore
+from secure_storage import SecureStorage  # type: ignore
+from wifi import connect_wifi  # type: ignore
 
 
 def main():
+    input("READY TO START? Press Enter to continue...")
+    print("Start main script")
     # Initialize wlan
     wlan = network.WLAN(network.STA_IF)
     ssid = None
@@ -17,11 +19,12 @@ def main():
             # Create an instance of SecureStorage
             storage = SecureStorage()
             # Retrieve WiFi credentials from secure storage
-            credentials_dict = storage.get_credentials()
-            if credentials_dict and credentials_dict["credentials"]:
+            ssid, password = storage.get_credentials()
+            if ssid and password:
                 # If credentials are found, try to connect to WiFi
+                print(f"Credentials found: {ssid}")
                 try:
-                    ssid, password = credentials_dict["credentials"]
+                    print("Trying to connect to wifi")
                     wlan, ssid = connect_wifi(ssid, password)
                     time.sleep(3)
                     if not wlan.isconnected():
@@ -34,11 +37,10 @@ def main():
                 try:
                     # Prompt user to enter WiFi credentials
                     storage.prompt_and_store_credentials()
-                    credentials_dict = storage.get_credentials()
-                    if credentials_dict and credentials_dict["credentials"]:
+                    ssid, password = storage.get_credentials()
+                    if ssid and password:
                         try:
                             # If credentials are found, try to connect to WiFi
-                            ssid, password = credentials_dict["credentials"]
                             wlan, ssid = connect_wifi(ssid, password)
                             time.sleep(3)
                             if not wlan.isconnected():
@@ -59,8 +61,6 @@ def main():
     try:
         print("Starting WiFi monitoring...")
         while True:
-            status = check_wifi_status(wlan)
-            print(status)
             if wlan.isconnected():
                 print(f"Connected to: {ssid}")
             else:

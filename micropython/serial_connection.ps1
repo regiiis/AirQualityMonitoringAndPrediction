@@ -6,14 +6,12 @@ $AMPY_CMD = "python"
 
 # Serial Connection Configuration
 $BAUD_RATE = 115200
-$DATA_BITS = 8
-$STOP_BITS = [System.IO.Ports.StopBits]::One
-$PARITY = [System.IO.Ports.Parity]::None
 
 function Initialize-Python {
     Write-Host "Setting up Python environment..." -ForegroundColor Blue
     python -m pip install --upgrade pip --quiet
     python -m pip install adafruit-ampy --quiet
+    python -m pip install pyserial --quiet
 
     # Verify ampy installation
     python -m pip show adafruit-ampy
@@ -30,30 +28,6 @@ function Get-AvailablePorts {
         Write-Host "  - $p"
     }
     return $ports
-}
-
-function Connect-ToESP32 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]$PortName
-    )
-
-    try {
-        $script:port = New-Object System.IO.Ports.SerialPort $PortName, $BAUD_RATE, $PARITY, $DATA_BITS, $STOP_BITS
-        $script:port.ReadTimeout = 1000
-        $script:port.WriteTimeout = 1000
-        $script:port.DtrEnable = $true
-        $script:port.RtsEnable = $true
-
-        $script:port.Open()
-        Write-Host "Connected to $PortName successfully!" -ForegroundColor Green
-        return $true
-    }
-    catch {
-        $errorMessage = $_.Exception.Message
-        Write-Host "Error connecting to $PortName`: $errorMessage" -ForegroundColor Red
-        return $false
-    }
 }
 
 function Execute-Ampy {
@@ -90,14 +64,6 @@ function Send-Command {
     }
 }
 
-function Disconnect-FromESP32 {
-    if ($script:port -and $script:port.IsOpen) {
-        $script:port.Close()
-        $script:port.Dispose()
-        Write-Host "Disconnected from port." -ForegroundColor Yellow
-    }
-}
-
 function Get-ESP32Port {
     Write-Host "Getting ESP32..." -ForegroundColor Blue
     $port = Get-CimInstance -ClassName Win32_SerialPort |
@@ -112,33 +78,6 @@ function Get-ESP32Port {
     exit 1
 }
 
-function Start-InteractiveSession {
-    $ports = Get-AvailablePorts
-    if ($ports.Count -eq 0) {
-        Write-Host "No COM ports found!" -ForegroundColor Red
-        return
-    }
-
-    $portName = Get-ESP32Port
-    if (!$portName) {
-        Write-Host "No ESP32 port found. Exiting." -ForegroundColor Red
-        return
-    }
-
-    Write-Host "`nInteractive Session Started" -ForegroundColor Green
-    Write-Host "Enter commands to send to ESP32 (type 'exit' to quit)`n" -ForegroundColor Yellow
-
-    while ($true) {
-        $command = Read-Host "ESP32>"
-        if ($command -eq "exit") {
-            break
-        }
-        Send-Command -Command $command -Port $portName
-    }
-
-    Disconnect-FromESP32
-}
-
 # Clean up on script exit
 Register-EngineEvent PowerShell.Exiting -Action {
     Disconnect-FromESP32
@@ -147,7 +86,13 @@ Register-EngineEvent PowerShell.Exiting -Action {
 # Main execution
 try {
     Initialize-Python
-    Start-InteractiveSession
+    $port = Get-ESP32Port
+
+    if ($port) {
+        Write-Host "Connecting to REPL using miniterm..." -ForegroundColor Blue
+        Write-Host "Press Ctrl+] to exit miniterm." -ForegroundColor Yellow
+        python -m serial.tools.miniterm $port $BAUD_RATE
+    }
 }
 catch {
     Write-Host "An error occurred: $_" -ForegroundColor Red

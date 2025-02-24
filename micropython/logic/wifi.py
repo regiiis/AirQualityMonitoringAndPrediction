@@ -1,4 +1,4 @@
-import network
+import network  # type: ignore
 import time
 
 
@@ -9,23 +9,10 @@ def check_wifi_status(wlan):
         return "WiFi disconnected"
 
     status = wlan.status()
-    if status == network.STAT_IDLE:
-        return "WiFi idle"
-    elif status == network.STAT_CONNECTING:
-        return "WiFi connecting..."
-    elif status == network.STAT_WRONG_PASSWORD:
-        return "WiFi wrong password"
-    elif status == network.STAT_NO_AP_FOUND:
-        return "WiFi no access point found"
-    elif status == network.STAT_CONNECT_FAIL:
-        return "WiFi connection failed"
-    elif status == network.STAT_GOT_IP:
-        return f"WiFi connected - IP: {wlan.ifconfig()[0]}"
-
-    return f"WiFi unknown status: {status}"
+    print(f"WiFi status: {status}")
 
 
-def connect_wifi(ssid: str, password: str):
+def connect_wifi(ssid, password):
     if not ssid or not password:
         raise Exception("WiFi credentials not found in secure storage")
 

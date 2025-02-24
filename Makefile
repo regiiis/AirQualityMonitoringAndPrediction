@@ -4,7 +4,7 @@ lint:
 	pre-commit run --all-files
 
 type_check:
-	mypy app/ tests/
+	mypy app/ micropython/ tests/
 
 test_logic:
 	mkdir -p reports
