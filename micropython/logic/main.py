@@ -11,7 +11,7 @@ import time
 import network  # type: ignore
 from secure_storage import SecureStorage  # type: ignore
 from wifi import connect_wifi  # type: ignore
-from ina219_sensor import read_ina219  # type: ignore
+from ina219_sensor import ina219  # type: ignore
 from hyt221_sensor import HYT221  # type: ignore
 
 
@@ -92,8 +92,12 @@ def main():
                     print(f"Connected to: {ssid}")
                 else:
                     print("Not connected to any network")
-                read_ina219(scl=scl, sda=sda, I2C_ADDRESS=0x41, sensor_name="Battery")
-                read_ina219(scl=scl, sda=sda, I2C_ADDRESS=0x45, sensor_name="PV Panel")
+                ina219(
+                    scl=scl, sda=sda, I2C_ADDRESS=0x41, sensor_name="Battery"
+                ).print()
+                ina219(
+                    scl=scl, sda=sda, I2C_ADDRESS=0x45, sensor_name="PV Panel"
+                ).print()
                 HYT221(scl=scl, sda=sda, freq=100000, address=0x28).print()
                 time.sleep(5)
 
