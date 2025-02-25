@@ -147,6 +147,15 @@ function Upload-Code {
         exit 1
         }
 
+    # Upload hyt221_sensor.py
+    Write-Host "Uploading hyt221_sensor.py..." -ForegroundColor Blue
+    $hyt221_sensorPyPath = Join-Path $LOGIC_DIR "hyt221_sensor.py"
+    $result = Execute-Ampy -port $port -arguments @("put", $hyt221_sensorPyPath, "/hyt221_sensor.py")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to upload hyt221_sensor.py" -ForegroundColor Red
+        exit 1
+        }
+
     # Upload main.py
     Write-Host "Uploading main.py..." -ForegroundColor Blue
     $mainPyPath = Join-Path $LOGIC_DIR "main.py"

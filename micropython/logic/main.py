@@ -12,6 +12,7 @@ import network  # type: ignore
 from secure_storage import SecureStorage  # type: ignore
 from wifi import connect_wifi  # type: ignore
 from ina219_sensor import read_ina219  # type: ignore
+from hyt221_sensor import HYT221  # type: ignore
 
 
 def main():
@@ -34,6 +35,8 @@ def main():
     wlan = network.WLAN(network.STA_IF)
     ssid = None
     password = None
+    scl = 11
+    sda = 12
 
     # Wifi setup
     if not wlan.isconnected():
@@ -81,19 +84,20 @@ def main():
             print(f"Error in the wifi process: {e}")
 
     # Main monitoring loop
-    try:
-        print("Starting WiFi monitoring...")
-        while True:
-            if wlan.isconnected():
-                print(f"Connected to: {ssid}")
-            else:
-                print("Not connected to any network")
-            read_ina219(I2C_ADDRESS=0x41, sensor_name="Battery")
-            read_ina219(I2C_ADDRESS=0x45, sensor_name="PV Panel")
-            time.sleep(5)
+    while True:
+        try:
+            print("Starting WiFi monitoring...")
+            while True:
+                if wlan.isconnected():
+                    print(f"Connected to: {ssid}")
+                else:
+                    print("Not connected to any network")
+                read_ina219(scl=scl, sda=sda, I2C_ADDRESS=0x41, sensor_name="Battery")
+                read_ina219(scl=scl, sda=sda, I2C_ADDRESS=0x45, sensor_name="PV Panel")
+                HYT221(scl=scl, sda=sda, freq=100000, address=0x28).print()
+                time.sleep(5)
 
-    except Exception as e:
-        while True:
+        except Exception as e:
             print(f"Error: {e}")
             time.sleep(5)
 
