@@ -8,13 +8,13 @@
 
 # Configuration
 $LOGIC_DIR = "./logic"
-$MAIN_SCRIPT = "main.py"
 $LIB_DIR = "./libs"
 $AMPY_CMD = "python"
 
 # Define the libraries and their URLs
 $libraries = @(
-    @{ Name = "ina219"; Url = "https://raw.githubusercontent.com/chrisb2/pyb_ina219/master/ina219.py" }
+    @{ Name = "ina219"; Url = "https://raw.githubusercontent.com/chrisb2/pyb_ina219/master/ina219.py" },
+    @{ Name = "logging"; Url = "https://raw.githubusercontent.com/micropython/micropython-lib/refs/heads/master/python-stdlib/logging/logging.py" }
 )
 
 function Initialize-Python {
@@ -138,9 +138,18 @@ function Upload-Code {
         exit 1
     }
 
+    # Upload ina219_sensor.py
+    Write-Host "Uploading ina219_sensor.py..." -ForegroundColor Blue
+    $ina219_sensorPyPath = Join-Path $LOGIC_DIR "ina219_sensor.py"
+    $result = Execute-Ampy -port $port -arguments @("put", $ina219_sensorPyPath, "/ina219_sensor.py")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to upload ina219_sensor.py" -ForegroundColor Red
+        exit 1
+        }
+
     # Upload main.py
     Write-Host "Uploading main.py..." -ForegroundColor Blue
-    $mainPyPath = Join-Path $LOGIC_DIR $MAIN_SCRIPT
+    $mainPyPath = Join-Path $LOGIC_DIR "main.py"
     $result = Execute-Ampy -port $port -arguments @("put", $mainPyPath, "/main.py")
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to upload main.py" -ForegroundColor Red

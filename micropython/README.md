@@ -3,11 +3,22 @@
 ## Development Environment
 
 - VS Code
+- Powershell (with extension)
 - Arduino Nano ESP32-S3
 - MicroPython firmware for ESP32-S3
 - Python 3.x
 - lab-micropython-installer: https://github.com/arduino/lab-micropython-installer
-- micropythn doc: https://docs.micropython.org/en/latest/index.html
+- Micropython doc: https://docs.micropython.org/en/latest/index.html
+- Micropython libs: https://github.com/micropython/micropython-lib/tree/master
+
+Sensor Libs:
+- INA219: https://raw.githubusercontent.com/chrisb2/pyb_ina219/master/ina219.py
+
+   The module has four I2C, these addresses are:<br>
+   INA219_I2C_ADDRESS1:  0x40   A0 = 0  A1 = 0<br>
+   INA219_I2C_ADDRESS2  0x41   A0 = 1  A1 = 0<br>
+   INA219_I2C_ADDRESS3  0x44   A0 = 0  A1 = 1<br>
+   INA219_I2C_ADDRESS4  0x45   A0 = 1  A1 = 1<br>
 
 ### Installation
 

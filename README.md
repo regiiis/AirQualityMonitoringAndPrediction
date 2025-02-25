@@ -137,7 +137,7 @@ The sensor module is composed of the following components:
 | Humidity Sensor | HYT 221 | |
 | CO2 Sensor | MH-Z19C-PC | |
 | Power MGMT | DFRobot Solar Power Manager 5V | |
-| V/I Monitor | INA219 | |
+| V/I Monitor | INA219 | https://wiki.dfrobot.com/Gravity:%20I2C%20Digital%20Wattmeter%20SKU:%20SEN0291 |
 | V Step-Up | MT3608 | |
 | Solar Power | PV Panel 4.5-6V, max 1A | |
 | Battery | Li-Po 3.7V | |

@@ -11,6 +11,7 @@ import time
 import network  # type: ignore
 from secure_storage import SecureStorage  # type: ignore
 from wifi import connect_wifi  # type: ignore
+from ina219_sensor import read_ina219  # type: ignore
 
 
 def main():
@@ -87,14 +88,13 @@ def main():
                 print(f"Connected to: {ssid}")
             else:
                 print("Not connected to any network")
+            read_ina219(I2C_ADDRESS=0x41, sensor_name="Battery")
+            read_ina219(I2C_ADDRESS=0x45, sensor_name="PV Panel")
             time.sleep(5)
 
     except Exception as e:
-        print(f"Error: {e}")
-        if wlan:
-            wlan.disconnect()
         while True:
-            print("Error state - WiFi configuration failed")
+            print(f"Error: {e}")
             time.sleep(5)
 
 
