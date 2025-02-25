@@ -1,8 +1,24 @@
+"""
+WiFi connectivity module for ESP32 MicroPython.
+
+This module provides functions to establish and monitor WiFi connections
+on ESP32 devices running MicroPython.
+"""
+
 import network  # type: ignore
 import time
 
 
 def check_wifi_status(wlan):
+    """
+    Check the current status of the WiFi connection.
+
+    Args:
+        wlan: network.WLAN instance representing the WiFi interface
+
+    Returns:
+        str: A message describing the current WiFi status
+    """
     if not wlan.active():
         return "WiFi interface inactive"
     if not wlan.isconnected():
@@ -12,7 +28,20 @@ def check_wifi_status(wlan):
     print(f"WiFi status: {status}")
 
 
-def connect_wifi(ssid, password):
+def connect_wifi(ssid: str, password: str):
+    """
+    Establish a WiFi connection using provided credentials.
+
+    Args:
+        ssid (str): The name of the WiFi network to connect to
+        password (str): The password for the WiFi network
+
+    Returns:
+        tuple: (network.WLAN object, str) - The WiFi interface and connected SSID
+
+    Raises:
+        Exception: If credentials are invalid or connection fails
+    """
     if not ssid or not password:
         raise Exception("WiFi credentials not found in secure storage")
 

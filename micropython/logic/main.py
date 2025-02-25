@@ -1,3 +1,12 @@
+"""
+Main script for ESP32 Air Quality Monitoring System.
+
+This module handles the main execution flow including:
+- WiFi connection management
+- Secure storage for credentials
+- Network status monitoring
+"""
+
 import time
 import network  # type: ignore
 from secure_storage import SecureStorage  # type: ignore
@@ -5,6 +14,19 @@ from wifi import connect_wifi  # type: ignore
 
 
 def main():
+    """
+    Main execution function for the ESP32 Air Quality Monitoring System.
+
+    This function performs the following tasks:
+    1. Initializes the WiFi interface
+    2. Attempts to retrieve stored WiFi credentials
+    3. Connects to WiFi using stored or user-provided credentials
+    4. Monitors the WiFi connection status
+
+    Raises:
+        Exception: For various WiFi-related errors including connection failures
+                  and credential management issues
+    """
     input("READY TO START? Press Enter to continue...")
     print("Start main script")
     # Initialize wlan

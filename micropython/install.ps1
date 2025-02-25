@@ -1,3 +1,11 @@
+<#
+.SYNOPSIS
+    Installs MicroPython on ESP32 devices.
+.DESCRIPTION
+    Handles the complete installation process of MicroPython on ESP32,
+    including prerequisites checking and verification.
+#>
+
 # Configuration
 $INSTALLER_REPO = "https://github.com/arduino/lab-micropython-installer.git"
 $INSTALLER_DIR = "micropython-installer-arduino"
@@ -6,6 +14,13 @@ $DRIVER_ZIP = "CP210x_Universal_Windows_Driver.zip"
 $DRIVER_FOLDER = "CP210x_Universal_Windows_Driver"
 
 function Check-Prerequisites {
+    <#
+    .SYNOPSIS
+        Verifies required software is installed.
+    .DESCRIPTION
+        Checks for the presence of Git, Node.js, and npm
+        installations on the system.
+    #>
     Write-Host "Checking prerequisites..." -ForegroundColor Blue
 
     # Check if Git is installed
@@ -28,6 +43,13 @@ function Check-Prerequisites {
 }
 
 function Install-MicroPython {
+    <#
+    .SYNOPSIS
+        Installs MicroPython using Arduino Lab installer.
+    .DESCRIPTION
+        Clones the Arduino Lab MicroPython installer repository
+        and runs the installation process through npm.
+    #>
     Write-Host "Setting up Arduino Lab MicroPython Installer..." -ForegroundColor Blue
 
     # Clone the repository if it doesn't exist
@@ -69,6 +91,15 @@ function Install-MicroPython {
 }
 
 function Get-ESP32Port {
+    <#
+    .SYNOPSIS
+        Detects and returns the COM port for connected ESP32.
+    .DESCRIPTION
+        Searches through available serial ports to find an ESP32 device
+        by matching common identifiers in the device name.
+    .OUTPUTS
+        String containing the COM port identifier.
+    #>
     Write-Host "Getting ESP32..." -ForegroundColor Blue
     $port = Get-CimInstance -ClassName Win32_SerialPort |
             Where-Object { $_.Name -like '*Arduino*' -or $_.Name -like '*USB*' -or $_.Name -like '*CP210*' } |
@@ -84,6 +115,17 @@ function Get-ESP32Port {
 }
 
 function Test-MicroPython {
+    <#
+    .SYNOPSIS
+        Tests if MicroPython is installed on ESP32.
+    .PARAMETER port
+        The COM port where ESP32 is connected.
+    .DESCRIPTION
+        Attempts to communicate with ESP32 via serial connection
+        to verify MicroPython installation.
+    .OUTPUTS
+        Boolean indicating if MicroPython is detected.
+    #>
     param($port)
     Write-Host "Checking for existing MicroPython installation..." -ForegroundColor Blue
 
