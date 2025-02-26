@@ -84,6 +84,7 @@ class ina219:
                 address=self.I2C_ADDRESS,
                 log_level=logging.INFO,
             )
+
             ina.configure(
                 voltage_range=ina.RANGE_16V,
                 gain=ina.GAIN_1_40MV,

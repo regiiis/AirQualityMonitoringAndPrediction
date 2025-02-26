@@ -17,6 +17,15 @@ $libraries = @(
     @{ Name = "logging"; Url = "https://raw.githubusercontent.com/micropython/micropython-lib/refs/heads/master/python-stdlib/logging/logging.py" }
 )
 
+# Define the list of files to upload from the logic directory
+$logicFiles = @(
+    "secure_storage.py",
+    "wifi.py",
+    "ina219_sensor.py",
+    "hyt221_sensor.py",
+    "main.py"
+)
+
 function Initialize-Python {
     <#
     .SYNOPSIS
@@ -114,55 +123,28 @@ function Upload-Code {
         Uploads MicroPython code files to ESP32.
     .PARAMETER port
         The COM port where ESP32 is connected.
+    .PARAMETER logicFiles
+        Array of file names to upload from the logic directory.
     .DESCRIPTION
-        Handles the sequential upload of secure_storage.py, wifi.py, main.py,
-        and any additional libraries to the ESP32 device.
+        Handles the sequential upload of Python files from the logic directory
+        and additional libraries to the ESP32 device.
     #>
-    param($port)
+    param(
+        $port,
+        $logicFiles
+    )
 
-    # Upload secure_storage.py
-    Write-Host "Uploading secure storage module..." -ForegroundColor Blue
-    $storagePath = Join-Path $LOGIC_DIR "secure_storage.py"
-    $result = Execute-Ampy -port $port -arguments @("put", $storagePath, "/secure_storage.py")
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to upload secure_storage.py" -ForegroundColor Red
-        exit 1
-    }
+    # Upload files from the logic directory
+    foreach ($file in $logicFiles) {
+        Write-Host "Uploading $file..." -ForegroundColor Blue
+        $sourcePath = Join-Path $LOGIC_DIR $file
+        $destinationPath = "/$file"
 
-    # Upload wifi.py
-    Write-Host "Uploading wifi module..." -ForegroundColor Blue
-    $wifiPath = Join-Path $LOGIC_DIR "wifi.py"
-    $result = Execute-Ampy -port $port -arguments @("put", $wifiPath, "/wifi.py")
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to upload wifi.py" -ForegroundColor Red
-        exit 1
-    }
-
-    # Upload ina219_sensor.py
-    Write-Host "Uploading ina219_sensor.py..." -ForegroundColor Blue
-    $ina219_sensorPyPath = Join-Path $LOGIC_DIR "ina219_sensor.py"
-    $result = Execute-Ampy -port $port -arguments @("put", $ina219_sensorPyPath, "/ina219_sensor.py")
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to upload ina219_sensor.py" -ForegroundColor Red
-        exit 1
+        $result = Execute-Ampy -port $port -arguments @("put", $sourcePath, $destinationPath)
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to upload $file" -ForegroundColor Red
+            exit 1
         }
-
-    # Upload hyt221_sensor.py
-    Write-Host "Uploading hyt221_sensor.py..." -ForegroundColor Blue
-    $hyt221_sensorPyPath = Join-Path $LOGIC_DIR "hyt221_sensor.py"
-    $result = Execute-Ampy -port $port -arguments @("put", $hyt221_sensorPyPath, "/hyt221_sensor.py")
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to upload hyt221_sensor.py" -ForegroundColor Red
-        exit 1
-        }
-
-    # Upload main.py
-    Write-Host "Uploading main.py..." -ForegroundColor Blue
-    $mainPyPath = Join-Path $LOGIC_DIR "main.py"
-    $result = Execute-Ampy -port $port -arguments @("put", $mainPyPath, "/main.py")
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to upload main.py" -ForegroundColor Red
-        exit 1
     }
 
     # Upload additional libraries
@@ -178,13 +160,104 @@ function Upload-Code {
         }
     }
 
-    Write-Host "Code and libraries uploaded. Please press the RESET button on your ESP32 NOW." -ForegroundColor Yellow
-    Read-Host "Press Enter to continue after rebooting the ESP32"
+    Write-Host "Code and libraries uploaded." -ForegroundColor Yellow
+}
 
+function Reset-ESP32 {
+    <#
+    .SYNOPSIS
+        Reboots the Arduino Nano ESP32 device programmatically.
+    .PARAMETER port
+        The COM port where ESP32 is connected.
+    .DESCRIPTION
+        Performs a programmatic reset using MicroPython's machine.reset() function.
+    #>
+    param($port)
+
+    [string]$ComPort = $port
+    [int]$BaudRate = 115200
+
+    Write-Host "Rebooting ESP32 programmatically..." -ForegroundColor Blue
+    try {
+        # First ensure pyserial is installed for better control
+        python -m pip install pyserial --quiet
+
+        # Use Python directly for more reliable reset
+        $pythonResetScript = @"
+import serial
+import time
+
+try:
+    # Open the serial connection
+    print('Opening serial connection to $ComPort')
+    ser = serial.Serial('$ComPort', $BaudRate, timeout=1)
+
+    # Wait for connection to stabilize
+    time.sleep(0.5)
+
+    # Send Ctrl+C to interrupt any running program
+    print('Interrupting current program')
+    ser.write(b'\x03')
+    time.sleep(0.5)
+
+    # Clear the input buffer
+    ser.reset_input_buffer()
+
+    # Send a few newlines to ensure we're at a fresh prompt
+    ser.write(b'\r\n\r\n')
+    time.sleep(0.5)
+
+    # Send the reset command
+    print('Sending reset command')
+    ser.write(b'import machine\r\n')
+    time.sleep(0.5)
+    ser.write(b'machine.reset()\r\n')
+
+    # Give a small delay before closing to ensure command is sent
+    time.sleep(0.2)
+    ser.close()
+
+    print('Reset command sent successfully')
+    exit(0)
+except Exception as e:
+    print(f'Error: {str(e)}')
+    exit(1)
+"@
+
+        # Execute the Python script for reset
+        $tempFile = [System.IO.Path]::GetTempFileName() + ".py"
+        $pythonResetScript | Out-File -FilePath $tempFile -Encoding utf8
+
+        Write-Host "Executing Python reset script..." -ForegroundColor Blue
+        $result = python $tempFile
+        $resetSuccess = $LASTEXITCODE -eq 0
+
+        # Clean up temp file
+        Remove-Item -Path $tempFile -Force
+
+        if ($resetSuccess) {
+            Write-Host "Reset command sent. ESP32 should reboot momentarily." -ForegroundColor Green
+            Write-Host "Waiting for ESP32 to reboot..." -ForegroundColor Blue
+            return $true
+        } else {
+            Write-Host "Reset command failed. Output: $result" -ForegroundColor Red
+            throw "Reset command failed"
+        }
+    }
+    catch {
+        Write-Host "Error during programmatic reset: $_" -ForegroundColor Red
+
+        # Fall back to manual reset
+        Write-Host "Automatic reset failed. Please press the RESET button on your Arduino Nano ESP32." -ForegroundColor Yellow
+        Read-Host "Press Enter after pressing the reset button"
+        return $true
+    }
+}
+
+function Connect-REPL {
+    param($port)
     # Connect to REPL using miniterm
     Write-Host "Connecting to REPL using miniterm..." -ForegroundColor Blue
-    Write-Host "Please enter the following command in the miniterm window:" -ForegroundColor Yellow
-    Write-Host "$pythonCommand" -ForegroundColor Yellow
     python -m serial.tools.miniterm $port 115200
 }
 
@@ -193,8 +266,11 @@ try {
     Initialize-Python
     Download-Libraries
     $port = Get-ESP32Port
-    Upload-Code $port
-    Write-Host "Upload successful. Please RESET the ESP32 before use!" -ForegroundColor Yellow
+    Upload-Code $port $logicFiles
+    Reset-ESP32 $port
+    Start-Sleep -Seconds 5
+    Connect-REPL $port
+    Write-Host "Upload successful." -ForegroundColor Yellow
 }
 catch {
     Write-Host "An error occurred: $_" -ForegroundColor Red

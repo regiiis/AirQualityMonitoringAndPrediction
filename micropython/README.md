@@ -16,9 +16,12 @@ Sensor Libs:
 
    The module has four I2C, these addresses are:<br>
    INA219_I2C_ADDRESS1:  0x40   A0 = 0  A1 = 0<br>
-   INA219_I2C_ADDRESS2  0x41   A0 = 1  A1 = 0<br>
-   INA219_I2C_ADDRESS3  0x44   A0 = 0  A1 = 1<br>
-   INA219_I2C_ADDRESS4  0x45   A0 = 1  A1 = 1<br>
+   INA219_I2C_ADDRESS2:  0x41   A0 = 1  A1 = 0<br>
+   INA219_I2C_ADDRESS3:  0x44   A0 = 0  A1 = 1<br>
+   INA219_I2C_ADDRESS4:  0x45   A0 = 1  A1 = 1<br>
+
+- HYT221:
+   I2C adress: 0X28
 
 ### Installation
 

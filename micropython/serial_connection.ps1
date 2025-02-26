@@ -1,9 +1,8 @@
 <#
 .SYNOPSIS
-    Manages serial connections to ESP32 devices.
+    Establishes a serial connection to ESP32 devices.
 .DESCRIPTION
-    Provides functionality for establishing and managing serial connections
-    to ESP32 devices, including REPL access and command execution.
+    Provides a simple way to connect to ESP32 devices via serial REPL.
 #>
 
 # Configuration
@@ -20,20 +19,11 @@ function Initialize-Python {
     .SYNOPSIS
         Initializes Python environment for serial communication.
     .DESCRIPTION
-        Ensures all required Python packages are installed for
-        serial communication with ESP32.
+        Ensures pyserial is installed for communication with ESP32.
     #>
     Write-Host "Setting up Python environment..." -ForegroundColor Blue
     python -m pip install --upgrade pip --quiet
-    python -m pip install adafruit-ampy --quiet
     python -m pip install pyserial --quiet
-
-    # Verify ampy installation
-    python -m pip show adafruit-ampy
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Error: adafruit-ampy not properly installed!" -ForegroundColor Red
-        exit 1
-    }
 }
 
 function Get-AvailablePorts {
@@ -110,6 +100,14 @@ function Send-Command {
 }
 
 function Get-ESP32Port {
+    <#
+    .SYNOPSIS
+        Detects and returns the COM port for connected ESP32.
+    .DESCRIPTION
+        Searches through available serial ports to find an ESP32 device.
+    .OUTPUTS
+        String containing the COM port identifier.
+    #>
     Write-Host "Getting ESP32..." -ForegroundColor Blue
     $port = Get-CimInstance -ClassName Win32_SerialPort |
             Where-Object { $_.Name -like '*Arduino*' -or $_.Name -like '*USB*' -or $_.Name -like '*CP210*' } |
@@ -123,6 +121,26 @@ function Get-ESP32Port {
     exit 1
 }
 
+function Connect-ESP32REPL {
+    <#
+    .SYNOPSIS
+        Connects to ESP32 REPL using miniterm.
+    .PARAMETER port
+        The COM port where ESP32 is connected.
+    .PARAMETER baudRate
+        Baud rate for the serial connection.
+    #>
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$port,
+        [int]$baudRate = 115200
+    )
+
+    Write-Host "Connecting to REPL using miniterm..." -ForegroundColor Blue
+    Write-Host "Press Ctrl+] to exit miniterm." -ForegroundColor Yellow
+    python -m serial.tools.miniterm $port $baudRate
+}
+
 # Clean up on script exit
 Register-EngineEvent PowerShell.Exiting -Action {
     Disconnect-FromESP32
@@ -132,12 +150,7 @@ Register-EngineEvent PowerShell.Exiting -Action {
 try {
     Initialize-Python
     $port = Get-ESP32Port
-
-    if ($port) {
-        Write-Host "Connecting to REPL using miniterm..." -ForegroundColor Blue
-        Write-Host "Press Ctrl+] to exit miniterm." -ForegroundColor Yellow
-        python -m serial.tools.miniterm $port $BAUD_RATE
-    }
+    Connect-ESP32REPL -port $port -baudRate $BAUD_RATE
 }
 catch {
     Write-Host "An error occurred: $_" -ForegroundColor Red
