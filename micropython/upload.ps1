@@ -14,16 +14,17 @@ $AMPY_CMD = "python"
 # Define the libraries and their URLs
 $libraries = @(
     @{ Name = "ina219"; Url = "https://raw.githubusercontent.com/chrisb2/pyb_ina219/master/ina219.py" },
-    @{ Name = "logging"; Url = "https://raw.githubusercontent.com/micropython/micropython-lib/refs/heads/master/python-stdlib/logging/logging.py" }
+    @{ Name = "logging"; Url = "https://raw.githubusercontent.com/micropython/micropython-lib/refs/heads/master/python-stdlib/logging/logging.py" },
+    @{ Name = "typing"; Url = "https://raw.githubusercontent.com/Josverl/micropython-stubs/refs/heads/main/mip/typing.py" },
+    @{ Name = "abc"; Url = "https://raw.githubusercontent.com/micropython/micropython-lib/master/python-stdlib/abc/abc.py" }
 )
 
-# Define the list of files to upload from the logic directory
-$logicFiles = @(
-    "secure_storage.py",
-    "wifi.py",
-    "ina219_sensor.py",
-    "hyt221_sensor.py",
-    "main.py"
+# Define directories to create and populate on ESP32
+$directories = @(
+    "/modules",
+    "/data_collection",
+    "/data_collection/port",
+    "/data_collection/adapter"
 )
 
 function Initialize-Python {
@@ -78,16 +79,32 @@ function Execute-Ampy {
     .PARAMETER arguments
         Array of arguments to pass to ampy.
     .OUTPUTS
-        Command output or $false if command fails.
+        PSObject with Success and Output properties.
     #>
     param($port, $arguments)
+
     # Use python -m ampy to execute ampy commands
-    $output = & python -m ampy.cli --port $port $arguments 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Command failed: ampy --port $port $arguments" -ForegroundColor Red
-        return $false
+    try {
+        $cmdOutput = & python -m ampy.cli --port $port $arguments 2>&1
+        $success = $LASTEXITCODE -eq 0
+
+        if (-not $success) {
+            Write-Host "Command failed: ampy --port $port $arguments" -ForegroundColor Red
+        }
+
+        # Return both success status and output
+        return @{
+            Success = $success
+            Output = $cmdOutput
+        }
     }
-    return $output
+    catch {
+        Write-Host "Exception executing ampy: $_" -ForegroundColor Red
+        return @{
+            Success = $false
+            Output = $_.Exception.Message
+        }
+    }
 }
 
 function Download-Libraries {
@@ -118,49 +135,162 @@ function Download-Libraries {
 }
 
 function Upload-Code {
-    <#
-    .SYNOPSIS
-        Uploads MicroPython code files to ESP32.
-    .PARAMETER port
-        The COM port where ESP32 is connected.
-    .PARAMETER logicFiles
-        Array of file names to upload from the logic directory.
-    .DESCRIPTION
-        Handles the sequential upload of Python files from the logic directory
-        and additional libraries to the ESP32 device.
-    #>
-    param(
-        $port,
-        $logicFiles
+    param($port)
+
+    # Create directories on ESP32 - one by one without -p flag
+    Write-Host "Creating directory structure on ESP32..." -ForegroundColor Blue
+
+    # Try to create individual directories without using -p flag
+    # First create parent directories, then subdirectories
+    $orderedDirs = @(
+        "/modules",
+        "/data_collection",
+        "/data_collection/port",
+        "/data_collection/adapter"
     )
 
-    # Upload files from the logic directory
-    foreach ($file in $logicFiles) {
-        Write-Host "Uploading $file..." -ForegroundColor Blue
-        $sourcePath = Join-Path $LOGIC_DIR $file
-        $destinationPath = "/$file"
+    foreach ($dir in $orderedDirs) {
+        try {
+            # First check if directory exists to avoid errors
+            $checkResult = Execute-Ampy -port $port -arguments @("ls", "/")
 
-        $result = Execute-Ampy -port $port -arguments @("put", $sourcePath, $destinationPath)
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "Failed to upload $file" -ForegroundColor Red
-            exit 1
+            # Try to make directory (without -p flag)
+            Write-Host "Creating directory: $dir" -ForegroundColor Blue
+            $result = Execute-Ampy -port $port -arguments @("mkdir", $dir)
+
+            if ($result.Success) {
+                Write-Host "Created directory: $dir" -ForegroundColor Green
+            } else {
+                # Directory might already exist which is fine
+                Write-Host "Note: Could not create directory $dir (might already exist)" -ForegroundColor Yellow
+            }
+
+            # Add longer delay after directory operations
+            Start-Sleep -Seconds 2
+        }
+        catch {
+            Write-Host "Error with directory $dir : $_" -ForegroundColor Yellow
+            # Continue anyway as the directory might still work for uploads
         }
     }
 
-    # Upload additional libraries
+    # Upload main.py to the root directory
+    Write-Host "Uploading main.py..." -ForegroundColor Blue
+    $mainPath = Join-Path $LOGIC_DIR "main.py"
+    $result = Execute-Ampy -port $port -arguments @("put", $mainPath, "/main.py")
+
+    if ($result.Success) {
+        Write-Host "Successfully uploaded main.py" -ForegroundColor Green
+        # If main.py uploads successfully, we have a good connection
+        Start-Sleep -Seconds 3
+    } else {
+        Write-Host "Failed to upload main.py - check ESP32 connection" -ForegroundColor Red
+        exit 1
+    }
+
+    # Process each directory's files
+    foreach ($dir in $directories) {
+        # Convert ESP32 path to local path
+        $localDir = $dir -replace "^/", ""  # Remove leading slash
+        $localPath = Join-Path $LOGIC_DIR $localDir
+
+        if (-not (Test-Path $localPath)) {
+            Write-Host "Local directory $localPath not found, skipping" -ForegroundColor Yellow
+            continue
+        }
+
+        # Get Python files
+        $pyFiles = Get-ChildItem -Path $localPath -Filter "*.py"
+        Write-Host "Found $($pyFiles.Count) Python files in $localPath" -ForegroundColor Blue
+
+        # Upload each file
+        foreach ($file in $pyFiles) {
+            $sourcePath = $file.FullName
+            $destPath = "$dir/$($file.Name)"
+            $fileName = $file.Name
+
+            $maxRetries = 3
+            $retryCount = 0
+            $uploadSuccess = $false
+
+            while (-not $uploadSuccess -and $retryCount -lt $maxRetries) {
+                if ($retryCount -gt 0) {
+                    Write-Host "Retry $retryCount for $fileName..." -ForegroundColor Yellow
+                    Start-Sleep -Seconds 3  # Longer delay between retries
+                }
+
+                Write-Host "Uploading $fileName to $destPath..." -ForegroundColor Blue
+
+                # Try direct file upload first - simpler and might work
+                $result = Execute-Ampy -port $port -arguments @("put", $sourcePath, $destPath)
+
+                if ($result.Success) {
+                    $uploadSuccess = $true
+                    Write-Host "Successfully uploaded $fileName" -ForegroundColor Green
+                } else {
+                    # If direct upload fails, try via temp file
+                    try {
+                        $content = Get-Content -Path $sourcePath -Raw
+                        $tempFile = [System.IO.Path]::GetTempFileName()
+                        $content | Out-File -FilePath $tempFile -Encoding utf8 -NoNewline
+
+                        $result = Execute-Ampy -port $port -arguments @("put", $tempFile, $destPath)
+                        Remove-Item -Path $tempFile -Force
+
+                        if ($result.Success) {
+                            $uploadSuccess = $true
+                            Write-Host "Successfully uploaded $fileName (via temp file)" -ForegroundColor Green
+                        }
+                    }
+                    catch {
+                        Write-Host "Error during alternative upload: $_" -ForegroundColor Red
+                    }
+                }
+
+                $retryCount++
+                Start-Sleep -Seconds 1
+            }
+
+            if (-not $uploadSuccess) {
+                Write-Host "Failed to upload $fileName after $maxRetries attempts" -ForegroundColor Red
+                # Try a different approach - upload to root and then move?
+                try {
+                    $rootResult = Execute-Ampy -port $port -arguments @("put", $sourcePath, "/$fileName")
+                    if ($rootResult.Success) {
+                        Write-Host "Uploaded $fileName to root as fallback" -ForegroundColor Yellow
+                    }
+                }
+                catch {
+                    # Last resort failed, continue with next file
+                }
+            }
+        }
+    }
+
+    # Upload libraries to root
     Write-Host "Uploading additional libraries..." -ForegroundColor Blue
     $libFiles = Get-ChildItem -Path $LIB_DIR -Filter "*.py"
-    foreach ($libFile in $libFiles) {
-        $libPath = $libFile.FullName
-        $libName = $libFile.Name
-        $result = Execute-Ampy -port $port -arguments @("put", $libPath, "/$libName")
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "Failed to upload $libName" -ForegroundColor Red
-            exit 1
+
+    foreach ($lib in $libFiles) {
+        $libPath = $lib.FullName
+        $libName = $lib.Name
+
+        $maxRetries = 2
+        for ($i = 0; $i -lt $maxRetries; $i++) {
+            Write-Host "Uploading $libName to root..." -ForegroundColor Blue
+            $result = Execute-Ampy -port $port -arguments @("put", $libPath, "/$libName")
+
+            if ($result.Success) {
+                Write-Host "Successfully uploaded $libName" -ForegroundColor Green
+                break
+            } else {
+                Write-Host "Failed to upload $libName, retrying..." -ForegroundColor Yellow
+                Start-Sleep -Seconds 2
+            }
         }
     }
 
-    Write-Host "Code and libraries uploaded." -ForegroundColor Yellow
+    Write-Host "Upload process completed." -ForegroundColor Yellow
 }
 
 function Reset-ESP32 {
@@ -266,7 +396,7 @@ try {
     Initialize-Python
     Download-Libraries
     $port = Get-ESP32Port
-    Upload-Code $port $logicFiles
+    Upload-Code $port
     Reset-ESP32 $port
     Start-Sleep -Seconds 5
     Connect-REPL $port

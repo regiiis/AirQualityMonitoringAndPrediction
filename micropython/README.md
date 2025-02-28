@@ -10,6 +10,7 @@
 - lab-micropython-installer: https://github.com/arduino/lab-micropython-installer
 - Micropython doc: https://docs.micropython.org/en/latest/index.html
 - Micropython libs: https://github.com/micropython/micropython-lib/tree/master
+- Micropython stubs: https://github.com/Josverl/micropython-stubs
 
 Sensor Libs:
 - INA219: https://raw.githubusercontent.com/chrisb2/pyb_ina219/master/ina219.py
@@ -22,6 +23,8 @@ Sensor Libs:
 
 - HYT221:
    I2C adress: 0X28
+
+- SoftI2C: any pin
 
 ### Installation
 

@@ -9,10 +9,9 @@ This module handles the main execution flow including:
 
 import time
 import network  # type: ignore
-from secure_storage import SecureStorage  # type: ignore
-from wifi import connect_wifi  # type: ignore
-from ina219_sensor import ina219  # type: ignore
-from hyt221_sensor import HYT221  # type: ignore
+from modules.secure_storage import SecureStorage  # type: ignore
+from modules.wifi import connect_wifi  # type: ignore
+from data_collection.sensor_factory import SensorFactory  # type: ignore
 
 
 def main():
@@ -31,7 +30,8 @@ def main():
     """
     input("READY TO START? Press Enter to continue...")
     print("Start main script")
-    # Initialize wlan
+
+    # Initialize system parameters
     wlan = network.WLAN(network.STA_IF)
     ssid = None
     password = None
@@ -83,26 +83,69 @@ def main():
         except Exception as e:
             print(f"Error in the wifi process: {e}")
 
+    # Create sensors using the factory
+    try:
+        # Create sensor instances
+        sensors = [
+            # Battery monitoring sensor
+            SensorFactory.create(
+                "ina219", name="Battery", i2c_address=0x41, scl=scl, sda=sda
+            ),
+            # Solar panel monitoring sensor
+            SensorFactory.create(
+                "ina219", name="PV Panel", i2c_address=0x45, scl=scl, sda=sda
+            ),
+            # Environmental sensor
+            SensorFactory.create(
+                "hyt221", name="Environment", i2c_address=0x28, scl=scl, sda=sda
+            ),
+        ]
+
+        print(f"Created {len(sensors)} sensor instances")
+
+    except Exception as e:
+        print(f"Error creating sensors: {e}")
+        sensors = []
+
     # Main monitoring loop
     while True:
         try:
-            print("Starting WiFi monitoring...")
-            while True:
-                if wlan.isconnected():
-                    print(f"Connected to: {ssid}")
+            print("\n--- Starting monitoring cycle ---")
+
+            # Display WiFi status
+            if wlan.isconnected():
+                print(f"Connected to: {ssid}")
+            else:
+                print("Not connected to any network")
+
+            # Read and display sensor data
+            for sensor in sensors:
+                if sensor.is_ready():
+                    # Method 1: Use the built-in print method
+                    sensor.print()
+
+                    # Method 2: Read and process data manually
+                    readings = sensor.read()
+
+                    # Example of accessing specific values
+                    if "voltage" in readings and sensor.name == "Battery":
+                        voltage = readings["voltage"]
+                        if voltage < 3.3:
+                            print(f"WARNING: Battery voltage low ({voltage}V)")
+
+                    if "humidity" in readings:
+                        humidity = readings["humidity"]
+                        if humidity > 80:
+                            print(f"WARNING: High humidity ({humidity}%)")
                 else:
-                    print("Not connected to any network")
-                ina219(
-                    scl=scl, sda=sda, I2C_ADDRESS=0x41, sensor_name="Battery"
-                ).print()
-                ina219(
-                    scl=scl, sda=sda, I2C_ADDRESS=0x45, sensor_name="PV Panel"
-                ).print()
-                HYT221(scl=scl, sda=sda, freq=100000, address=0x28).print()
-                time.sleep(5)
+                    print(f"Warning: Sensor '{sensor.name}' is not ready")
+
+            # Wait before next reading
+            print("Waiting for next reading cycle...")
+            time.sleep(5)
 
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error in monitoring loop: {e}")
             time.sleep(5)
 
 
