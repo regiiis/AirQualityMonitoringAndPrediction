@@ -5,7 +5,11 @@ This module defines the interfaces (ports) that sensor implementations
 must adhere to, following the Ports and Adapters pattern.
 """
 
-from abc import ABC, abstractmethod
+try:
+    from modules.mock_abc import ABC, abstractmethod  # type: ignore
+except ImportError:
+    from abc import ABC, abstractmethod  # type: ignore
+
 from typing import Dict, Any
 
 

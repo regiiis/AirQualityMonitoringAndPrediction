@@ -25,7 +25,9 @@ def check_wifi_status(wlan):
         return "WiFi disconnected"
 
     status = wlan.status()
+    status_message = f"WiFi connected with status {status}"
     print(f"WiFi status: {status}")
+    return status_message
 
 
 def connect_wifi(ssid: str, password: str):

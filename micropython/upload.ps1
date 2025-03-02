@@ -2,8 +2,21 @@
 .SYNOPSIS
     Script to upload MicroPython code to ESP32 devices.
 .DESCRIPTION
-    Handles the upload process of MicroPython files to ESP32, including automatic port detection
-    and verification of successful uploads.
+    Handles the upload process of MicroPython files to ESP32, including:
+    - Automatic port detection and connection
+    - Required library downloads
+    - Directory structure creation
+    - Code upload from local project to ESP32
+    - ESP32 reset after upload
+    - REPL connection for immediate testing
+
+    The script maintains the same directory structure on the ESP32 as in the local project.
+.NOTES
+    Requires Python with adafruit-ampy and pyserial packages.
+    Compatible with Arduino Nano ESP32 and similar boards.
+.EXAMPLE
+    ./upload.ps1
+    # Executes the full upload process
 #>
 
 # Configuration
@@ -15,8 +28,7 @@ $AMPY_CMD = "python"
 $libraries = @(
     @{ Name = "ina219"; Url = "https://raw.githubusercontent.com/chrisb2/pyb_ina219/master/ina219.py" },
     @{ Name = "logging"; Url = "https://raw.githubusercontent.com/micropython/micropython-lib/refs/heads/master/python-stdlib/logging/logging.py" },
-    @{ Name = "typing"; Url = "https://raw.githubusercontent.com/Josverl/micropython-stubs/refs/heads/main/mip/typing.py" },
-    @{ Name = "abc"; Url = "https://raw.githubusercontent.com/python/cpython/refs/heads/main/Lib/abc.py" }
+    @{ Name = "typing"; Url = "https://raw.githubusercontent.com/Josverl/micropython-stubs/refs/heads/main/mip/typing.py" }
 )
 
 # Define directories to create and populate on ESP32
@@ -81,17 +93,29 @@ function Execute-Ampy {
         The COM port where ESP32 is connected.
     .PARAMETER arguments
         Array of arguments to pass to ampy.
+    .PARAMETER SuppressError
+        Switch to suppress error messages for expected failures.
+    .DESCRIPTION
+        Wrapper function for executing ampy commands to communicate with ESP32.
+        Returns a hashtable with Success status and command Output.
     .OUTPUTS
-        PSObject with Success and Output properties.
+        Hashtable with Success (Boolean) and Output (String) properties.
+    .EXAMPLE
+        Execute-Ampy -port "COM5" -arguments @("ls", "/")
+        # Lists files in the root directory
     #>
-    param($port, $arguments)
+    param(
+        $port,
+        $arguments,
+        [switch]$SuppressError
+    )
 
     # Use python -m ampy to execute ampy commands
     try {
         $cmdOutput = & python -m ampy.cli --port $port $arguments 2>&1
         $success = $LASTEXITCODE -eq 0
 
-        if (-not $success) {
+        if (-not $success -and -not $SuppressError) {
             Write-Host "Command failed: ampy --port $port $arguments" -ForegroundColor Red
         }
 
@@ -138,6 +162,19 @@ function Download-Libraries {
 }
 
 function Upload-Code {
+    <#
+    .SYNOPSIS
+        Uploads MicroPython code to an ESP32 device.
+    .PARAMETER port
+        The COM port where ESP32 is connected.
+    .DESCRIPTION
+        Creates necessary directory structure on the ESP32 and uploads Python files
+        from the local project structure. Handles main.py, module files, and libraries.
+        Files are uploaded to their respective directories based on the project structure.
+    .EXAMPLE
+        Upload-Code -port "COM5"
+        # Uploads all code to the ESP32 connected to COM5
+    #>
     param($port)
 
     # Create directories on ESP32 - one by one without -p flag
@@ -154,9 +191,9 @@ function Upload-Code {
 
     foreach ($dir in $orderedDirs) {
         try {
-            # First check if directory exists
+            # First check if directory exists (suppress error since we expect it might not exist)
             Write-Host "Checking if directory exists: $dir" -ForegroundColor Blue
-            $checkResult = Execute-Ampy -port $port -arguments @("ls", "$dir")
+            $checkResult = Execute-Ampy -port $port -arguments @("ls", "$dir") -SuppressError
 
             if ($checkResult.Success) {
                 Write-Host "Directory $dir already exists" -ForegroundColor Green
@@ -371,6 +408,17 @@ except Exception as e:
 }
 
 function Connect-REPL {
+    <#
+    .SYNOPSIS
+        Connects to the ESP32's MicroPython REPL interface.
+    .PARAMETER port
+        The COM port where ESP32 is connected.
+    .DESCRIPTION
+        Opens a serial connection to the ESP32's REPL (Read-Eval-Print Loop) interface
+        using miniterm. This allows direct interaction with the MicroPython environment.
+    .NOTES
+        Press Ctrl+] to exit the REPL connection.
+    #>
     param($port)
     # Connect to REPL using miniterm
     Write-Host "Connecting to REPL using miniterm..." -ForegroundColor Blue
