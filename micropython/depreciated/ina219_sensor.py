@@ -1,5 +1,5 @@
-from machine import Pin, SoftI2C
-from ina219 import INA219
+from machine import Pin, SoftI2C  # type: ignore
+from ina219 import INA219  # type: ignore
 import logging
 
 

@@ -100,7 +100,7 @@ class SecureStorage:
 
             # Encode credentials
             ssid_encoded = ssid.encode()
-            pwd_encoded = password.encode()
+            pwd_encoded = bytearray(password.encode())
 
             # Store in NVS
             self._nvs.set_blob("ssid", ssid_encoded)

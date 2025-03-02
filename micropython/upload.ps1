@@ -16,7 +16,7 @@ $libraries = @(
     @{ Name = "ina219"; Url = "https://raw.githubusercontent.com/chrisb2/pyb_ina219/master/ina219.py" },
     @{ Name = "logging"; Url = "https://raw.githubusercontent.com/micropython/micropython-lib/refs/heads/master/python-stdlib/logging/logging.py" },
     @{ Name = "typing"; Url = "https://raw.githubusercontent.com/Josverl/micropython-stubs/refs/heads/main/mip/typing.py" },
-    @{ Name = "abc"; Url = "https://raw.githubusercontent.com/micropython/micropython-lib/master/python-stdlib/abc/abc.py" }
+    @{ Name = "abc"; Url = "https://raw.githubusercontent.com/python/cpython/refs/heads/main/Lib/abc.py" }
 )
 
 # Define directories to create and populate on ESP32
