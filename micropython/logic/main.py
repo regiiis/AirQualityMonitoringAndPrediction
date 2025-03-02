@@ -11,7 +11,8 @@ import time
 import network  # type: ignore
 from modules.secure_storage import SecureStorage  # type: ignore
 from modules.wifi import connect_wifi  # type: ignore
-from data_collection.sensor_factory import SensorFactory  # type: ignore
+from data_collection.adapter.hyt221 import HYT221Adapter  # type: ignore
+from data_collection.adapter.ina219 import INA219Adapter  # type: ignore
 
 
 def main():
@@ -37,6 +38,7 @@ def main():
     password = None
     scl = 11
     sda = 12
+    sensors = []
 
     # Wifi setup
     if not wlan.isconnected():
@@ -83,21 +85,23 @@ def main():
         except Exception as e:
             print(f"Error in the wifi process: {e}")
 
-    # Create sensors using the factory
+    # Intantiate sensors
     try:
         # Create sensor instances
         sensors = [
             # Battery monitoring sensor
-            SensorFactory.create(
-                "ina219", name="Battery", i2c_address=0x41, scl=scl, sda=sda
-            ),
+            INA219Adapter("ina219", name="Battery", i2c_address=0x41, scl=scl, sda=sda),
             # Solar panel monitoring sensor
-            SensorFactory.create(
+            INA219Adapter(
                 "ina219", name="PV Panel", i2c_address=0x45, scl=scl, sda=sda
             ),
             # Environmental sensor
-            SensorFactory.create(
-                "hyt221", name="Environment", i2c_address=0x28, scl=scl, sda=sda
+            HYT221Adapter(
+                "hyt221",
+                name="Humidity & Temperature",
+                i2c_address=0x28,
+                scl=scl,
+                sda=sda,
             ),
         ]
 

@@ -4,7 +4,7 @@ Adapter implementation for HYT221 humidity/temperature sensor
 
 from machine import Pin, SoftI2C
 import time
-from sensorport import I2CSensorPort
+from data_collection.port.sensorport import I2CSensorPort
 
 
 class HYT221Adapter(I2CSensorPort):

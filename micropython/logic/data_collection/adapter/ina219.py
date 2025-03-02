@@ -5,7 +5,7 @@ Adapter implementation for INA219 current/voltage sensor
 from machine import Pin, SoftI2C
 from ina219 import INA219
 import logging
-from sensorport import I2CSensorPort
+from data_collection.port.sensorport import I2CSensorPort
 
 
 class CustomINA219(INA219):

@@ -24,7 +24,10 @@ $directories = @(
     "/modules",
     "/data_collection",
     "/data_collection/port",
-    "/data_collection/adapter"
+    "/data_collection/adapter",
+    "/data_transmission",
+    "/data_transmission/port",
+    "/data_transmission/adapter"
 )
 
 function Initialize-Python {
@@ -151,26 +154,29 @@ function Upload-Code {
 
     foreach ($dir in $orderedDirs) {
         try {
-            # First check if directory exists to avoid errors
-            $checkResult = Execute-Ampy -port $port -arguments @("ls", "/")
+            # First check if directory exists
+            Write-Host "Checking if directory exists: $dir" -ForegroundColor Blue
+            $checkResult = Execute-Ampy -port $port -arguments @("ls", "$dir")
 
-            # Try to make directory (without -p flag)
-            Write-Host "Creating directory: $dir" -ForegroundColor Blue
-            $result = Execute-Ampy -port $port -arguments @("mkdir", $dir)
-
-            if ($result.Success) {
-                Write-Host "Created directory: $dir" -ForegroundColor Green
+            if ($checkResult.Success) {
+                Write-Host "Directory $dir already exists" -ForegroundColor Green
             } else {
-                # Directory might already exist which is fine
-                Write-Host "Note: Could not create directory $dir (might already exist)" -ForegroundColor Yellow
+                # Directory doesn't exist, try to create it
+                Write-Host "Creating directory: $dir" -ForegroundColor Blue
+                $result = Execute-Ampy -port $port -arguments @("mkdir", $dir)
+
+                if ($result.Success) {
+                    Write-Host "Created directory: $dir" -ForegroundColor Green
+                } else {
+                    Write-Host "Failed to create directory: $dir" -ForegroundColor Red
+                }
             }
 
-            # Add longer delay after directory operations
-            Start-Sleep -Seconds 2
+            # Add small delay after directory operations
+            Start-Sleep -Seconds 1
         }
         catch {
-            Write-Host "Error with directory $dir : $_" -ForegroundColor Yellow
-            # Continue anyway as the directory might still work for uploads
+            Write-Host "Error processing directory $dir : $_" -ForegroundColor Yellow
         }
     }
 
@@ -181,8 +187,7 @@ function Upload-Code {
 
     if ($result.Success) {
         Write-Host "Successfully uploaded main.py" -ForegroundColor Green
-        # If main.py uploads successfully, we have a good connection
-        Start-Sleep -Seconds 3
+        Start-Sleep -Seconds 1
     } else {
         Write-Host "Failed to upload main.py - check ESP32 connection" -ForegroundColor Red
         exit 1
@@ -203,71 +208,54 @@ function Upload-Code {
         $pyFiles = Get-ChildItem -Path $localPath -Filter "*.py"
         Write-Host "Found $($pyFiles.Count) Python files in $localPath" -ForegroundColor Blue
 
-        # Upload each file
+        # Upload each file - no retries
         foreach ($file in $pyFiles) {
             $sourcePath = $file.FullName
             $destPath = "$dir/$($file.Name)"
             $fileName = $file.Name
 
-            $maxRetries = 3
-            $retryCount = 0
-            $uploadSuccess = $false
+            Write-Host "Uploading $fileName to $destPath..." -ForegroundColor Blue
 
-            while (-not $uploadSuccess -and $retryCount -lt $maxRetries) {
-                if ($retryCount -gt 0) {
-                    Write-Host "Retry $retryCount for $fileName..." -ForegroundColor Yellow
-                    Start-Sleep -Seconds 3  # Longer delay between retries
-                }
+            # Try direct file upload
+            $result = Execute-Ampy -port $port -arguments @("put", $sourcePath, $destPath)
 
-                Write-Host "Uploading $fileName to $destPath..." -ForegroundColor Blue
-
-                # Try direct file upload first - simpler and might work
-                $result = Execute-Ampy -port $port -arguments @("put", $sourcePath, $destPath)
-
-                if ($result.Success) {
-                    $uploadSuccess = $true
-                    Write-Host "Successfully uploaded $fileName" -ForegroundColor Green
-                } else {
-                    # If direct upload fails, try via temp file
-                    try {
-                        $content = Get-Content -Path $sourcePath -Raw
-                        $tempFile = [System.IO.Path]::GetTempFileName()
-                        $content | Out-File -FilePath $tempFile -Encoding utf8 -NoNewline
-
-                        $result = Execute-Ampy -port $port -arguments @("put", $tempFile, $destPath)
-                        Remove-Item -Path $tempFile -Force
-
-                        if ($result.Success) {
-                            $uploadSuccess = $true
-                            Write-Host "Successfully uploaded $fileName (via temp file)" -ForegroundColor Green
-                        }
-                    }
-                    catch {
-                        Write-Host "Error during alternative upload: $_" -ForegroundColor Red
-                    }
-                }
-
-                $retryCount++
-                Start-Sleep -Seconds 1
-            }
-
-            if (-not $uploadSuccess) {
-                Write-Host "Failed to upload $fileName after $maxRetries attempts" -ForegroundColor Red
-                # Try a different approach - upload to root and then move?
+            if ($result.Success) {
+                Write-Host "Successfully uploaded $fileName" -ForegroundColor Green
+            } else {
+                # If direct upload fails, try via temp file (one attempt)
                 try {
-                    $rootResult = Execute-Ampy -port $port -arguments @("put", $sourcePath, "/$fileName")
-                    if ($rootResult.Success) {
-                        Write-Host "Uploaded $fileName to root as fallback" -ForegroundColor Yellow
+                    $content = Get-Content -Path $sourcePath -Raw
+                    $tempFile = [System.IO.Path]::GetTempFileName()
+                    $content | Out-File -FilePath $tempFile -Encoding utf8 -NoNewline
+
+                    $result = Execute-Ampy -port $port -arguments @("put", $tempFile, $destPath)
+                    Remove-Item -Path $tempFile -Force
+
+                    if ($result.Success) {
+                        Write-Host "Successfully uploaded $fileName (via temp file)" -ForegroundColor Green
+                    } else {
+                        Write-Host "Failed to upload $fileName" -ForegroundColor Red
+
+                        # Try to upload to root as last resort (one attempt)
+                        $rootResult = Execute-Ampy -port $port -arguments @("put", $sourcePath, "/$fileName")
+                        if ($rootResult.Success) {
+                            Write-Host "Uploaded $fileName to root as fallback" -ForegroundColor Yellow
+                        } else {
+                            Write-Host "All upload attempts for $fileName failed" -ForegroundColor Red
+                        }
                     }
                 }
                 catch {
-                    # Last resort failed, continue with next file
+                    Write-Host "Error during file upload: $_" -ForegroundColor Red
                 }
             }
+
+            # Small delay between files
+            Start-Sleep -Milliseconds 500
         }
     }
 
-    # Upload libraries to root
+    # Upload libraries to root - no retries
     Write-Host "Uploading additional libraries..." -ForegroundColor Blue
     $libFiles = Get-ChildItem -Path $LIB_DIR -Filter "*.py"
 
@@ -275,19 +263,17 @@ function Upload-Code {
         $libPath = $lib.FullName
         $libName = $lib.Name
 
-        $maxRetries = 2
-        for ($i = 0; $i -lt $maxRetries; $i++) {
-            Write-Host "Uploading $libName to root..." -ForegroundColor Blue
-            $result = Execute-Ampy -port $port -arguments @("put", $libPath, "/$libName")
+        Write-Host "Uploading $libName to root..." -ForegroundColor Blue
+        $result = Execute-Ampy -port $port -arguments @("put", $libPath, "/$libName")
 
-            if ($result.Success) {
-                Write-Host "Successfully uploaded $libName" -ForegroundColor Green
-                break
-            } else {
-                Write-Host "Failed to upload $libName, retrying..." -ForegroundColor Yellow
-                Start-Sleep -Seconds 2
-            }
+        if ($result.Success) {
+            Write-Host "Successfully uploaded $libName" -ForegroundColor Green
+        } else {
+            Write-Host "Failed to upload $libName" -ForegroundColor Red
         }
+
+        # Small delay between libraries
+        Start-Sleep -Milliseconds 500
     }
 
     Write-Host "Upload process completed." -ForegroundColor Yellow
