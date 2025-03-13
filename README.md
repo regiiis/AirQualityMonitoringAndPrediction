@@ -1,5 +1,5 @@
 # Indoor Air Quality Monitoring And Prediction
-A indoor air quality monitoring- and prediction project for learning purposes.
+An indoor air quality monitoring- and prediction project for learning purposes.
 
 ## Motivation
 This is an end-to-end air quality monitoring and prediction project. In order to do so, a sensor module is installed in an appartment room, which collects and periodically sends measurement data to a server.
