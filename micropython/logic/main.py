@@ -29,9 +29,9 @@ def main():
         Exception: For various WiFi-related errors including connection failures
                   and credential management issues
     """
+
     input("READY TO START? Press Enter to continue...")
     print("Start main script")
-
     # Initialize system parameters
     wlan = network.WLAN(network.STA_IF)
     ssid = None
@@ -39,8 +39,9 @@ def main():
     scl = 11
     sda = 12
     sensors = []
-
+    ########################################################
     # Wifi setup
+    ########################################################
     if not wlan.isconnected():
         print("Not connected to any network")
         try:
@@ -85,20 +86,32 @@ def main():
         except Exception as e:
             print(f"Error in the wifi process: {e}")
 
-    # Intantiate sensors
+    ########################################################
+    # Sensor setup
+    ########################################################
     try:
         # Create sensor instances
         sensors = [
             # Battery monitoring sensor
-            INA219Adapter("ina219", name="Battery", i2c_address=0x41, scl=scl, sda=sda),
+            INA219Adapter(
+                sensor="ina219",
+                measurement="Battery",
+                i2c_address=0x41,
+                scl=scl,
+                sda=sda,
+            ),
             # Solar panel monitoring sensor
             INA219Adapter(
-                "ina219", name="PV Panel", i2c_address=0x45, scl=scl, sda=sda
+                sensor="ina219",
+                measurement="PV Panel",
+                i2c_address=0x45,
+                scl=scl,
+                sda=sda,
             ),
             # Environmental sensor
             HYT221Adapter(
-                "hyt221",
-                name="Humidity & Temperature",
+                sensor="hyt221",
+                measurement="Humidity & Temperature",
                 i2c_address=0x28,
                 scl=scl,
                 sda=sda,
@@ -111,7 +124,9 @@ def main():
         print(f"Error creating sensors: {e}")
         sensors = []
 
-    # Main monitoring loop
+    ################################################
+    # Main loop
+    ################################################
     while True:
         try:
             print("\n--- Starting monitoring cycle ---")
@@ -128,25 +143,25 @@ def main():
                     # Method 1: Use the built-in print method
                     sensor.print()
 
-                    # Method 2: Read and process data manually
-                    readings = sensor.read()
+                    # # Method 2: Read and process data manually
+                    # readings = sensor.read()
 
-                    # Example of accessing specific values
-                    if "voltage" in readings and sensor.name == "Battery":
-                        voltage = readings["voltage"]
-                        if voltage < 3.3:
-                            print(f"WARNING: Battery voltage low ({voltage}V)")
+                    # # Example of accessing specific values
+                    # if "voltage" in readings and sensor.sensor == "Battery":
+                    #     voltage = readings["voltage"]
+                    #     if voltage < 3.3:
+                    #         print(f"WARNING: Battery voltage low ({voltage}V)")
 
-                    if "humidity" in readings:
-                        humidity = readings["humidity"]
-                        if humidity > 80:
-                            print(f"WARNING: High humidity ({humidity}%)")
+                    # if "humidity" in readings:
+                    #     humidity = readings["humidity"]
+                    #     if humidity > 80:
+                    #         print(f"WARNING: High humidity ({humidity}%)")
                 else:
-                    print(f"Warning: Sensor '{sensor.name}' is not ready")
+                    print(f"Warning: Sensor '{sensor.sensor}' is not ready")
 
             # Wait before next reading
             print("Waiting for next reading cycle...")
-            time.sleep(5)
+            time.sleep(10)
 
         except Exception as e:
             print(f"Error in monitoring loop: {e}")

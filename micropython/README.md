@@ -2,12 +2,15 @@
 
 ## Development Environment
 
-- VS Code
-- Powershell (with extension)
-- Arduino Nano ESP32-S3
-- MicroPython firmware for ESP32-S3
-- Python 3.x
-- lab-micropython-installer: https://github.com/arduino/lab-micropython-installer
+### Development Components
+- **IDE**: VS Code
+- **Scripts**: PowerShell (with extension)
+- **Hardware**: Arduino Nano ESP32-S3
+- **Firmware**: MicroPython for ESP32-S3
+- **Language**: Python 3.x
+- **Tools**: lab-micropython-installer: https://github.com/arduino/lab-micropython-installer
+
+Resources & Knowledge:
 - Micropython doc: https://docs.micropython.org/en/latest/index.html
 - Micropython libs: https://github.com/micropython/micropython-lib/tree/master
 - Micropython stubs: https://github.com/Josverl/micropython-stubs
@@ -26,6 +29,13 @@ Sensor Libs:
    I2C adress: 0X28
 
 - SoftI2C: any pin
+
+## Automation Scripts
+
+Env variables:
+- .\upload.ps1
+   - $libraries - List of libs to upload on esp32
+   - $directories - Directory structure under .\micropython\
 
 ### Installation
 

@@ -32,7 +32,7 @@ $libraries = @(
 )
 
 # Define directories to create and populate on ESP32
-$directories = @(
+$orderedDirs = @(
     "/modules",
     "/data_collection",
     "/data_collection/port",
@@ -165,7 +165,7 @@ function Upload-Code {
     <#
     .SYNOPSIS
         Uploads MicroPython code to an ESP32 device.
-    .PARAMETER port
+    .PARAMETER port orderedDirs
         The COM port where ESP32 is connected.
     .DESCRIPTION
         Creates necessary directory structure on the ESP32 and uploads Python files
@@ -175,20 +175,13 @@ function Upload-Code {
         Upload-Code -port "COM5"
         # Uploads all code to the ESP32 connected to COM5
     #>
-    param($port)
+    param($port, $orderedDirs)
 
     # Create directories on ESP32 - one by one without -p flag
     Write-Host "Creating directory structure on ESP32..." -ForegroundColor Blue
 
     # Try to create individual directories without using -p flag
     # First create parent directories, then subdirectories
-    $orderedDirs = @(
-        "/modules",
-        "/data_collection",
-        "/data_collection/port",
-        "/data_collection/adapter"
-    )
-
     foreach ($dir in $orderedDirs) {
         try {
             # First check if directory exists (suppress error since we expect it might not exist)
@@ -430,7 +423,7 @@ try {
     Initialize-Python
     Download-Libraries
     $port = Get-ESP32Port
-    Upload-Code $port
+    Upload-Code $port $orderedDirs
     Reset-ESP32 $port
     Start-Sleep -Seconds 5
     Connect-REPL $port
