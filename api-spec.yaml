@@ -7,9 +7,14 @@ info:
   version: 1.0.0
   contact:
     name: Air Quality Monitoring Team
+
 servers:
   - url: https://api.url.com/v1
     description: Production server
+
+tags:
+  - name: "Sensor Data Upload"
+    description: "Endpoints for uploading sensor data from IoT devices"
 
 components:
   securitySchemes:
@@ -24,6 +29,7 @@ components:
   schemas:
     SensorReading:
       type: object
+      description: "Data structure containing readings from environmental sensors"
       required:
         - device_id
         - timestamp
@@ -80,6 +86,7 @@ components:
 
     ErrorResponse:
       type: object
+      description: "Standardized error response format for API errors"
       required:
         - error
         - message
@@ -98,6 +105,7 @@ components:
 paths:
   /readings:
     post:
+      operationId: uploadSensorReading
       tags: ["Sensor Data Upload"]
       summary: Submit new sensor readings
       description: Endpoint for ESP32 devices to submit their sensor data

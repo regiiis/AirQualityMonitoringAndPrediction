@@ -25,13 +25,13 @@ class TransmissionPort(ABC):
     @abstractmethod
     def name(self) -> str:
         """Get the transmission service name"""
-        pass
+        raise NotImplementedError("Abstract method")
 
     @property
     @abstractmethod
     def endpoint(self) -> str:
         """Get the server endpoint URL. It should be the complete URL"""
-        pass
+        raise NotImplementedError("Abstract method")
 
     @abstractmethod
     def is_ready(self) -> bool:
@@ -41,7 +41,7 @@ class TransmissionPort(ABC):
         Returns:
             bool: True if ready, False otherwise
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @abstractmethod
     def test_connection(self) -> bool:
@@ -51,7 +51,7 @@ class TransmissionPort(ABC):
         Returns:
             bool: True if connection successful, False otherwise
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @abstractmethod
     def send_data(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -64,4 +64,4 @@ class TransmissionPort(ABC):
         Returns:
             Dict[str, Any]: Response information
         """
-        pass
+        raise NotImplementedError("Abstract method")

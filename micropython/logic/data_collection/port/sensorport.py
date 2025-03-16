@@ -14,7 +14,7 @@ try:
 except ImportError:
     from abc import ABC, abstractmethod  # type: ignore
 
-from typing import Dict
+from typing import Dict, Any
 
 
 class SensorPort(ABC):
@@ -36,7 +36,7 @@ class SensorPort(ABC):
                 Returns:
                     str: The sensor type (e.g., "hyt221", "ina219")
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @property
     @abstractmethod
@@ -47,7 +47,7 @@ class SensorPort(ABC):
                 Returns:
                     str: Description of what's being measured (e.g., "Humidity & Temperature")
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @property
     @abstractmethod
@@ -58,10 +58,10 @@ class SensorPort(ABC):
         Returns:
             str: Communication protocol identifier ("i2c", "uart", "spi", etc.)
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @abstractmethod
-    def read(self) -> Dict[Dict[any]]:
+    def read(self) -> Dict[str, Dict[str, Any]]:
         """
            Read data from the sensor.
 
@@ -74,7 +74,7 @@ class SensorPort(ABC):
         - Units information
                         - Error details if the reading fails
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @abstractmethod
     def is_ready(self) -> bool:
@@ -87,7 +87,7 @@ class SensorPort(ABC):
         Returns:
             bool: True if sensor is present and ready, False otherwise
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     def print(self) -> None:
         """
@@ -155,7 +155,7 @@ class I2CSensorPort(SensorPort):
                 Returns:
                     int: I2C address in hexadecimal (e.g., 0x28, 0x40)
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @property
     @abstractmethod
@@ -166,7 +166,7 @@ class I2CSensorPort(SensorPort):
                 Returns:
                     int: GPIO pin number for I2C clock line
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @property
     @abstractmethod
@@ -177,7 +177,7 @@ class I2CSensorPort(SensorPort):
                 Returns:
                     int: GPIO pin number for I2C data line
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
 
 class UARTSensorPort(SensorPort):
@@ -208,7 +208,7 @@ class UARTSensorPort(SensorPort):
                 Returns:
                     int: GPIO pin number for UART receive line
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @property
     @abstractmethod
@@ -219,7 +219,7 @@ class UARTSensorPort(SensorPort):
                 Returns:
                     int: GPIO pin number for UART transmit line
         """
-        pass
+        raise NotImplementedError("Abstract method")
 
     @property
     @abstractmethod
@@ -230,4 +230,4 @@ class UARTSensorPort(SensorPort):
                 Returns:
                     int: Communication speed in bits per second (e.g., 9600, 115200)
         """
-        pass
+        raise NotImplementedError("Abstract method")
