@@ -1,0 +1,137 @@
+openapi: 3.0.3
+info:
+  title: Air Quality Monitoring API
+  description: |
+    API for the Air Quality Monitoring and Prediction System.
+    Handles sensor data collection, storage, and analysis.
+  version: 1.0.0
+  contact:
+    name: Air Quality Monitoring Team
+servers:
+  - url: https://api.url.com/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    SensorReading:
+      type: object
+      required:
+        - device_id
+        - timestamp
+        - measurements
+      properties:
+        device_id:
+          type: string
+          description: Unique identifier for the sensor device
+          example: "esp32-001"
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp when readings were taken
+          example: 1679580000
+        measurements:
+          type: object
+          description: Sensor measurements grouped by sensor type
+          properties:
+            temperature:
+              type: number
+              format: float
+              description: Temperature in degrees Celsius
+              example: 23.5
+            humidity:
+              type: number
+              format: float
+              description: Relative humidity percentage
+              example: 45.2
+            voltage:
+              type: number
+              format: float
+              description: Voltage measurement in Volts
+              example: 3.72
+            current:
+              type: number
+              format: float
+              description: Current measurement in milliamps
+              example: 120.5
+        units:
+          type: object
+          description: Units for each measurement type
+          example:
+            temperature: "C"
+            humidity: "1/100"
+            voltage: "V"
+            current: "mA"
+        metadata:
+          type: object
+          description: Additional metadata about the reading
+          additionalProperties: true
+          example:
+            location: "living_room"
+            sensor_firmware: "v1.2.3"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code or identifier
+        message:
+          type: string
+          description: Human-readable error description
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+
+paths:
+  /readings:
+    post:
+      tags: ["Sensor Data Upload"]
+      summary: Submit new sensor readings
+      description: Endpoint for ESP32 devices to submit their sensor data
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorReading'
+      responses:
+        '201':
+          description: Reading successfully recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ID of the recorded reading
+                  success:
+                    type: boolean
+                    example: true
+        '400':
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

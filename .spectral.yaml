@@ -1,0 +1,17 @@
+extends: ["spectral:oas"]
+rules:
+  operation-tags:
+    description: All operations must have tags
+    given: "$.paths[*][*]"
+    severity: error
+    then:
+      field: tags
+      function: truthy
+
+  schema-description:
+    description: All schema objects should have descriptions
+    given: "$.components.schemas.*"
+    severity: warn
+    then:
+      field: description
+      function: truthy

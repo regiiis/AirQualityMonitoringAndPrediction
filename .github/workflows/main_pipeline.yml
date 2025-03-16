@@ -22,3 +22,51 @@ jobs:
 
       - name: Run type checking
         run: make type_check
+
+  api-validation:
+    needs: pre-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Spectral
+        run: npm install -g @stoplight/spectral-cli
+
+      - name: Validate OpenAPI Schema
+        run: spectral lint api-spec.yaml -r .spectral.yaml
+
+      - name: Check for breaking changes
+        if: github.event_name == 'pull_request'
+        uses: char0n/swagger-diff-action@v1
+        with:
+          old: origin/${{ github.base_ref }}:api-spec.yaml
+          new: api-spec.yaml
+          fail-on-incompatible: true
+
+  # Add documentation generation job
+  api-docs:
+    needs: api-validation
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install Redocly
+        run: npm install -g @redocly/cli
+
+      - name: Generate Redoc documentation
+        run: make generate_api_docs
+
+      - name: Deploy API docs
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: docs/api
+          branch: gh-pages
+          target-folder: api

@@ -29,10 +29,9 @@ def main():
         Exception: For various WiFi-related errors including connection failures
                   and credential management issues
     """
-
+    # Initialize system parameters
     input("READY TO START? Press Enter to continue...")
     print("Start main script")
-    # Initialize system parameters
     wlan = network.WLAN(network.STA_IF)
     ssid = None
     password = None
