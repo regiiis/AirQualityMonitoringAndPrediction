@@ -151,16 +151,51 @@ The sensor module is composed of the following components:
 <br>
 
 
-## Logic Directory Structure
+## Directory Structure - Cloud-Infrastructure
 ```plaintext
 app
 |
 ├──
 ```
 
-
 ### Infrastructure System Diagram
 Following the Cloud ressource system diagram  - [Generate System Diagram](#generate-system-diagram):
+
+## Directory Structure - Distibuted Embedded System
+This the repository created on the ESP32.
+```plaintext
+micropython
+├── libs
+|   ├── __init__.py
+|   └── ...                # Any libs not included in MicroPython
+└── logic
+    ├── data_collection    # Data collection logic
+    |   ├── adapter
+    |   |   ├── __init__.py
+    |   |   ├── hyt221.py
+    |   |   ├── ina219.py
+    |   |   └── mhz19cpc.py
+    |   ├── port
+    |   |   ├── __init__.py
+    |   |   └── sensorport.py
+    |   └── __init__.py    
+    ├── data_transmission  # Data transmission logic
+    |   ├── adapter
+    |   |   ├── __init__.py
+    |   |   └── http_adapter.py
+    |   ├── port
+    |   |   ├── __init__.py
+    |   |   └── transmissionport.py
+    |   └── __init__.py       
+    ├── modules            # Various scripts
+    |   ├── __init__.py
+    |   ├── mock_abc.py
+    |   ├── secure_storage.py
+    |   └── wifi.py
+    ├── __init__.py
+    └── main.py
+                     
+```
 
 <br>
 
@@ -243,10 +278,23 @@ git remote set-url origin
 
 ```
 
+## Linux Subsystem
+If you are working with Windows, you need to use a Linux subsystem to work in the same env as the CI/CD pipline.
 
+You can then use, e.g., in VS, the WSL terminal for CI/CD relevant operation. Or just to run your script from a Linux env.
+
+```bash
+# 1. In Powershell
+wsl --set-default-version 2
+
+```
+```bash
+# 2. Install Debian (or Ubuntu)
+wsl --install -d Debian
+# 3. Follow the installation instruction.
+```
 
 ### Commit naming rules
-
 
 | Type | Purpose | Examples |
 |------|---------|----------|
