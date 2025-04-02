@@ -200,12 +200,34 @@ micropython
 <br>
 
 ## Setup for Development
-Use Linux. If you have windows, use Ubuntu-based WSL.
+Use Linux. If you have windows, use Debian-based WSL.
+<br>Run VS as admin!
 
-### Python Virtual Environment
+### Linux Subsystem (WSL)
+If you are working with Windows, you need to use a Linux subsystem to work in the same env as the CI/CD pipline.
+
+#### Install Debian WSL:
+```bash
+# 1. In Powershell
+wsl --set-default-version 2
+```
+```bash
+# 2. Install Debian (or Ubuntu)
+wsl --install -d Debian
+# 3. Follow the installation instruction (Restart).
+```
+#### Setup Debian WSL:
+```bash
+# 1. In WSL - Install Python (Check latest version for Debian)
+sudo apt install -y python3.11  # Install Python
+sudo apt install -y python3-pip  # Install Python package manager
+# 3. Follow the installation instruction.
+```
+
+#### Create Python Virtual Environment
 ```bash
 # Install proper venv lib for linux
-sudo apt install python3.12-venv
+sudo apt install python3.11-venv
 
 # Create new virtual environment
 python3 -m venv .venv
@@ -239,6 +261,8 @@ Sphix is used to automatically generate a code docstring documentation as well a
 
 ## Version Control
 A guideline for version control in this project - Work on main except for larger parallel feature devs or experimentations.
+
+Git doc: https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
 ### Link GitHub to WSL
 
 ```bash
@@ -278,21 +302,7 @@ git remote set-url origin
 
 ```
 
-## Linux Subsystem
-If you are working with Windows, you need to use a Linux subsystem to work in the same env as the CI/CD pipline.
-
-You can then use, e.g., in VS, the WSL terminal for CI/CD relevant operation. Or just to run your script from a Linux env.
-
-```bash
-# 1. In Powershell
-wsl --set-default-version 2
-
-```
-```bash
-# 2. Install Debian (or Ubuntu)
-wsl --install -d Debian
-# 3. Follow the installation instruction.
-```
+Continue with [Python Virtual Environment](#python-virtual-environment).
 
 ### Commit naming rules
 
