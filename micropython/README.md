@@ -2,7 +2,7 @@
 
 ## Development Environment
 
-### Development Components
+### ``` Development Components```
 - **IDE**: VS Code
 - **Scripts**: PowerShell (with extension)
 - **Hardware**: Arduino Nano ESP32-S3
@@ -37,7 +37,7 @@ Env variables:
    - $libraries - List of libs to upload on esp32
    - $directories - Directory structure under .\micropython\
 
-### Installation
+### ``` Installation```
 
 1. Navigate to the `micropython` folder
 2. Run the installation script:
@@ -49,7 +49,7 @@ This script will:
 - Install MicroPython on your ESP32 if not already installed
 - Verify the installation
 
-### Uploading Code
+### ``` Uploading Code```
 
 To upload the code to your ESP32:
 ```powershell
@@ -62,7 +62,7 @@ This script will:
 - Connect to esp via miniterm
 - Insert Credentials (Credentials are persistent on separate, NVS storage)
 
-### Serial Connection
+### ``` Serial Connection```
 
 To connect to the ESP32's serial monitor:
 ```powershell

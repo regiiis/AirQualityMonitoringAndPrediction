@@ -12,7 +12,7 @@ The goal of this project is to learn and apply MLOps best practices to an air qu
 | **Data Pipeline** | • Ingestion & Validation<br>• Feature Engineering<br>• Data Versioning<br>• Feature Store Integration |
 | **ML Lifecycle** | • Training & Experimentation<br>• Model Registry & Versioning<br>• Deployment & Serving<br>• Performance Monitoring<br>
 
-### Technology Stack
+### ```Technology Stack```
 
 | Component | Tools & Technologies |
 |-|-|
@@ -23,10 +23,10 @@ The goal of this project is to learn and apply MLOps best practices to an air qu
 
 ## Solution Design
 
-### Vision Statement
+### ``` Vision Statement```
 Create an indoor air quality monitoring system that helps users maintain optimal CO2 levels through real-time monitoring, predictive analytics and event detection.
 
-### 1. Project Goals
+### ``` 1. Project Goals```
 - Monitor and predict indoor air quality (CO2, humidity, temperature)
 - Provide real-time insights through visualizations
 - Enable air quality prediction and alerts
@@ -53,7 +53,7 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 
 
 
-### 2. Requirements
+### ``` 2. Requirements```
 
 | Requirements Type | Description | Specifications |
 |-|-|-|
@@ -65,7 +65,7 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 | | Security | • Encrypted transmission<br>• Access control<br>• Secure API endpoints |
 
 
-### 3. System Components
+### ``` 3. System Components```
 | Component | Description | Key Features |
 |-|-|-|
 | **Sensor Module** | Data collection unit | • CO2/humidity sensors<br>• Batch API<br>• Secure transmission <br>• 72h backend-server independency |
@@ -78,7 +78,7 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 <br>
 
 ## Project Roadmap
-### **MVP**
+### ``` **MVP**```
 A web page with CO2 and Humidity TS Dashboard, consisting of the following componenets:
 <br>
 
@@ -100,26 +100,26 @@ Logic:
 **MC Logic**<br>
 Logic: Collects Data -> Sends Data
 
-### 1st Feature Implementation
+### ```1st Feature Implementation```
 - Add first model to dashboard
 
-### 2nd Feature Implementation
+### ``` 2nd Feature Implementation```
 - Add brightness sensor
 - Add V & I meter for PV and battery
 - Add battery charge status monitoring
 - Add PV Power monitoring
 - Add brightness monitoring
 
-### 3rd Feature Implementation
+### ``` 3rd Feature Implementation```
 - Add two additional models
 - Add model benchmarking
 - Build Sensor module chassis
 
-### 4th Feature Implementation
+### ``` 4th Feature Implementation```
 - Add model with meteo data enrichment
 - Add battery charging prediction
 
-### 5th Feature Implementation
+### ``` 5th Feature Implementation```
 - Make Dashboard interactive
 - Make Dashboard Dynamic (Live)
 
@@ -128,7 +128,7 @@ Logic: Collects Data -> Sends Data
 
 ## System Design
 
-### Sensor Module
+### ``` Sensor Module```
 The sensor module is composed of the following components:
 
 | Function | Module | Links
@@ -178,7 +178,7 @@ micropython
     |   ├── port
     |   |   ├── __init__.py
     |   |   └── sensorport.py
-    |   └── __init__.py    
+    |   └── __init__.py
     ├── data_transmission  # Data transmission logic
     |   ├── adapter
     |   |   ├── __init__.py
@@ -186,7 +186,7 @@ micropython
     |   ├── port
     |   |   ├── __init__.py
     |   |   └── transmissionport.py
-    |   └── __init__.py       
+    |   └── __init__.py
     ├── modules            # Various scripts
     |   ├── __init__.py
     |   ├── mock_abc.py
@@ -194,16 +194,18 @@ micropython
     |   └── wifi.py
     ├── __init__.py
     └── main.py
-                     
+
 ```
 
 <br>
 
 ## Setup for Development
-Use Linux. If you have windows, use Debian-based WSL.
-<br>Run VS as admin!
+In order to run the CI/CD pipeline, you need to make sure to:
+- Run VS as admin.
+- Install Debian on WSL
+- Setup Git on WSL
 
-### Linux Subsystem (WSL)
+### ``` Linux Subsystem (WSL)```
 If you are working with Windows, you need to use a Linux subsystem to work in the same env as the CI/CD pipline.
 
 #### Install Debian WSL:
@@ -237,7 +239,7 @@ source .venv/bin/activate
 ```
 
 
-### Daily Command for Local Dev
+### ``` Daily Command for Local Dev```
 ```bash
 # Activate Python virtual environment
 source .venv/bin/activate
@@ -249,46 +251,53 @@ pip install -r requirements-dev.txt
 # Install pre-Commits
 pre-commit install
 ```
+<br>
 
 ## Project Documentation
 The project is documented by means of a wiki and README's.
 
-### README
-Every folder should have a README providing an overview and describing specific aspect of the substructure.
+### ``` README```
+Every main folder should have a README, describing its substructure, included tech and used knowledge.
 
-### Wiki - Sphinx
+### ``` Wiki - Sphinx```
 Sphix is used to automatically generate a code docstring documentation as well as dedicated pages in marksdown.
+<br>
 
 ## Version Control
-A guideline for version control in this project - Work on main except for larger parallel feature devs or experimentations.
+A guideline for version control in this project. Work on main. Use Flags. Do not break the Pipeline.
 
 Git doc: https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
-### Link GitHub to WSL
+### ```Link GitHub to WSL```
 
 ```bash
-# 1. Update package manager and install git
+# 1. Update package manager
 sudo apt-get update
-sudo apt-get install git
+# 2. Install git
+sudo apt-get -y install git
 
-# 2. Generate SSH key
-# Save to default location when prompted
+# 3. Create directory for SSH agent
 mkdir -p ~/.ssh
+# 4. Generate SSH-Key pair
+# - Press ENTER to choose default file location
+# - Press ENTER for no passphrase
 ssh-keygen -t rsa -b 4096 -C "your.email@example.com"
 
-# 4. Start the SSH agent and add your new key
+# 4. Start the SSH agent
 eval "$(ssh-agent -s)"
+# 5. Add your new identity key to SSH agent
 ssh-add ~/.ssh/id_rsa
 
-# 4. Display and copy your public key
+# 5. Display and copy your public key
 cat ~/.ssh/id_rsa.pub
 ```
 5. Add to GitHub:
 
-- Go to GitHub → Settings → SSH and GPG keys
+- Go to GitHub → Profile Settings → SSH and GPG keys
 - Click "New SSH key"
 - Paste your key and save
 ```bash
 # 6. Configure Git globally
+# Name and email do not need to be realated to GitHub Account
 git config --global user.name "Any Name"
 git config --global user.email "your.email@example.com"
 
@@ -296,15 +305,18 @@ git config --global user.email "your.email@example.com"
 ssh -T git@github.com
 ```
 ```bash
-# 8. Set remote URL
+# 8. Check URL's
+# If the URL starts with https://, you need to change it in order to use SSH.
+git remote -v
+
+# 8. Set remote URL for SSH
 # Use SSH URL
-git remote set-url origin
+git remote set-url origin git@github.com:<username>/<repository>.git
 
 ```
+<br>
 
-Continue with [Python Virtual Environment](#python-virtual-environment).
-
-### Commit naming rules
+### ```Commit naming rules```
 
 | Type | Purpose | Examples |
 |------|---------|----------|
@@ -317,3 +329,7 @@ Continue with [Python Virtual Environment](#python-virtual-environment).
 | `refactor` | Non-feature code changes | Code reorganization, readability |
 | `style` | Code formatting changes | Whitespace, semicolons |
 | `docs` | Documentation updates | README changes, code comments |
+<br>
+
+# Backlog
+- Explore UV for Python (Benefit could be faster setup on Runners)

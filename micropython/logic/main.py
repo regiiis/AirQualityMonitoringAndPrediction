@@ -13,6 +13,8 @@ from modules.secure_storage import SecureStorage  # type: ignore
 from modules.wifi import connect_wifi  # type: ignore
 from data_collection.adapter.hyt221 import HYT221Adapter  # type: ignore
 from data_collection.adapter.ina219 import INA219Adapter  # type: ignore
+from data_transmission.adapter.api_http_adapter import ApiHttpAdapter  # type: ignore
+from data_transmission.adapter.api_contract_adapter import ApiContractAdapter  # type: ignore
 
 
 def main():
@@ -29,15 +31,30 @@ def main():
         Exception: For various WiFi-related errors including connection failures
                   and credential management issues
     """
-    # Initialize system parameters
-    input("READY TO START? Press Enter to continue...")
-    print("Start main script")
-    wlan = network.WLAN(network.STA_IF)
-    ssid = None
-    password = None
-    scl = 11
-    sda = 12
-    sensors = []
+    try:
+        # Initialize system parameters
+        input("READY TO START? Press Enter to continue...")
+        print("Start main script")
+        # Initialize device parameters
+        device_id: str = "ESP32-001"
+        location: str = "living_room"
+        version: str = "1.0.0"
+        # Initialize telecommunication parameters
+        wlan = network.WLAN(network.STA_IF)
+        ssid: str = None
+        password: str = None
+        api_endpoint: str = "https://api.example.com/v1/readings"
+        api_key: str = "your_api_key_here"
+        # Initialize system parameters
+        sensors: dict = None
+        colletcion_interval: int = 10  # seconds
+        scl: int = 11
+        sda: int = 12
+
+    except Exception as e:
+        print(f"Error initializing parameters: {e}")
+        return
+
     ########################################################
     # Wifi setup
     ########################################################
@@ -123,9 +140,23 @@ def main():
         print(f"Error creating sensors: {e}")
         sensors = []
 
-    ################################################
+    ########################################################
+    # API setup
+    ########################################################
+    try:
+        # Create contract adapter for payload creation
+        contract = ApiContractAdapter()
+
+        # Create HTTP adapter with contract validation
+        api_client = ApiHttpAdapter(
+            name="AirQualityAPI", endpoint=api_endpoint, api_key=api_key
+        )
+    except Exception as e:
+        print(f"Error in API setup: {e}")
+
+    ########################################################
     # Main loop
-    ################################################
+    ########################################################
     while True:
         try:
             print("\n--- Starting monitoring cycle ---")
@@ -158,9 +189,69 @@ def main():
                 else:
                     print(f"Warning: Sensor '{sensor.sensor}' is not ready")
 
+            ################################################
+            # Data transmission
+            ################################################
+            try:
+                # Collect data from all sensors
+                temperature = None
+                humidity = None
+                voltage = {}
+                current = {}
+
+                # Extract readings from each sensor
+                for sensor in sensors:
+                    if not sensor.is_ready():
+                        continue
+
+                    readings = sensor.read()
+
+                    # HYT221 sensor provides temperature and humidity
+                    if sensor.measurement == "Humidity & Temperature":
+                        temperature = readings.get("temperature")
+                        humidity = readings.get("humidity")
+
+                    # INA219 sensors provide voltage and current
+                    elif sensor.measurement == "Battery":
+                        voltage["battery"] = readings.get("voltage")
+                        current["battery"] = readings.get("current")
+
+                    elif sensor.measurement == "PV Panel":
+                        voltage["solar"] = readings.get("voltage")
+                        current["solar"] = readings.get("current")
+
+                # Create the API payload with all collected data
+                sensor_data = contract.create_sensor_payload(
+                    device_id=device_id,
+                    timestamp=int(time.time()),
+                    temperature=temperature,
+                    humidity=humidity,
+                    voltage=voltage,  # Dictionary with multiple voltage sources
+                    current=current,  # Dictionary with multiple current sources
+                    metadata={
+                        "location": location,
+                        "version": version,
+                        "battery_percent": readings.get("battery_percent", 0)
+                        if "battery_percent" in readings
+                        else None,
+                    },
+                )
+
+                # Check if we have any measurements before sending
+                if sensor_data["measurements"]:
+                    print(f"Sending data: {sensor_data}")
+                    response = api_client.send_data(sensor_data)
+                    print(f"API response: {response}")
+                else:
+                    print("No measurements to send")
+
+            except Exception as e:
+                print(f"Error in data transmission: {e}")
+                response = {"success": False, "error": str(e)}
+
             # Wait before next reading
             print("Waiting for next reading cycle...")
-            time.sleep(10)
+            time.sleep(colletcion_interval)
 
         except Exception as e:
             print(f"Error in monitoring loop: {e}")

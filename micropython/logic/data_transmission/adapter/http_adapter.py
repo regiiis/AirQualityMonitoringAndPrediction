@@ -1,15 +1,14 @@
 """
 HTTP Adapter implementation for data transmission
 
-This module provides a concrete adapter for sending data over HTTP/HTTPS.
+This module provides an adapter for sending data over HTTP/HTTPS.
 """
 
 import urequests  # type: ignore
 import ujson  # type: ignore
 import time
-from typing import Dict, Any, Optional
 
-from data_transmission.port.transmissionport import TransmissionPort
+from data_transmission.port.transmissionport import TransmissionPort  # type: ignore
 
 
 class HttpAdapter(TransmissionPort):
@@ -23,9 +22,9 @@ class HttpAdapter(TransmissionPort):
         self,
         name: str,
         endpoint: str,
-        api_key: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        timeout: int = 10
+        api_key: str,
+        headers: dict,
+        timeout: int = 10,
     ):
         """
         Initialize HTTP adapter with server details.
@@ -51,32 +50,31 @@ class HttpAdapter(TransmissionPort):
             self._headers["Authorization"] = f"Bearer {api_key}"
 
     @property
-    def name(self) -> str:
+    def name(self):
         return self._name
 
     @property
-    def endpoint(self) -> str:
+    def endpoint(self):
         return self._endpoint
 
-    def is_ready(self) -> bool:
+    def is_ready(self):
         """Check if network is available"""
         try:
             import network  # type: ignore
+
             wlan = network.WLAN(network.STA_IF)
             return wlan.isconnected()
         except Exception:
             return False
 
-    def test_connection(self) -> bool:
+    def test_connection(self):
         """Test server connection with a HEAD request"""
         if not self.is_ready():
             return False
 
         try:
             response = urequests.head(
-                self._endpoint,
-                headers=self._headers,
-                timeout=self._timeout
+                self._endpoint, headers=self._headers, timeout=self._timeout
             )
             success = 200 <= response.status_code < 300
             response.close()
@@ -85,7 +83,7 @@ class HttpAdapter(TransmissionPort):
             print(f"Connection test failed: {e}")
             return False
 
-    def send_data(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def send_data(self, payload):
         """
         Send data to server via HTTP POST
 
@@ -96,10 +94,7 @@ class HttpAdapter(TransmissionPort):
             Dict with status information
         """
         if not self.is_ready():
-            return {
-                "success": False,
-                "error": "Network not connected"
-            }
+            return {"success": False, "error": "Network not connected"}
 
         try:
             # Add timestamp if not included
@@ -115,7 +110,7 @@ class HttpAdapter(TransmissionPort):
                 self._endpoint,
                 headers=self._headers,
                 data=json_data,
-                timeout=self._timeout
+                timeout=self._timeout,
             )
 
             # Process response
@@ -133,12 +128,9 @@ class HttpAdapter(TransmissionPort):
             return {
                 "success": success,
                 "status_code": status_code,
-                "data": response_data
+                "data": response_data,
             }
 
         except Exception as e:
             print(f"Error sending data: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}

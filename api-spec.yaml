@@ -34,6 +34,7 @@ components:
         - device_id
         - timestamp
         - measurements
+        - metadata
       properties:
         device_id:
           type: string
@@ -56,13 +57,21 @@ components:
             humidity:
               type: number
               format: float
-              description: Relative humidity percentage
+              description: Multiple voltage measurements from different sources
               example: 45.2
             voltage:
               type: number
               format: float
               description: Voltage measurement in Volts
-              example: 3.72
+              properties:
+                battery:
+                  type: number
+                  format: float
+                  example: 3.72
+                solar:
+                  type: number
+                  format: float
+                  example: 4.8
             current:
               type: number
               format: float
@@ -90,6 +99,7 @@ components:
       required:
         - error
         - message
+        - details
       properties:
         error:
           type: string

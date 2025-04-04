@@ -1,4 +1,4 @@
-# Simple abc module for MicroPython
+# Mock implementation of the abc module for MicroPython. Real abc module used in the CI/CD pipeline.
 
 
 def abstractmethod(func):

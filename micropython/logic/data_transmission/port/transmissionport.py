@@ -6,8 +6,10 @@ must adhere to, following the Ports and Adapters pattern.
 """
 
 try:
+    # Use mock abc module when running on ESP32
     from modules.mock_abc import ABC, abstractmethod  # type: ignore
 except ImportError:
+    # Use real abc module when running on CI/CD pipeline
     from abc import ABC, abstractmethod  # type: ignore
 
 from typing import Dict, Any
