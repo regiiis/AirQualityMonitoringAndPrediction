@@ -13,9 +13,11 @@ try:
     if "micropython" not in sys.implementation.name:
         from typing import Dict, Any
 except (ImportError, AttributeError):
-    pass  # Skip typing imports on MicroPython
+    pass
 
-from data_transmission.port.api_validation_port import ApiValidationPort  # type: ignore
+from micropython.logic.data_transmission.port.api_validation_port import (
+    ApiValidationPort,
+)  # type: ignore
 
 
 class ApiContractAdapter(ApiValidationPort):

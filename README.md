@@ -245,6 +245,11 @@ sudo apt update
 sudo apt install nodejs npm
 ```
 
+#### Installing missing stub packages
+```bash
+mypy --install-types
+```
+
 ### ``` Daily Command for Local Dev```
 ```bash
 # Activate Python virtual environment
