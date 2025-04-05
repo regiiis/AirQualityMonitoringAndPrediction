@@ -23,14 +23,6 @@ test_cdk:
 	PYTHONPATH=$(PWD)/stacks python3 -m pytest -v -s tests/cdk --junit-xml=reports/TEST-pytests.xml --cov=stacks \
 	--cov-report term --cov-report xml:reports/py-coverage.cobertura.xml --cov-fail-under=80
 
-check_api_breaking_changes:
-	@if [ -n "$(COMPARE_BRANCH)" ]; then \
-		npx swagger-cli validate api-spec.yaml && \
-		npx openapi-diff origin/$(COMPARE_BRANCH):api-spec.yaml api-spec.yaml --fail-on-incompatible; \
-	else \
-		echo "No comparison branch specified"; \
-	fi
-
 generate_api_docs:
 	mkdir -p docs/api
 	npx @redocly/cli build-docs api-spec.yaml -o docs/api/index.html

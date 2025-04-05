@@ -57,11 +57,12 @@ components:
             humidity:
               type: number
               format: float
-              description: Humidity percentage
+              description: Multiple voltage measurements from different sources
               example: 45.2
             voltage:
-              type: object
-              description: Voltage measurements from different sources
+              type: number
+              format: float
+              description: Voltage measurement in Volts
               properties:
                 battery:
                   type: number
@@ -72,8 +73,9 @@ components:
                   format: float
                   example: 4.8
             current:
-              type: object
-              description: Current measurements in milliamps from different sources
+              type: number
+              format: float
+              description: Current measurement in milliamps
               properties:
                 battery:
                   type: number
@@ -83,6 +85,19 @@ components:
                   type: number
                   format: float
                   example: 0.1
+            power:
+              type: number
+              format: float
+              description: Power calculation, by sensor, in milliwatts
+              properties:
+                battery:
+                  type: number
+                  format: float
+                  example: 0.4
+                solar:
+                  type: number
+                  format: float
+                  example: 0.5
         units:
           type: object
           description: Units for each measurement type
@@ -91,6 +106,7 @@ components:
             humidity: "1/100"
             voltage: "V"
             current: "mA"
+            power: "mW"
         metadata:
           type: object
           description: Additional metadata about the reading

@@ -238,6 +238,12 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
+#### Install Node
+```bash
+# Install Node.js and npm
+sudo apt update
+sudo apt install nodejs npm
+```
 
 ### ``` Daily Command for Local Dev```
 ```bash
