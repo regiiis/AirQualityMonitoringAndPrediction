@@ -57,12 +57,11 @@ components:
             humidity:
               type: number
               format: float
-              description: Multiple voltage measurements from different sources
+              description: Humidity percentage
               example: 45.2
             voltage:
-              type: number
-              format: float
-              description: Voltage measurement in Volts
+              type: object
+              description: Voltage measurements from different sources
               properties:
                 battery:
                   type: number
@@ -73,10 +72,17 @@ components:
                   format: float
                   example: 4.8
             current:
-              type: number
-              format: float
-              description: Current measurement in milliamps
-              example: 120.5
+              type: object
+              description: Current measurements in milliamps from different sources
+              properties:
+                battery:
+                  type: number
+                  format: float
+                  example: 0.2
+                solar:
+                  type: number
+                  format: float
+                  example: 0.1
         units:
           type: object
           description: Units for each measurement type

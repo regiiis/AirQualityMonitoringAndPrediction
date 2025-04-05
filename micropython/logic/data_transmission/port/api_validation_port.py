@@ -47,7 +47,11 @@ class ApiValidationPort(ABC):
     @abstractmethod
     def create_sensor_payload(
         self,
-        data: dict,
+        ina219_1: dict,
+        ina219_2: dict,
+        hyt221: dict,
+        device_id: str,
+        timestamp: str,
     ) -> dict:
         """
         Create a properly formatted sensor reading payload

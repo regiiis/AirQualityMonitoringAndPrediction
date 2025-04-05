@@ -131,7 +131,11 @@ class HYT221Adapter(I2CSensorPort):
             temperature = temperature * 165 / 16383.0 - 40
 
             return {
-                "measurements": {"humidity": humidity, "temperature": temperature},
+                "measurements": {
+                    "measurement": self._measurement,
+                    "humidity": humidity,
+                    "temperature": temperature,
+                },
                 "units": {"humidity": "1/100", "temperature": "C"},
             }
         except Exception as e:

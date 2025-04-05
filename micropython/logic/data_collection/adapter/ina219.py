@@ -165,6 +165,7 @@ class INA219Adapter(I2CSensorPort):
 
             return {
                 "measurements": {
+                    "measurement:": self._measurement,
                     "voltage": voltage,
                     "current": current,
                     "power": power,
