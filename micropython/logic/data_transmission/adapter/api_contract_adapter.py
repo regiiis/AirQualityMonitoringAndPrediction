@@ -4,8 +4,6 @@ API Contract Adapter - Implementation of API contract validation
 This module creates payloads that conform to the API specification.
 """
 
-import time
-
 # Conditionally import typing module only when not running on MicroPython
 try:
     import sys
@@ -50,13 +48,7 @@ class ApiContractAdapter(ApiValidationPort):
                 raise ValueError("Payload must be a dictionary")
 
             # Check for required fields
-            expected_fields = [
-                "device_id",
-                "timestamp",
-                "measurements",
-                "units",
-                "metadata",
-            ]
+            expected_fields = ["measurements", "units", "metadata"]
             available_fields = [data for data in expected_fields if data not in payload]
 
             if available_fields:
@@ -64,7 +56,6 @@ class ApiContractAdapter(ApiValidationPort):
                     "Missing required data: " + ", ".join(available_fields)
                 )
 
-            # Measurements must be an object
             try:
                 measurements = payload.get("measurements", {})
                 if not isinstance(measurements, dict):
@@ -77,7 +68,24 @@ class ApiContractAdapter(ApiValidationPort):
             available_fields = [
                 field for field in expected_fields if field not in measurements
             ]
+            if available_fields:
+                raise ValueError(
+                    "Missing required measurements fields: "
+                    + ", ".join(available_fields)
+                )
 
+            try:
+                metadata = payload.get("metadata", {})
+                if not isinstance(metadata, dict):
+                    raise ValueError("'metadata' must be a dictionary")
+            except Exception as e:
+                raise ValueError(f"Invalid metadata field: {e}")
+
+            # Check that measurements fields are present
+            expected_fields = ["device_id", "timestamp", "location", "version"]
+            available_fields = [
+                field for field in expected_fields if field not in metadata
+            ]
             if available_fields:
                 raise ValueError(
                     "Missing required measurements fields: "
@@ -85,7 +93,6 @@ class ApiContractAdapter(ApiValidationPort):
                 )
 
             return payload
-
         except ValueError:
             raise
         except Exception as e:
@@ -96,8 +103,7 @@ class ApiContractAdapter(ApiValidationPort):
         hyt221: dict,
         ina219_1: dict,
         ina219_2: dict,
-        device_id: str,
-        timestamp: int,
+        metadata: dict,
     ) -> dict:
         """
         Create a properly formatted sensor reading payload from HYT221 and INA219 sensor readings
@@ -115,10 +121,6 @@ class ApiContractAdapter(ApiValidationPort):
             ValueError: If parameters are invalid
         """
         try:
-            # Validate required device_id
-            if not device_id:
-                raise ValueError("device_id is required")
-
             # Create measurements object
             measurements: Dict[str, Any] = {}
 
@@ -151,7 +153,7 @@ class ApiContractAdapter(ApiValidationPort):
                         "measurement name is missing in ina219_1 measurements"
                     )
 
-                # Process voltage - create as a dictionary with the measurement name as the key
+                # Process voltage
                 if "voltage" in ina_measurements:
                     try:
                         # Ensure we're working with a dictionary of the right type
@@ -164,7 +166,7 @@ class ApiContractAdapter(ApiValidationPort):
                     except (TypeError, ValueError):
                         raise ValueError("voltage must be a number")
 
-                # Process current - create as a dictionary with the measurement name as the key
+                # Process current
                 if "current" in ina_measurements:
                     try:
                         # Ensure we're working with a dictionary of the right type
@@ -177,14 +179,13 @@ class ApiContractAdapter(ApiValidationPort):
                     except (TypeError, ValueError):
                         raise ValueError("current must be a number")
 
-                # Process power - create as a dictionary with the measurement name as the key
+                # Process power
                 if "power" in ina_measurements:
                     try:
                         # Ensure we're working with a dictionary of the right type
                         if "power" not in measurements:
                             measurements["power"] = {}
 
-                        # Now we can safely add the value
                         power_value = float(ina_measurements["power"])
                         measurements["power"][measurement_name] = power_value
                     except (TypeError, ValueError):
@@ -202,11 +203,9 @@ class ApiContractAdapter(ApiValidationPort):
                 # Process voltage for second sensor
                 if "voltage" in ina_measurements:
                     try:
-                        # Ensure we're working with a dictionary of the right type
                         if "voltage" not in measurements:
                             measurements["voltage"] = {}
 
-                        # Now we can safely add the value
                         voltage_value = float(ina_measurements["voltage"])
                         measurements["voltage"][measurement_name] = voltage_value
                     except (TypeError, ValueError):
@@ -215,11 +214,9 @@ class ApiContractAdapter(ApiValidationPort):
                 # Process current for second sensor
                 if "current" in ina_measurements:
                     try:
-                        # Ensure we're working with a dictionary of the right type
                         if "current" not in measurements:
                             measurements["current"] = {}
 
-                        # Now we can safely add the value
                         current_value = float(ina_measurements["current"])
                         measurements["current"][measurement_name] = current_value
                     except (TypeError, ValueError):
@@ -238,30 +235,20 @@ class ApiContractAdapter(ApiValidationPort):
                     except (TypeError, ValueError):
                         raise ValueError("power must be a number")
 
-            # Process timestamp with better error handling
-            if timestamp is None:
-                try:
-                    timestamp = int(time.time())
-                except Exception:
-                    # Fallback for time.time() failure
-                    print("Warning: using default timestamp")
-                    timestamp = 0
-            else:
-                try:
-                    timestamp = int(timestamp)
-                except (TypeError, ValueError):
-                    raise ValueError("timestamp must be an integer")
+            # Validate metadata
+            if "device_id" not in metadata:
+                raise ValueError("Missing device_id in metadata.")
 
-            # Create the payload structure
-            payload = {
-                "device_id": str(device_id),
-                "timestamp": timestamp,
-                "measurements": measurements,
-                "units": {},
-                "metadata": {},
-            }
+            if "timestamp" not in metadata:
+                raise ValueError("Missing timestamp in metadata.")
 
-            # Add appropriate units based on measurements
+            if "location" not in metadata:
+                raise ValueError("Missing location in metadata.")
+
+            if "version" not in metadata:
+                raise ValueError("Missing version in metadata.")
+
+            # Add units
             units = {}
 
             # Add units from HYT221
@@ -272,7 +259,12 @@ class ApiContractAdapter(ApiValidationPort):
             if ina219_1 and "units" in ina219_1:
                 units.update(ina219_1.get("units", {}))
 
-            payload["units"] = units
+            # Create the payload structure
+            payload = {
+                "measurements": measurements,
+                "units": units,
+                "metadata": metadata,
+            }
 
             # Final validation
             return self.validate_payload(payload)

@@ -50,8 +50,7 @@ class ApiValidationPort(ABC):
         ina219_1: dict,
         ina219_2: dict,
         hyt221: dict,
-        device_id: str,
-        timestamp: str,
+        metadata: dict,
     ) -> dict:
         """
         Create a properly formatted sensor reading payload

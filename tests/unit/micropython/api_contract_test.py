@@ -75,11 +75,23 @@ def mock_ina219_2_data():
     }
 
 
+@pytest.fixture
+def mock_metadata():
+    """Mock metadata"""
+    return {
+        "device_id": "esp32-001",
+        "timestamp": 1679580000,
+        "location": "living_room",
+        "version": "v1.2.3",
+    }
+
+
 def test_create_sensor_payload_schema_validation(
     api_contract_adapter,
     mock_hyt221_data,
     mock_ina219_1_data,
     mock_ina219_2_data,
+    mock_metadata,
     openapi_spec_dict,
 ):
     """Test that created payload conforms to the API schema"""
@@ -88,8 +100,7 @@ def test_create_sensor_payload_schema_validation(
         hyt221=mock_hyt221_data,
         ina219_1=mock_ina219_1_data,
         ina219_2=mock_ina219_2_data,
-        device_id="esp32-001",
-        timestamp=1679580000,
+        metadata=mock_metadata,
     )
 
     # Print the payload for debugging
@@ -103,8 +114,6 @@ def test_create_sensor_payload_schema_validation(
     validate(instance=payload, schema=sensor_schema)
 
     # Additional specific assertions
-    assert payload["device_id"] == "esp32-001"
-    assert payload["timestamp"] == 1679580000
     assert payload["measurements"]["temperature"] == 23.5
     assert payload["measurements"]["humidity"] == 45.2
     assert payload["measurements"]["voltage"]["battery"] == 3.72
@@ -113,6 +122,10 @@ def test_create_sensor_payload_schema_validation(
     assert payload["measurements"]["current"]["solar"] == 0.1
     assert payload["measurements"]["power"]["battery"] == 0.4
     assert payload["measurements"]["power"]["solar"] == 0.5
+    assert payload["metadata"]["device_id"] == "esp32-001"
+    assert payload["metadata"]["timestamp"] == 1679580000
+    assert payload["metadata"]["location"] == "living_room"
+    assert payload["metadata"]["version"] == "v1.2.3"
 
 
 def test_validate_payload_with_invalid_data(api_contract_adapter):
@@ -134,7 +147,7 @@ def test_validate_payload_with_invalid_data(api_contract_adapter):
 
 
 def test_create_sensor_payload_with_missing_data(
-    api_contract_adapter, mock_hyt221_data
+    api_contract_adapter, mock_hyt221_data, mock_metadata
 ):
     """Test creating a payload with missing sensor data"""
     # Missing INA219 data
@@ -143,6 +156,5 @@ def test_create_sensor_payload_with_missing_data(
             hyt221=mock_hyt221_data,
             ina219_1=None,
             ina219_2=None,
-            device_id="esp32-001",
-            timestamp=1679580000,
+            metadata=mock_metadata,
         )

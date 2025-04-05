@@ -32,7 +32,10 @@ class TransmissionPort(ABC):
     @property
     @abstractmethod
     def endpoint(self) -> str:
-        """Get the server endpoint URL. It should be the complete URL"""
+        """
+        Get the server base endpoint URL.
+
+        """
         raise NotImplementedError("Abstract method")
 
     @abstractmethod

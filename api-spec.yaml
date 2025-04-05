@@ -22,32 +22,25 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
-    BearerAuth:
-      type: http
-      scheme: bearer
 
   schemas:
     SensorReading:
       type: object
       description: "Data structure containing readings from environmental sensors"
       required:
-        - device_id
-        - timestamp
         - measurements
+        - units
         - metadata
       properties:
-        device_id:
-          type: string
-          description: Unique identifier for the sensor device
-          example: "esp32-001"
-        timestamp:
-          type: integer
-          format: int64
-          description: Unix timestamp when readings were taken
-          example: 1679580000
         measurements:
           type: object
           description: Sensor measurements grouped by sensor type
+          required:
+            - temperature
+            - humidity
+            - voltage
+            - current
+            - power
           properties:
             temperature:
               type: number
@@ -107,10 +100,30 @@ components:
         metadata:
           type: object
           description: Additional metadata about the reading
+          required:
+            - device_id
+            - timestamp
+            - location
+            - version
           additionalProperties: true
-          example:
-            location: "living_room"
-            sensor_firmware: "v1.2.3"
+          properties:
+            device_id:
+              type: string
+              description: Unique identifier for the sensor device
+              example: "esp32-001"
+            timestamp:
+              type: integer
+              format: int64
+              description: Unix timestamp when readings were taken
+              example: 1679580000
+            location:
+              type: string
+              description: Firmware version
+              example: "living_room"
+            version:
+              type: string
+              description: Firmware version
+              example: "v1.2.3"
 
     ErrorResponse:
       type: object

@@ -6,7 +6,7 @@ This module provides an adapter for sending data over HTTP/HTTPS.
 
 import urequests  # type: ignore
 import ujson  # type: ignore
-import time
+import network  # type: ignore
 
 from data_transmission.port.transmissionport import TransmissionPort  # type: ignore
 
@@ -31,13 +31,16 @@ class HttpAdapter(TransmissionPort):
 
         Args:
             name: Name for this transmission service
-            endpoint: Full URL of API endpoint
-            api_key: Optional API key for authentication
+            endpoint: Full URL of API endpoint (without the path)
+            api_key: Optional API key for authentication (X-API-Key header)
             headers: Optional HTTP headers to include
             timeout: Request timeout in seconds
         """
         self._name = name
-        self._endpoint = endpoint
+
+        # Ensure endpoint doesn't end with a slash
+        self._endpoint = endpoint.rstrip("/")
+        self._readings_endpoint = f"{self._endpoint}/readings"
         self._timeout = timeout
 
         # Initialize headers
@@ -45,9 +48,9 @@ class HttpAdapter(TransmissionPort):
         if "Content-Type" not in self._headers:
             self._headers["Content-Type"] = "application/json"
 
-        # Add API key to headers if provided
+        # Add API key to X-API-Key header if provided (ApiKeyAuth scheme)
         if api_key:
-            self._headers["Authorization"] = f"Bearer {api_key}"
+            self._headers["X-API-Key"] = api_key
 
     @property
     def name(self):
@@ -60,21 +63,20 @@ class HttpAdapter(TransmissionPort):
     def is_ready(self):
         """Check if network is available"""
         try:
-            import network  # type: ignore
-
             wlan = network.WLAN(network.STA_IF)
             return wlan.isconnected()
         except Exception:
             return False
 
     def test_connection(self):
-        """Test server connection with a HEAD request"""
+        """Test server connection with a HEAD request to the readings endpoint"""
         if not self.is_ready():
             return False
 
         try:
+            # Test connection to the readings endpoint specifically
             response = urequests.head(
-                self._endpoint, headers=self._headers, timeout=self._timeout
+                self._readings_endpoint, headers=self._headers, timeout=self._timeout
             )
             success = 200 <= response.status_code < 300
             response.close()
@@ -97,17 +99,13 @@ class HttpAdapter(TransmissionPort):
             return {"success": False, "error": "Network not connected"}
 
         try:
-            # Add timestamp if not included
-            if "timestamp" not in payload:
-                payload["timestamp"] = time.time()
-
             # Convert payload to JSON
             json_data = ujson.dumps(payload)
 
-            # Send POST request
-            print(f"Sending data to {self._endpoint}...")
+            # Send POST request to the readings endpoint
+            print(f"Sending data to {self._readings_endpoint}...")
             response = urequests.post(
-                self._endpoint,
+                self._readings_endpoint,
                 headers=self._headers,
                 data=json_data,
                 timeout=self._timeout,
