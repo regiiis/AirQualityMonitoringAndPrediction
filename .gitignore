@@ -1,4 +1,5 @@
 # Custom
+*.xml
 xdev.sh
 *.ruff_cache
 *.vscode
@@ -47,6 +48,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
+reports/
 htmlcov/
 .tox/
 .nox/

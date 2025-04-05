@@ -17,29 +17,19 @@ from micropython.logic.data_transmission.adapter.api_contract_adapter import (
 ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
 
-def load_schema():
-    """Load the OpenAPI schema and extract the SensorReading schema"""
+def load_spec():
+    """Load the OpenAPI specification"""
     api_spec_path = os.path.join(ROOT_DIR, "api-spec.yaml")
     with open(api_spec_path, "r") as f:
-        api_spec = yaml.safe_load(f)
+        api_spec_dict = yaml.safe_load(f)
 
-    # Extract the SensorReading schema from the OpenAPI spec
-    sensor_schema = api_spec["components"]["schemas"]["SensorReading"]
-
-    # Convert OpenAPI schema to JSON Schema
-    json_schema = {
-        "type": "object",
-        "required": sensor_schema.get("required", []),
-        "properties": sensor_schema.get("properties", {}),
-    }
-
-    return json_schema
+    return api_spec_dict
 
 
 @pytest.fixture
-def schema():
-    """Fixture to provide the JSON schema"""
-    return load_schema()
+def openapi_spec_dict():
+    """Fixture to provide the OpenAPI specification as a dictionary"""
+    return load_spec()
 
 
 @pytest.fixture
@@ -90,7 +80,7 @@ def test_create_sensor_payload_schema_validation(
     mock_hyt221_data,
     mock_ina219_1_data,
     mock_ina219_2_data,
-    schema,
+    openapi_spec_dict,
 ):
     """Test that created payload conforms to the API schema"""
     # Create a payload with the adapter
@@ -106,8 +96,11 @@ def test_create_sensor_payload_schema_validation(
     print("\nGenerated payload:")
     print(json.dumps(payload, indent=2))
 
-    # Validate the payload against the schema
-    validate(instance=payload, schema=schema)
+    # Get the SensorReading schema directly from the dict
+    sensor_schema = openapi_spec_dict["components"]["schemas"]["SensorReading"]
+
+    # Validate using jsonschema directly
+    validate(instance=payload, schema=sensor_schema)
 
     # Additional specific assertions
     assert payload["device_id"] == "esp32-001"
