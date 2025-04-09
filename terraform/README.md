@@ -6,3 +6,7 @@ Terraform commands:
 # Enaböe autocomplete
 terraform -install-autocomplete
 ```
+
+## Setup Terraform
+```Bash
+# Install Terraform

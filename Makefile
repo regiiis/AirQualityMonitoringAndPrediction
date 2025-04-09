@@ -19,10 +19,11 @@ test_logic:
 		--cov-report term \
 		--cov-report xml:reports/py-coverage.cobertura.xml
 
-test_cdk:
-	mkdir -p reports
-	PYTHONPATH=$(PWD)/stacks python3 -m pytest -v -s tests/cdk --junit-xml=reports/TEST-pytests.xml --cov=stacks \
-	--cov-report term --cov-report xml:reports/py-coverage.cobertura.xml --cov-fail-under=80
+test_terraform:
+	python3 -m pytest -s tests/test_terraform.py \
+		-o asyncio_mode=auto \
+		--junit-xml=reports/TEST-terraform.xml
+
 
 generate_api_docs:
 	mkdir -p docs/api
