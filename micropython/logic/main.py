@@ -45,10 +45,11 @@ class Main:
             self.version: str = "1.0.0"
             # Initialize telecommunication parameters
             self.wlan = network.WLAN(network.STA_IF)
+            self.storage = SecureStorage()
             self.ssid: str = None
             self.password: str = None
             self.api_endpoint: str = "https://api.example.com/v1/readings"
-            self.api_key: str = "your_api_key_here"
+            self.api_key: str = None
             # Initialize system parameters
             self.sensors: dict = None
             self.colletcion_interval: int = 60  # seconds
@@ -63,20 +64,21 @@ class Main:
             return
 
         ########################################################
-        # Wifi setup
+        # WiFi setup
         ########################################################
         if not self.wlan.isconnected():
             print("Not connected to any network")
             try:
-                # Create an instance of SecureStorage
-                storage = SecureStorage()
-                # Retrieve WiFi credentials from secure storage
-                self.ssid, self.password = storage.get_credentials()
+                try:
+                    # Retrieve WiFi credentials from secure storage
+                    self.ssid, self.password = self.storage.get_credentials()
+                except Exception as e:
+                    print(f"Failed to retrieve WiFi credentials: {e}")
                 if self.ssid and self.password:
                     # If credentials are found, try to connect to WiFi
                     print(f"Credentials found: {self.ssid}")
                     try:
-                        print("Trying to connect to wifi")
+                        print("Trying to connect to Wifi")
                         self.wlan, self.ssid = connect_wifi(self.ssid, self.password)
                         time.sleep(3)
                         if not self.wlan.isconnected():
@@ -88,8 +90,14 @@ class Main:
                     print("WiFi credentials not found in secure storage")
                     try:
                         # Prompt user to enter WiFi credentials
-                        storage.prompt_and_store_credentials()
-                        self.ssid, self.password = storage.get_credentials()
+                        try:
+                            self.storage.prompt_and_store_credentials()
+                        except Exception as e:
+                            print(f"Failed to store WiFi Credentials: {e}")
+                        try:
+                            self.ssid, self.password = self.storage.get_credentials()
+                        except Exception as e:
+                            print(f"Failed to retrieve WiFi credetnials: {e}")
                         if self.ssid and self.password:
                             try:
                                 # If credentials are found, try to connect to WiFi
@@ -102,18 +110,53 @@ class Main:
                                         "Failed to get WiFi connection details"
                                     )
                             except Exception as e:
-                                print(f"Error trying to connect to wifi: {e}")
+                                print(f"Error trying to connect to WiFi: {e}")
                         else:
                             raise Exception(
                                 "Failed to get WiFi credentials from secure storage"
                             )
                     except Exception as e:
                         print(
-                            f"Error trying to set credentials and connect to wifi: {e}"
+                            f"Error trying to set credentials and connect to WiFi: {e}"
                         )
 
             except Exception as e:
-                print(f"Error in the wifi process: {e}")
+                print(f"Error in the WiFi process: {e}")
+
+        ########################################################
+        # API setup
+        ########################################################
+
+        if not self.api_key:
+            try:
+                # Try to get API key
+                self.api_key = self.storage.get_api_key()
+                if self.api_key:
+                    print(f"API key found: {self.api_key}")
+                else:
+                    try:
+                        # Try to store API key
+                        print("API key not stored")
+                        self.storage.prompt_and_store_api_key()
+                    except Exception:
+                        print("Failed to store API Key")
+                    try:
+                        self.api_key = self.storage.get_api_key()
+                    except Exception as e:
+                        print(f"Failed to store API key: {e}")
+                    if not self.api_key:
+                        raise Exception("Failed to retrieve API key")
+            except Exception as e:
+                print(f"Failed to handle API key: {e}")
+
+        try:
+            # Create API service with contract validation
+            self.api_client = ApiHttpService(
+                name="AirQualityAPI", endpoint=self.api_endpoint, api_key=self.api_key
+            )
+            print("API client initialized successfully")
+        except Exception as e:
+            print(f"Error in API setup: {e}")
 
         ########################################################
         # Sensor setup
@@ -156,18 +199,6 @@ class Main:
         except Exception as e:
             print(f"Error creating sensors: {e}")
 
-        ########################################################
-        # API setup
-        ########################################################
-        try:
-            # Create API service with contract validation
-            self.api_client = ApiHttpService(
-                name="AirQualityAPI", endpoint=self.api_endpoint, api_key=self.api_key
-            )
-            print("API client initialized successfully")
-        except Exception as e:
-            print(f"Error in API setup: {e}")
-
     def main(self):
         ########################################################
         # Main loop
@@ -181,6 +212,24 @@ class Main:
                     print(f"Connected to: {self.ssid}")
                 else:
                     print("Not connected to any network")
+                    if self.ssid and self.password:
+                        # If credentials are found, try to connect to WiFi
+                        print(f"Credentials found: {self.ssid}")
+                        try:
+                            print("Trying to connect to Wifi")
+                            self.wlan, self.ssid = connect_wifi(
+                                self.ssid, self.password
+                            )
+                            time.sleep(3)
+                            if self.wlan.isconnected():
+                                print(f"Connected to: {self.ssid}")
+                            else:
+                                print("Not connected to any network")
+                                break
+                        except Exception as e:
+                            print(f"Error: {e}")
+                    else:
+                        print("Missing WiFi credentials!")
 
                 ########################################################
                 # Data collection
@@ -222,6 +271,17 @@ class Main:
                 ################################################
                 # Data transmission
                 ################################################
+                ## API Request:
+                # POST https://api.url.com/v1/readings
+                # Content-Type: application/json
+                # X-API-Key: "api-key"
+
+                # {
+                # "measurements": {...},
+                # "units": {...},
+                # "metadata": {...}
+                # }
+
                 try:
                     # Create the API payload with all collected data
                     payload = self.contract.create_sensor_payload(
@@ -269,6 +329,12 @@ class Main:
 
 
 if __name__ == "__main__":
-    main = Main()
-    main.setup()
-    main.main()
+    while True:
+        try:
+            main = Main()
+            main.setup()
+            main.main()
+        except Exception as e:
+            print(f"Fatal error: {e}")
+            time.sleep(60)
+            print("Restarting application...")

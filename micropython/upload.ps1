@@ -40,6 +40,7 @@ $orderedDirs = @(
     "/data_transmission",
     "/data_transmission/port",
     "/data_transmission/adapter"
+    "/data_transmission/service"
 )
 
 function Initialize-Python {
