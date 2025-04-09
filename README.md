@@ -2,15 +2,17 @@
 An indoor air quality monitoring- and prediction project for learning purposes.
 
 ## Motivation
-This is an end-to-end air quality monitoring and prediction project. In order to do so, a sensor module is installed in an appartment room, which collects and periodically sends measurement data to a server.
+This is an end-to-end air quality monitoring and prediction project. A sensor module is installed in an appartment room, which collects and periodically sends measurement data to a server. The server processes the data and provides a web interface for real-time monitoring and prediction of indoor air quality.
 
-The goal of this project is to learn and apply MLOps best practices to an air quality monitoring use-case. The following topics are aimed to be covered:
+The goal of this project is to learn and apply MLOps best practices to a fearly simple use-case. The following topics are aimed to be covered:
 
-| MLOps Component | Key Aspects |
+| | Key Aspects |
 |-|-|
 | **Dev & Ops** | • Version Control & CI/CD<br>• Code Quality & Testing<br>• Infrastructure Automation<br>• Container Orchestration<br>• Security & Monitoring |
 | **Data Pipeline** | • Ingestion & Validation<br>• Feature Engineering<br>• Data Versioning<br>• Feature Store Integration |
 | **ML Lifecycle** | • Training & Experimentation<br>• Model Registry & Versioning<br>• Deployment & Serving<br>• Performance Monitoring<br>
+| **Data Communication** | • Interactive Dashboarding
+<br><br>
 
 ### ```Technology Stack```
 
@@ -19,12 +21,12 @@ The goal of this project is to learn and apply MLOps best practices to an air qu
 | **Development** | • Git - Version Control<br>• GitHub Actions - CI/CD<br>• pre-commit - Code Quality |
 | **Data** | • Data Version Control<br>|
 | **ML & Deploy** | • Docker|
-| **Infrastructure** | • AWS - Cloud Platform<br>• CDK - IaC<br>|
+| **Infrastructure** | • AWS - Cloud Platform<br>• Terraform - IaC<br>|
 
 ## Solution Design
 
 ### ``` Vision Statement```
-Create an indoor air quality monitoring system that helps users maintain optimal CO2 levels through real-time monitoring, predictive analytics and event detection.
+Create an indoor-air monitoring system that helps users maintain optimal CO2 levels through real-time monitoring, predictive analytics and event detection.
 
 ### ``` 1. Project Goals```
 - Monitor and predict indoor air quality (CO2, humidity, temperature)
@@ -34,22 +36,34 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 #### Core Features
 1. **Real-Time Monitoring**
    - Live CO2, humidity and temperature measurements
-   - Interactive dashboards
-   - Alert system for detected events
 
 2. **Predictive Analytics**
    - 24-hour forecasts for CO2, humidity and temperature
    - Multiple prediction model:
-   - Time Series
-   - Polynomial Regression
-   - DNN
-   - DNN with enriched Data
+     - Time Series
+     - Polynomial Regression
+     - DNN
+     - DNN with enriched Data
    - Models comparison & benchmarking
+   - Automated model retraining
+   - Model performance monitoring
 
 3. **Data Management**
-   - Historical data storage and retrieval
-   - Data quality monitoring
    - Automated data collection
+   - Data quality monitoring
+   - Data versioning
+   - Data storage and retrieval
+   - Data pipeline for real-time data processing
+   - Data validation and feature engineering
+   - Data enrichment with external sources (e.g., weather data)
+
+4. **User Interface**
+   - Web-based dashboard
+   - Interactive dashboards
+   - User authentication and access control
+   - Alert management system
+
+
 
 
 
@@ -57,11 +71,11 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 
 | Requirements Type | Description | Specifications |
 |-|-|-|
-| **Functional** | Real-time Monitoring | • Sensor data collection every 30s<br>• Live dashboard updates<br>• Historical data view |
-| | Predictions | • 24h forecasting window<br>• Benchmarking|
+| **Functional** | Real-time Monitoring | • Sensor data collection every 60s<br>• Live dashboard<br>• Historical data view |
+| | Predictions | • 24h forecasting window<br>• Model benchmarking|
 | | Alerts | • Threshold configuration<br>• Email/SMS notifications<br>• Alert history |
 | **Non-Functional** | Performance | • Data latency < 1s<br>• API response < 500ms<br>• 95% uptime |
-| | Scalability | • Multi-sensor<br>• Multi-model<br>• Concurrent users|
+| | Scalability | • Multi-sensor<br>• Multi-model<br>|
 | | Security | • Encrypted transmission<br>• Access control<br>• Secure API endpoints |
 
 
@@ -79,50 +93,58 @@ Create an indoor air quality monitoring system that helps users maintain optimal
 
 ## Project Roadmap
 ### ``` **MVP**```
-A web page with CO2 and Humidity TS Dashboard, consisting of the following componenets:
+A web page with CO2, temperature and humidity TS dashboard, including the following componenets:
 <br>
 
 | Sensor module| Backend | Frontend |
 |-|-|-|
 | • Sensors<br>• PV & Battery<br>• MC<br>• MC Logic | • Data Pipeline <br>• Database <br>• Frontend Host | • Webpage <br>• Login <br>• Dashboard (static)
 
+
 - The **Sensor Module** is assembled and runned by software that collects and sends data to the backend.<br>
 - The **Backend** hosts and serves the frontend. The backend receives and stores data from the sensor module.<br>
 - The **Frontend** is a static webpage with login. A dashboard is loaded with the most recent data on the database.
 
-**Data Pipeline**<br>
-Logic: Data Collection -> Data Quality Gate -> Data Storage<br>
-Infrastructure: API Gateway (Data Collection) -> Lambda Function (Data Quality Gate) -> S3 Bucket (Data Storage: main_db or anomaly_db)
+**Data Pipeline:**<br>
+- Data Collection -> Data Quality Gate -> Data Storage<br>
+- Infrastructure: API Gateway (Data Collection) -> Lambda Function (Data Quality Gate) -> S3 Bucket
 
-**Frontend**<br>
-Logic:
+**Frontend:**<br>
+Landing page with login and dashboard. The dashboard is a static webpage that displays the most recent data from the database.
 
-**MC Logic**<br>
-Logic: Collects Data -> Sends Data
+**MC Logic:**
+- Credentials management for WiFi and API
+- WiFi connection
+- Data collection and transmission
+<br><br>
 
 ### ```1st Feature Implementation```
 - Add first model to dashboard
+   - Model 1: Time Series
 
 ### ``` 2nd Feature Implementation```
-- Add brightness sensor
-- Add V & I meter for PV and battery
 - Add battery charge status monitoring
 - Add PV Power monitoring
-- Add brightness monitoring
+- Make Dashboard interactive
 
 ### ``` 3rd Feature Implementation```
 - Add two additional models
+   - Model 2: Polynomial Regression
+   - Model 3: DNN
 - Add model benchmarking
 - Build Sensor module chassis
 
 ### ``` 4th Feature Implementation```
 - Add model with meteo data enrichment
+   . Model 4: DNN with enriched data
 - Add battery charging prediction
 
-### ``` 5th Feature Implementation```
-- Make Dashboard interactive
+### ``` Backlog```
+- Add automated model retraining
+- Add brightness sensor
+- Add brightness monitoring
 - Make Dashboard Dynamic (Live)
-
+- Add alert management
 
 <br>
 
@@ -182,10 +204,15 @@ micropython
     ├── data_transmission  # Data transmission logic
     |   ├── adapter
     |   |   ├── __init__.py
+    |   |   ├── api_contract_adapter.py
     |   |   └── http_adapter.py
     |   ├── port
     |   |   ├── __init__.py
+    |   |   ├── api_contract_port.py
     |   |   └── transmissionport.py
+    |   ├── service
+    |   |   ├── __init__.py
+    |   |   ├── api_http_service.py
     |   └── __init__.py
     ├── modules            # Various scripts
     |   ├── __init__.py
@@ -245,11 +272,6 @@ sudo apt update
 sudo apt install nodejs npm
 ```
 
-#### Installing missing stub packages
-```bash
-mypy --install-types
-```
-
 ### ``` Daily Command for Local Dev```
 ```bash
 # Activate Python virtual environment
@@ -258,6 +280,9 @@ source .venv/bin/activate
 # Install Python packages
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
+
+# Install missing stubs
+mypy --install-types
 
 # Install pre-Commits
 pre-commit install
