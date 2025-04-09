@@ -25,9 +25,8 @@ def check_wifi_status(wlan):
         return "WiFi disconnected"
 
     status = wlan.status()
-    status_message = f"WiFi connected with status {status}"
     print(f"WiFi status: {status}")
-    return status_message
+    return status
 
 
 def connect_wifi(ssid: str, password: str):
@@ -61,8 +60,7 @@ def connect_wifi(ssid: str, password: str):
         # Wait for connection with timeout
         max_wait = 10
         while max_wait > 0:
-            status = check_wifi_status(wlan)
-            print(status)
+            check_wifi_status(wlan)
             if wlan.isconnected():
                 break
             max_wait -= 1

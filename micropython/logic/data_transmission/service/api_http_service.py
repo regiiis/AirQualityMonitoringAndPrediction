@@ -69,7 +69,13 @@ class ApiHttpService:
         """Test server connection to the readings endpoint"""
         return self._http_adapter.test_connection()
 
-    def send_data(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def send_data(
+        self,
+        hyt221: dict,
+        ina219_1: dict,
+        ina219_2: dict,
+        metadata: dict,
+    ) -> Dict[str, Any]:
         """
         Validate and send data to server via HTTP POST
 
@@ -84,7 +90,9 @@ class ApiHttpService:
         """
         try:
             # Validate the payload against the API contract
-            validated_payload = self._contract_adapter.validate_payload(payload)
+            validated_payload = self._contract_adapter.create_sensor_payload(
+                hyt221=hyt221, ina219_1=ina219_1, ina219_2=ina219_2, metadata=metadata
+            )
 
             # Send the validated payload using the HTTP adapter
             return self._http_adapter.send_data(validated_payload)

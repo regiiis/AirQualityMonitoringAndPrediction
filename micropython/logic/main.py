@@ -37,8 +37,9 @@ class Main:
         """
         try:
             # Initialize system parameters
-            input("READY TO START? Press Enter to continue...")
-            print("Start main script")
+            print("GET TO START SETUP")
+            time.sleep(3)
+            print("Start setup script")
             # Initialize device parameters
             self.device_id: str = "ESP32-001"
             self.location: str = "living_room"
@@ -52,7 +53,7 @@ class Main:
             self.api_key: str = None
             # Initialize system parameters
             self.sensors: dict = None
-            self.colletcion_interval: int = 60  # seconds
+            self.collection_interval: int = 60  # seconds
             self.scl: int = 11
             self.sda: int = 12
             self.bat_i2c: int = 0x41
@@ -164,34 +165,28 @@ class Main:
         try:
             # Create sensor instances
             # Battery monitoring sensor
-            self.battery = (
-                INA219Adapter(
-                    sensor="ina219",
-                    measurement="Battery",
-                    i2c_address=self.bat_i2c,
-                    scl=self.scl,
-                    sda=self.sda,
-                ),
+            self.battery = INA219Adapter(
+                sensor="ina219",
+                measurement="Battery",
+                i2c_address=self.bat_i2c,
+                scl=self.scl,
+                sda=self.sda,
             )
             # Solar panel monitoring sensor
-            self.pv = (
-                INA219Adapter(
-                    sensor="ina219",
-                    measurement="PV",
-                    i2c_address=self.pv_i2c,
-                    scl=self.scl,
-                    sda=self.sda,
-                ),
+            self.pv = INA219Adapter(
+                sensor="ina219",
+                measurement="PV",
+                i2c_address=self.pv_i2c,
+                scl=self.scl,
+                sda=self.sda,
             )
             # Environmental sensor
-            self.hum_and_temp = (
-                HYT221Adapter(
-                    sensor="hyt221",
-                    measurement="Humidity & Temperature",
-                    i2c_address=self.hum_and_temp_i2c,
-                    scl=self.scl,
-                    sda=self.sda,
-                ),
+            self.hum_and_temp = HYT221Adapter(
+                sensor="hyt221",
+                measurement="Humidity & Temperature",
+                i2c_address=self.hum_and_temp_i2c,
+                scl=self.scl,
+                sda=self.sda,
             )
 
             print("All sensor instances created.")
@@ -271,20 +266,10 @@ class Main:
                 ################################################
                 # Data transmission
                 ################################################
-                ## API Request:
-                # POST https://api.url.com/v1/readings
-                # Content-Type: application/json
-                # X-API-Key: "api-key"
-
-                # {
-                # "measurements": {...},
-                # "units": {...},
-                # "metadata": {...}
-                # }
-
                 try:
-                    # Create the API payload with all collected data
-                    payload = self.contract.create_sensor_payload(
+                    # Send API POST request
+                    print("Build and send API Request")
+                    response = self.api_client.send_data(
                         hyt221=hnt_data,
                         ina219_1=battery_data,
                         ina219_2=pv_data,
@@ -296,35 +281,27 @@ class Main:
                         },
                     )
 
-                    # Check if we have valid measurements before sending
-                    if payload and "measurements" in payload:
-                        # Send API POST request
-                        print("Sending API")
-                        response = self.api_client.send_data(payload)
-
-                        # Process the API response
-                        if response.get("success", False):
-                            print(f"API request successful: {response.get('data', {})}")
-                        else:
-                            print(
-                                f"API request failed: {response.get('error', 'Unknown error')}"
-                            )
-                            if response.get("retry_suggested", False):
-                                print("Will retry in next cycle")
+                    # Process the API response
+                    if response.get("success", False):
+                        print(f"API request successful: {response.get('data', {})}")
                     else:
-                        print("No valid measurements to send")
-                        response = {"success": False, "error": "Invalid payload"}
+                        error_msg = response.get("error", "Unknown error")
+                        status = response.get("status_code", "n/a")
+                        print(f"API request failed ({status}): {error_msg}")
 
                 except Exception as e:
                     print(f"Error in data transmission: {e}")
-                    response = {"success": False, "error": str(e)}
+                    # Short delay after errors to prevent rapid retries
+                    time.sleep(5)
 
-                # Wait before next reading
-                print("Waiting for next reading cycle...")
-                time.sleep(self.colletcion_interval)
+                # Always wait between cycles, regardless of success/failure
+                print(
+                    f"Waiting {self.collection_interval} seconds before next reading cycle..."
+                )
+                time.sleep(self.collection_interval)
 
             except Exception as e:
-                print(f"Error in monitoring loop: {e}")
+                print(f"Error during main loop: {e}")
                 time.sleep(5)
 
 

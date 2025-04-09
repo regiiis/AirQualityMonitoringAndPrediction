@@ -37,6 +37,11 @@ Env variables:
    - $libraries - List of libs to upload on esp32
    - $directories - Directory structure under .\micropython\
 
+- Run in PS in order to be able torun scripts:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
 ### ``` Installation```
 
 1. Navigate to the `micropython` folder

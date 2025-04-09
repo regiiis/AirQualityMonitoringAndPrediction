@@ -39,7 +39,7 @@ $orderedDirs = @(
     "/data_collection/adapter",
     "/data_transmission",
     "/data_transmission/port",
-    "/data_transmission/adapter"
+    "/data_transmission/adapter",
     "/data_transmission/service"
 )
 
@@ -225,7 +225,7 @@ function Upload-Code {
     }
 
     # Process each directory's files
-    foreach ($dir in $directories) {
+    foreach ($dir in $orderedDirs) {
         # Convert ESP32 path to local path
         $localDir = $dir -replace "^/", ""  # Remove leading slash
         $localPath = Join-Path $LOGIC_DIR $localDir
