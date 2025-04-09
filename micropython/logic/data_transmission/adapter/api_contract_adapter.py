@@ -4,18 +4,19 @@ API Contract Adapter - Implementation of API contract validation
 This module creates payloads that conform to the API specification.
 """
 
-# Conditionally import typing module only when not running on MicroPython
 try:
-    import sys
-
-    if "micropython" not in sys.implementation.name:
-        from typing import Dict, Any
-except (ImportError, AttributeError):
+    from typing import Dict, Any
+except ImportError:
     pass
 
-from micropython.logic.data_transmission.port.api_validation_port import (
-    ApiValidationPort,
-)  # type: ignore
+try:
+    from data_transmission.port.api_validation_port import (  # type: ignore
+        ApiValidationPort,
+    )
+except ImportError:
+    from micropython.logic.data_transmission.port.api_validation_port import (  # type: ignore
+        ApiValidationPort,
+    )
 
 
 class ApiContractAdapter(ApiValidationPort):
@@ -90,6 +91,26 @@ class ApiContractAdapter(ApiValidationPort):
                 raise ValueError(
                     "Missing required measurements fields: "
                     + ", ".join(available_fields)
+                )
+
+            # Check that measurements fields are present
+            expected_types = {
+                "device_id": str,
+                "timestamp": int,
+                "location": str,
+                "version": str,
+            }
+            wrong_types = []
+            for field, expected_type in expected_types.items():
+                if field in metadata:
+                    if not isinstance(metadata[field], expected_type):
+                        wrong_types.append(
+                            f"{field} (expected {expected_type.__name__}, got {type(metadata[field]).__name__})"
+                        )
+
+            if wrong_types:
+                raise ValueError(
+                    "Metadata fields with incorrect types: " + ", ".join(wrong_types)
                 )
 
             return payload

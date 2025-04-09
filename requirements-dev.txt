@@ -1,6 +1,7 @@
 coverage==7.5.*
 jsonschema==4.23.*
 mypy==1.14.*
+network
 openapi-core==0.19.*
 pre-commit==4.1.*
 pyserial==3.5.*

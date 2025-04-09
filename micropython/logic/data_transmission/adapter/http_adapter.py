@@ -4,11 +4,41 @@ HTTP Adapter implementation for data transmission
 This module provides an adapter for sending data over HTTP/HTTPS.
 """
 
-import urequests  # type: ignore
-import ujson  # type: ignore
-import network  # type: ignore
+# Mulit env lib import
+try:
+    import urequests as request  # type: ignore
+except ImportError:
+    pass
 
-from data_transmission.port.transmissionport import TransmissionPort  # type: ignore
+try:
+    import ujson as json  # type: ignore
+except ImportError:
+    import json
+
+try:
+    import network  # type: ignore
+except ImportError:
+    # Mock network module for non-MicroPython environments
+    class WLAN:
+        def __init__(self, interface=None):
+            pass
+
+        def isconnected(self):
+            return False
+
+    class NetworkModule:
+        STA_IF = 0
+        AP_IF = 1
+        WLAN = WLAN
+
+    network = NetworkModule()
+
+try:
+    from data_transmission.port.transmissionport import TransmissionPort  # type: ignore
+except ImportError:
+    from micropython.logic.data_transmission.port.transmissionport import (
+        TransmissionPort,
+    )  # type: ignore
 
 
 class HttpAdapter(TransmissionPort):
@@ -75,7 +105,7 @@ class HttpAdapter(TransmissionPort):
 
         try:
             # Test connection to the readings endpoint specifically
-            response = urequests.head(
+            response = request.head(
                 self._readings_endpoint, headers=self._headers, timeout=self._timeout
             )
             success = 200 <= response.status_code < 300
@@ -100,11 +130,11 @@ class HttpAdapter(TransmissionPort):
 
         try:
             # Convert payload to JSON
-            json_data = ujson.dumps(payload)
+            json_data = json.dumps(payload)
 
             # Send POST request to the readings endpoint
             print(f"Sending data to {self._readings_endpoint}...")
-            response = urequests.post(
+            response = request.post(
                 self._readings_endpoint,
                 headers=self._headers,
                 data=json_data,

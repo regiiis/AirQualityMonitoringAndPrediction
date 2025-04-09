@@ -8,7 +8,11 @@ the application's port-adapter architecture.
 
 from machine import Pin, SoftI2C  # type: ignore
 import time
-from data_collection.port.sensorport import I2CSensorPort  # type: ignore
+
+try:
+    from data_collection.port.sensorport import I2CSensorPort  # type: ignore
+except ImportError:
+    from micropython.logic.data_collection.port.sensorport import I2CSensorPort  # type: ignore
 
 
 class HYT221Adapter(I2CSensorPort):

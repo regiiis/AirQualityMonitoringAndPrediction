@@ -32,11 +32,44 @@ class ApiValidationPort(ABC):
         """
         Validate a payload against API schema definition
 
+        Expected payload structure:
+        {
+            "measurements": {
+                "temperature": float,
+                "humidity": float,
+                "voltage": {
+                    "battery": float,
+                    "solar": float
+                },
+                "current": {
+                    "battery": float,
+                    "solar": float
+                },
+                "power": {
+                    "battery": float,
+                    "solar": float
+                }
+            },
+            "units": {
+                "temperature": str,
+                "humidity": str,
+                "voltage": str,
+                "current": str,
+                "power": str
+            },
+            "metadata": {
+                "device_id": str,
+                "timestamp": int,
+                "location": str,
+                "version": str
+            }
+        }
+
         Args:
             payload: Dictionary containing the data to validate
 
         Returns:
-            Dictionary: Validated payload (may modify with defaults or normalization)
+            Dictionary: Validated payload
 
         Raises:
             ValueError: If payload doesn't match the schema requirements

@@ -9,7 +9,11 @@ the application's port-adapter architecture.
 from machine import Pin, SoftI2C  # type: ignore
 from ina219 import INA219  # type: ignore
 import logging
-from data_collection.port.sensorport import I2CSensorPort  # type: ignore
+
+try:
+    from data_collection.port.sensorport import I2CSensorPort  # type: ignore
+except ImportError:
+    from micropython.logic.data_collection.port.sensorport import I2CSensorPort  # type: ignore
 
 
 class CustomINA219(INA219):

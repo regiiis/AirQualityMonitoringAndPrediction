@@ -10,11 +10,14 @@ and facilitating testing and maintenance.
 """
 
 try:
+    from typing import Dict, Any
+except ImportError:
+    pass
+
+try:
     from modules.mock_abc import ABC, abstractmethod  # type: ignore
 except ImportError:
     from abc import ABC, abstractmethod  # type: ignore
-
-from typing import Dict, Any
 
 
 class SensorPort(ABC):

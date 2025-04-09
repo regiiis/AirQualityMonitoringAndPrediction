@@ -17,8 +17,7 @@ from modules.secure_storage import SecureStorage  # type: ignore
 from modules.wifi import connect_wifi  # type: ignore
 from data_collection.adapter.hyt221 import HYT221Adapter  # type: ignore
 from data_collection.adapter.ina219 import INA219Adapter  # type: ignore
-from data_transmission.adapter.api_http_adapter import ApiHttpAdapter  # type: ignore
-from data_transmission.adapter.api_contract_adapter import ApiContractAdapter  # type: ignore
+from data_transmission.service.api_http_service import ApiHttpService  # type: ignore
 
 
 class Main:
@@ -161,13 +160,11 @@ class Main:
         # API setup
         ########################################################
         try:
-            # Create contract adapter for payload creation
-            self.contract = ApiContractAdapter()
-
-            # Create HTTP adapter with contract validation
-            self.api_client = ApiHttpAdapter(
+            # Create API service with contract validation
+            self.api_client = ApiHttpService(
                 name="AirQualityAPI", endpoint=self.api_endpoint, api_key=self.api_key
             )
+            print("API client initialized successfully")
         except Exception as e:
             print(f"Error in API setup: {e}")
 
@@ -239,13 +236,28 @@ class Main:
                         },
                     )
 
+                    # Check if we have valid measurements before sending
+                    if payload and "measurements" in payload:
+                        # Send API POST request
+                        print("Sending API")
+                        response = self.api_client.send_data(payload)
+
+                        # Process the API response
+                        if response.get("success", False):
+                            print(f"API request successful: {response.get('data', {})}")
+                        else:
+                            print(
+                                f"API request failed: {response.get('error', 'Unknown error')}"
+                            )
+                            if response.get("retry_suggested", False):
+                                print("Will retry in next cycle")
+                    else:
+                        print("No valid measurements to send")
+                        response = {"success": False, "error": "Invalid payload"}
+
                 except Exception as e:
                     print(f"Error in data transmission: {e}")
                     response = {"success": False, "error": str(e)}
-
-                    # send API POST
-                    if payload:
-                        response
 
                 # Wait before next reading
                 print("Waiting for next reading cycle...")

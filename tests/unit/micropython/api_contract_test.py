@@ -17,25 +17,13 @@ from micropython.logic.data_transmission.adapter.api_contract_adapter import (
 ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
 
-def load_spec():
-    """Load the OpenAPI specification"""
-    api_spec_path = os.path.join(ROOT_DIR, "api-spec.yaml")
-    with open(api_spec_path, "r") as f:
-        api_spec_dict = yaml.safe_load(f)
-
-    return api_spec_dict
-
-
 @pytest.fixture
 def openapi_spec_dict():
     """Fixture to provide the OpenAPI specification as a dictionary"""
-    return load_spec()
-
-
-@pytest.fixture
-def api_contract_adapter():
-    """Fixture to provide an instance of ApiContractAdapter"""
-    return ApiContractAdapter()
+    api_spec_path = os.path.join(ROOT_DIR, "api-spec.yaml")
+    with open(api_spec_path, "r") as f:
+        api_spec_dict = yaml.safe_load(f)
+    return api_spec_dict
 
 
 @pytest.fixture
@@ -86,8 +74,14 @@ def mock_metadata():
     }
 
 
+# First, add a fixture for the ApiContractAdapter
+@pytest.fixture
+def api_contract_adapter():
+    """Fixture to provide an instance of ApiContractAdapter"""
+    return ApiContractAdapter()
+
+
 def test_create_sensor_payload_schema_validation(
-    api_contract_adapter,
     mock_hyt221_data,
     mock_ina219_1_data,
     mock_ina219_2_data,
@@ -96,7 +90,9 @@ def test_create_sensor_payload_schema_validation(
 ):
     """Test that created payload conforms to the API schema"""
     # Create a payload with the adapter
-    payload = api_contract_adapter.create_sensor_payload(
+    adapter = ApiContractAdapter()
+
+    payload = adapter.create_sensor_payload(
         hyt221=mock_hyt221_data,
         ina219_1=mock_ina219_1_data,
         ina219_2=mock_ina219_2_data,
@@ -128,22 +124,28 @@ def test_create_sensor_payload_schema_validation(
     assert payload["metadata"]["version"] == "v1.2.3"
 
 
-def test_validate_payload_with_invalid_data(api_contract_adapter):
+def test_validate_payload_with_invalid_data(
+    api_contract_adapter,
+    mock_hyt221_data,
+    mock_ina219_1_data,
+    mock_ina219_2_data,
+    mock_metadata,
+):
     """Test the validate_payload method with invalid data"""
-    # Missing required fields
-    invalid_payload = {
+    invalid_metadata = {
         "device_id": "esp32-001",
-        # Missing timestamp
-        "measurements": {
-            # Missing temperature
-            "humidity": 45.2
-        },
-        "metadata": {},
+        "timestamp": "wrong_data_type",  # Invalid type
+        "location": "living_room",
+        "version": "v1.2.3",
     }
 
-    # Should raise ValueError due to missing fields
     with pytest.raises(ValueError):
-        api_contract_adapter.validate_payload(invalid_payload)
+        api_contract_adapter.create_sensor_payload(
+            hyt221=mock_hyt221_data,
+            ina219_1=mock_ina219_1_data,
+            ina219_2=mock_ina219_2_data,
+            metadata=invalid_metadata,
+        )
 
 
 def test_create_sensor_payload_with_missing_data(
