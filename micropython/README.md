@@ -7,7 +7,7 @@ MicroPython is a lean implementation of Python 3 that is optimized to run on mic
 
 ## Development Environment
 
-### ``` Components```
+### ```Components```
 - **IDE**: VS Code
 - **Scripts**: PowerShell
 - **Hardware**: Arduino Nano ESP32-S3
@@ -53,8 +53,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 Run one of the following scripts:
 
-### ```Installation```
-- Install MicroPython on your ESP32:
+### ```Firmware Installer```
+Install MicroPython on your ESP32 board.
 
 ```powershell
 .\install.ps1
@@ -65,7 +65,7 @@ This script will:
 - Install MicroPython on your ESP32
 - Verify the installation
 
-### ``` Code Uploader```
+### ```Code Uploader```
 Upload the code to your ESP32.
 
 ```powershell

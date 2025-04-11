@@ -1,6 +1,7 @@
 # Configuration file for pre-commit: https://pre-commit.com/
 
 repos:
+  # Standard pre-commit hooks for basic file hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -11,25 +12,29 @@ repos:
       - id: check-docstring-first
       - id: pretty-format-json
 
+  # Python linting and formatting with Ruff (fast alternative to flake8/black)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.2
+    rev: v0.11.4
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
 
+  # YAML file linting and validation
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.37.0
     hooks:
       - id: yamllint
         args: [--strict, -c=.yamllint]
 
+  # Standardize commit messages using Conventional Commits format
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.4.1
+    rev: v4.5.1
     hooks:
       - id: commitizen
         stages: [commit-msg]
 
+  # Shell script syntax checking and best practices
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
     hooks:

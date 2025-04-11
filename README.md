@@ -289,6 +289,16 @@ pre-commit install
 ```
 <br>
 
+## CI/CD Pipeline
+
+- In Makefiles, each line runs in a separate shell
+
+Linters: ruff, tflint, yamllint, shellcheck
+Formatters: terraform_fmt, ruff-format
+Security scanners: tfsec, checkov
+Other checks: end-of-file-fixer, trailing-whitespace
+<br>
+
 ## Project Documentation
 The project is documented by means of a wiki and README's.
 

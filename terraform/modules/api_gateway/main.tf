@@ -1,4 +1,18 @@
 #################################################
+#
+#################################################
+terraform {
+  required_version = ">= 1.11.4"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.94"
+    }
+  }
+}
+
+#################################################
 # API GATEWAY CORE CONFIGURATION
 #################################################
 # Creates the primary API Gateway REST API resource - this is the container for all API components
@@ -8,6 +22,11 @@ resource "aws_api_gateway_rest_api" "air_quality_api" {
 
   endpoint_configuration {
     types = ["REGIONAL"]
+  }
+
+  # Add lifecycle policy for zero-downtime deployments
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
@@ -23,10 +42,10 @@ resource "aws_api_gateway_resource" "readings" {
 
 # Defines the POST method on the /readings resource
 resource "aws_api_gateway_method" "post_readings" {
-  rest_api_id      = aws_api_gateway_rest_api.air_quality_api.id
-  resource_id      = aws_api_gateway_resource.readings.id
-  http_method      = "POST"
-  authorization_type = "API_KEY"
+  rest_api_id   = aws_api_gateway_rest_api.air_quality_api.id
+  resource_id   = aws_api_gateway_resource.readings.id
+  http_method   = "POST"
+  authorization = "API_KEY"
 }
 
 #################################################
@@ -62,9 +81,28 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 
 # Creates a named v1 stage for the API - this forms part of the URL
 resource "aws_api_gateway_stage" "api_stage" {
-  deployment_id = aws_api_gateway_deployment.api_deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.air_quality_api.id
-  stage_name    = "v1"  # Creates /v1 prefix in API URL: https://api-id.execute-api.region.amazonaws.com/v1/readings
+  deployment_id         = aws_api_gateway_deployment.api_deployment.id
+  rest_api_id           = aws_api_gateway_rest_api.air_quality_api.id
+  stage_name            = "v1" # Creates /v1 prefix in API URL: https://api-id.execute-api.region.amazonaws.com/v1/readings
+  xray_tracing_enabled  = true # Enable X-Ray tracing for better observability
+  cache_cluster_enabled = true # Enable caching for improved performance
+
+  # Add access logging configuration
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
+    format = jsonencode({
+      requestId               = "$context.requestId"
+      sourceIp                = "$context.identity.sourceIp"
+      requestTime             = "$context.requestTime"
+      protocol                = "$context.protocol"
+      httpMethod              = "$context.httpMethod"
+      resourcePath            = "$context.resourcePath"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
+      responseLength          = "$context.responseLength"
+      integrationErrorMessage = "$context.integrationErrorMessage"
+    })
+  }
 }
 
 #################################################
@@ -94,8 +132,8 @@ resource "aws_api_gateway_usage_plan" "device_plan" {
 
   # Rate limiting to protect API and backend resources
   throttle_settings {
-    burst_limit = 5    # Allow bursts of up to 5 requests
-    rate_limit  = 1    # Normal operation: 1 request per second
+    burst_limit = 5 # Allow bursts of up to 5 requests
+    rate_limit  = 1 # Normal operation: 1 request per second
   }
 }
 
@@ -104,4 +142,10 @@ resource "aws_api_gateway_usage_plan_key" "device_plan_key" {
   key_id        = aws_api_gateway_api_key.device_key.id
   key_type      = "API_KEY"
   usage_plan_id = aws_api_gateway_usage_plan.device_plan.id
+}
+
+# Create a CloudWatch Log Group for API Gateway logs
+resource "aws_cloudwatch_log_group" "api_gateway_logs" {
+  name              = "/aws/apigateway/${var.api_name}"
+  retention_in_days = 365 # Adjust retention period as needed
 }

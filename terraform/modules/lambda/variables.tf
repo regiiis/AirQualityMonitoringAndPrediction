@@ -27,3 +27,13 @@ variable "api_gateway_execution_arn" {
   description = "The ARN of the API Gateway execution role"
   type        = string
 }
+
+variable "subnet_ids" {
+  description = "Subnet IDs for Lambda VPC configuration"
+  type        = list(string)
+}
+
+variable "security_group_id" {
+  description = "Security group ID for Lambda VPC configuration"
+  type        = string
+}

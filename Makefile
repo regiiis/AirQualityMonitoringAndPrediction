@@ -3,6 +3,9 @@
 lint:
 	pre-commit run --all-files
 
+lint_tf:
+	cd terraform && pre-commit run --config=.pre-commit-config-terraform.yaml --all-files
+
 type_check:
 	mypy app/ micropython/ tests/ --exclude 'micropython/libs/' --explicit-package-bases
 
@@ -18,16 +21,6 @@ test_logic:
 		--cov=micropython \
 		--cov-report term \
 		--cov-report xml:reports/py-coverage.cobertura.xml
-
-test_terraform:
-	python3 -m pytest -s tests/test_terraform.py \
-		-o asyncio_mode=auto \
-		--junit-xml=reports/TEST-terraform.xml
-
-
-generate_api_docs:
-	mkdir -p docs/api
-	npx @redocly/cli build-docs api-spec.yaml -o docs/api/index.html --junit-xml=reports/TEST-micropython.xml \
 
 generate_api_docs:
 	mkdir -p docs/api

@@ -1,0 +1,24 @@
+# Configuration file for pre-commit: https://pre-commit.com/
+
+repos:
+  # Terraform formatting and validation tools
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.98.1  # Use the latest version
+    hooks:
+      - id: terraform_fmt  # Format Terraform files
+      - id: terraform_validate  # Validate Terraform syntax
+      - id: terraform_tflint  # Lint Terraform files for errors and best practices
+  #  - id: terraform_docs  # Generate documentation from Terraform files
+
+  # Security scanner for Terraform code
+  - repo: https://github.com/aquasecurity/tfsec
+    rev: v1.28.13  # Use the latest version
+    hooks:
+      - id: tfsec  # Analyzes Terraform for security vulnerabilities
+
+# Policy compliance scanner for Terraform and other IaC
+# - repo: https://github.com/bridgecrewio/checkov.git
+#   rev: 3.2.402
+#   hooks:
+#     - id: checkov  # Checks IaC for misconfigurations and compliance issues
+#       args: [--quiet]

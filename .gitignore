@@ -9,6 +9,13 @@ micropython/*micropython*installer*
 micropython/libs/*
 !micropython/libs/__init__.py
 
+# AWS
+aws/*
+awscliv2.*
+
+# Terraform
+.terraform*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
