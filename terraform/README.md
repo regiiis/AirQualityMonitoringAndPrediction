@@ -27,14 +27,29 @@ sudo ./aws/install
 aws --version
 ```
 
-Setup AWS account credentials:
+### AWS Credential Managment
+Set up AWS IAM identity center for temporary credentials. You need this in order to be able to deploy the infrastructure to AWS.
+1. Go to the AWS Management Console and log in to your AWS account.
+2. Navigate to the "IAM Identity Center"
+3. IAM Identity Center -> Settings - > Enable IAM Identity Center
+4. IAM Identity Center -> Users -> Add user
+5. Permission sets -> Create permission set
+6. AWS accounts -> Select AWS account -> "Assign users or groups" -> Assign permission
+7. Open user confirmation-mail and set up password & MFA
+
+**Access Portal**: Setting -> AWS access portall -> Access Key
+
+**Credentials**: Copy "Option 1" and paste it in your terminal:
 ```Bash
-aws configure
-# Enter:
-# - AWS Access Key ID
-# - AWS Secret Access Key
-# - Default region name (e.g., us-west-2)
-# - Default output format (json)
+# Option 1 should look like this:
+export AWS_ACCESS_KEY_ID="something"
+export AWS_SECRET_ACCESS_KEY="something"
+export AWS_SESSION_TOKEN="something"
+```
+
+Your AWS credentials are now set up. You can verify them by running the following command:
+```Bash
+aws sts get-caller-identity
 ```
 
 
@@ -69,7 +84,30 @@ sudo apt-get install terraform
 terraform --version
 ```
 
-## Setup TF pre-commits in .pre-commit-config-terraform.yaml
+### Deploying the infrastructure
+1. Navigate to the `terraform` environment directory:
+```Bash
+cd terraform/environments/dev
+```
+2. Initialize Terraform:
+```Bash
+terraform init
+```
+3. Validate the Terraform configuration files:
+```Bash
+terraform validate
+```
+4. Plan the infrastructure changes:
+```Bash
+terraform plan
+```
+5. Apply the changes to create the infrastructure:
+```Bash
+terraform apply
+```
+
+
+## TF Code Quality - .pre-commit-config-terraform.yaml
 TFLint is a Terraform linter for detecting errors in your Terraform code. It helps ensure that your Terraform configurations are clean and follow best practices.
 ```Bash
 # Install tflint

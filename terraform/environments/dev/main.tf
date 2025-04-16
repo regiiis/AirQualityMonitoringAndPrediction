@@ -54,11 +54,11 @@ module "database" {
 module "lambda" {
   source = "../../modules/lambda"
 
-  validator_function_name   = var.validator_function_name
-  validator_zip_path        = var.validator_zip_path
-  storage_function_name     = var.storage_function_name
-  storage_zip_path          = var.storage_zip_path
-  storage_bucket_name       = module.database.bucket_name
+  data_validator_function_name   = var.data_validator_function_name
+  data_validator_zip_path        = var.data_validator_zip_path
+  data_storer_function_name     = var.data_storer_function_name
+  data_storer_zip_path          = var.data_storer_zip_path
+  data_storer_bucket_name       = module.database.bucket_name
   api_gateway_execution_arn = "${module.api_gateway.api_gateway_arn}/*"
   subnet_ids                = module.vpc.private_subnet_ids
   security_group_id         = module.vpc.lambda_security_group_id
@@ -74,5 +74,5 @@ module "api_gateway" {
   source = "../../modules/api_gateway"
 
   api_name                    = var.api_name
-  validator_lambda_invoke_arn = module.lambda.validator_function_arn
+  data_validator_lambda_invoke_arn = module.lambda.data_validator_function_arn
 }

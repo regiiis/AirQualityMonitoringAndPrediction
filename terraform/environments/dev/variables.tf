@@ -39,23 +39,23 @@ variable "api_name" {
 #################################################
 # LAMBDA CONFIGURATION
 #################################################
-variable "validator_function_name" {
-  description = "Name of the validator Lambda function"
+variable "data_validator_function_name" {
+  description = "Name of the data validator Lambda function"
   type        = string
 }
 
-variable "validator_zip_path" {
-  description = "Path to the validator Lambda deployment package"
+variable "data_validator_zip_path" {
+  description = "Path to the data validator Lambda deployment package"
   type        = string
 }
 
-variable "storage_function_name" {
-  description = "Name of the storage Lambda function"
+variable "data_storer_function_name" {
+  description = "Name of the data storer Lambda function"
   type        = string
 }
 
-variable "storage_zip_path" {
-  description = "Path to the storage Lambda deployment package"
+variable "data_storer_zip_path" {
+  description = "Path to the data storer Lambda deployment package"
   type        = string
 }
 

@@ -1,5 +1,7 @@
 .PHONY: all lint type_check validate_api check_api_breaking_changes generate_api_docs
 
+
+# Code quality
 lint:
 	pre-commit run --all-files
 
@@ -22,6 +24,15 @@ test_logic:
 		--cov-report term \
 		--cov-report xml:reports/py-coverage.cobertura.xml
 
+# Deployment
+deploy:
+	mkdir -p lambda
+	cd app/handlers
+	zip -r ../../../lambda/validator.zip validator.py
+	zip -r ../../../lambda/storage.zip storage.py
+	cd ../../..
+
+# Documentation
 generate_api_docs:
 	mkdir -p docs/api
 	npx @redocly/cli build-docs api-spec.yaml -o docs/api/index.html

@@ -1,19 +1,19 @@
-output "validator_function_name" {
-  description = "The name of the validator Lambda function"
-  value       = aws_lambda_function.validator.function_name
+output "data_validator_function_name" {
+  description = "The name of the data_validator Lambda function"
+  value       = aws_lambda_function.data_validator.function_name
 }
 
-output "validator_function_arn" {
-  description = "The ARN of the validator Lambda function"
-  value       = aws_lambda_function.validator.arn
+output "data_validator_function_arn" {
+  description = "The ARN of the data_validator Lambda function"
+  value       = aws_lambda_function.data_validator.arn
 }
 
-output "storage_function_name" {
-  description = "The name of the storage Lambda function"
-  value       = aws_lambda_function.storage.function_name
+output "data_storer_function_name" {
+  description = "The name of the data_storer Lambda function"
+  value       = aws_lambda_function.data_storer.function_name
 }
 
-output "storage_function_arn" {
-  description = "The ARN of the storage Lambda function"
-  value       = aws_lambda_function.storage.arn
+output "data_storer_function_arn" {
+  description = "The ARN of the data_storer Lambda function"
+  value       = aws_lambda_function.data_storer.arn
 }

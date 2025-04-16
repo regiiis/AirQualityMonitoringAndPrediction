@@ -1,24 +1,24 @@
-variable "validator_function_name" {
-  description = "The name of the validator Lambda function"
+variable "data_validator_function_name" {
+  description = "The name of the data_validator Lambda function"
   type        = string
 }
 
-variable "validator_zip_path" {
-  description = "The path to the ZIP file for the validator Lambda function"
+variable "data_validator_zip_path" {
+  description = "The path to the ZIP file for the data_validator Lambda function"
   type        = string
 }
 
-variable "storage_function_name" {
-  description = "The name of the storage Lambda function"
+variable "data_storer_function_name" {
+  description = "The name of the data_storer Lambda function"
   type        = string
 }
 
-variable "storage_zip_path" {
-  description = "The path to the ZIP file for the storage Lambda function"
+variable "data_storer_zip_path" {
+  description = "The path to the ZIP file for the data_storer Lambda function"
   type        = string
 }
 
-variable "storage_bucket_name" {
+variable "data_storer_bucket_name" {
   description = "The name of the S3 bucket for storing validated data"
   type        = string
 }

@@ -17,7 +17,31 @@ SENSOR_READING_SCHEMA = {
         "measurements": {
             "type": "object",
             "required": ["temperature", "humidity", "voltage", "current", "power"],
-            # Additional schema details from your API spec
+            "properties": {
+                "temperature": {"type": "float"},
+                "humidity": {"type": "float"},
+                "voltage": {
+                    "type": "object",
+                    "propertyies": {
+                        "battery": {"type": "float"},
+                        "solar": {"type": "float"},
+                    },
+                },
+                "current": {
+                    "type": "object",
+                    "propertyies": {
+                        "battery": {"type": "float"},
+                        "solar": {"type": "float"},
+                    },
+                },
+                "power": {
+                    "type": "object",
+                    "propertyies": {
+                        "battery": {"type": "float"},
+                        "solar": {"type": "float"},
+                    },
+                },
+            },
         },
         "units": {"type": "object"},
         "metadata": {

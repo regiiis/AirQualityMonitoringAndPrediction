@@ -115,12 +115,12 @@ resource "aws_security_group" "lambda_sg" {
   vpc_id      = aws_vpc.main.id
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
     cidr_blocks = concat(
-      var.private_subnet_cidrs,  # Allow traffic to resources in private subnets
-      ["${aws_vpc_endpoint.s3.dns_entry[0].dns_name}/32"]  # Allow traffic to S3 endpoint
+      var.private_subnet_cidrs,                           # Allow traffic to resources in private subnets
+      ["${aws_vpc_endpoint.s3.dns_entry[0].dns_name}/32"] # Allow traffic to S3 endpoint
     )
     description = "Allow traffic only to private subnets and AWS service endpoints"
   }
