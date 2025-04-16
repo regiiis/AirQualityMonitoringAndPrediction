@@ -9,8 +9,7 @@ from jsonschema import validate
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Schema definition based on your API spec
-SENSOR_READING_SCHEMA = {
+SENSOR_DATA_SCHEMA = {
     "type": "object",
     "required": ["measurements", "units", "metadata"],
     "properties": {
@@ -18,27 +17,27 @@ SENSOR_READING_SCHEMA = {
             "type": "object",
             "required": ["temperature", "humidity", "voltage", "current", "power"],
             "properties": {
-                "temperature": {"type": "float"},
-                "humidity": {"type": "float"},
+                "temperature": {"type": "number"},
+                "humidity": {"type": "number"},
                 "voltage": {
                     "type": "object",
-                    "propertyies": {
-                        "battery": {"type": "float"},
-                        "solar": {"type": "float"},
+                    "properties": {
+                        "battery": {"type": "number"},
+                        "solar": {"type": "number"},
                     },
                 },
                 "current": {
                     "type": "object",
-                    "propertyies": {
-                        "battery": {"type": "float"},
-                        "solar": {"type": "float"},
+                    "properties": {
+                        "battery": {"type": "number"},
+                        "solar": {"type": "number"},
                     },
                 },
                 "power": {
                     "type": "object",
-                    "propertyies": {
-                        "battery": {"type": "float"},
-                        "solar": {"type": "float"},
+                    "properties": {
+                        "battery": {"type": "number"},
+                        "solar": {"type": "number"},
                     },
                 },
             },
@@ -49,7 +48,7 @@ SENSOR_READING_SCHEMA = {
             "required": ["device_id", "timestamp", "location", "version"],
             "properties": {
                 "device_id": {"type": "string"},
-                "timestamp": {"type": "integer"},
+                "timestamp": {"type": "number"},
                 "location": {"type": "string"},
                 "version": {"type": "string"},
             },
@@ -58,49 +57,89 @@ SENSOR_READING_SCHEMA = {
 }
 
 
+def format_response(status_code, body):
+    """Helper to format API response consistently"""
+    return {
+        "statusCode": status_code,
+        "body": json.dumps(body),
+        "headers": {"Content-Type": "application/json"},
+    }
+
+
+def data_validator(body, data_schema=SENSOR_DATA_SCHEMA):
+    """
+    Validate the incoming payload against the defined schema.
+    """
+    try:
+        # Validate the payload against the schema
+        validate(instance=body, schema=data_schema)
+        return {"valid": True, "data": body}
+
+    except json.JSONDecodeError as e:
+        logger.error("JSON parsing error: %s", str(e))
+        return {"valid": False, "error": "invalid_json", "message": str(e)}
+
+    except ValueError as e:
+        logger.error("Schema validation error: %s", str(e))
+        return {"valid": False, "error": "schema_validation", "message": str(e)}
+
+    except Exception as e:
+        logger.error("Unexpected validation error: %s", str(e))
+        return {"valid": False, "error": "validation_error", "message": str(e)}
+
+
 def handler(event, context):
+    """Process and validate incoming API data, then forward to storage"""
     try:
         logger.info("Received event: %s", json.dumps(event))
 
+        # Get storage lambda name from environment variable
+        storage_lambda = os.environ.get("SENSOR_DATA_STORAGE_S3")
+        if not storage_lambda:
+            logger.error("Missing SENSOR_DATA_STORAGE_S3 environment variable")
+            return format_response(
+                500, {"error": "config_error", "message": "Lambda configuration error"}
+            )
+
         # Parse request body
-        body = json.loads(event["body"])
+        try:
+            body = json.loads(event["body"])
+        except json.JSONDecodeError as e:
+            return format_response(400, {"error": "invalid_json", "message": str(e)})
 
-        # Validate against schema
-        validate(instance=body, schema=SENSOR_READING_SCHEMA)
+        # Validate data
+        validation = data_validator(body)
+        if not validation["valid"]:
+            logger.error("Validation failed: %s", validation["error"])
+            return format_response(
+                400, {"error": validation["error"], "message": validation["message"]}
+            )
 
-        # If validation passes, forward to storage function
+        # Call storage Lambda
         lambda_client = boto3.client("lambda")
-        storage_function_name = os.environ["STORAGE_FUNCTION_NAME"]
+        try:
+            response = lambda_client.invoke(
+                FunctionName=storage_lambda,
+                InvocationType="RequestResponse",
+                Payload=json.dumps(body),
+            )
+        except Exception as e:
+            logger.error("Error invoking storage lambda: %s", str(e))
+            return format_response(502, {"error": "storage_error", "message": str(e)})
 
-        # Invoke storage lambda
-        response = lambda_client.invoke(
-            FunctionName=storage_function_name,
-            InvocationType="RequestResponse",
-            Payload=json.dumps(body),
-        )
+        # Check storage response
+        payload = json.loads(response["Payload"].read().decode())
+        if payload.get("statusCode") != 200:  # Check the actual Lambda response
+            logger.error("Storage lambda error: %s", response["StatusCode"])
+            return format_response(
+                502, {"error": "storage_error", "message": "Failed to store data"}
+            )
 
-        if response:
-            pass
-
-        # Return success response
-        return {
-            "statusCode": 201,
-            "body": json.dumps({"id": context.aws_request_id, "success": True}),
-            "headers": {"Content-Type": "application/json"},
-        }
+        logger.info("Data stored successfully")
+        return format_response(201, {"id": context.aws_request_id, "success": True})
 
     except Exception as e:
-        logger.error("Error: %s", str(e))
-
-        # Return error response
-        return {
-            "statusCode": 400,
-            "body": json.dumps(
-                {
-                    "error": "validation_error",
-                    "message": "Invalid request payload",
-                    "details": {"error": str(e)},
-                }
-            ),
-            "headers": {"Content-Type": "application/json"},
-        }
+        logger.error("Unhandled error: %s", str(e))
+        return format_response(
+            500, {"error": "server_error", "message": "Internal server error"}
+        )

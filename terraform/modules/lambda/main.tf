@@ -1,5 +1,5 @@
 #################################################
-# LAAMBDA CONFIGURATION
+# TERRAFORM CONFIGURATION
 #################################################
 terraform {
   required_version = ">= 1.11.4"
@@ -26,7 +26,7 @@ resource "aws_lambda_function" "data_validator" {
   reserved_concurrent_executions = 5
 
   # Package the code directly from the file system
-  filename         = "${path.root}/app/handlers/data_validator.py.zip"
+  filename         = "${path.root}/app/handlers/data_validator.zip"
   source_code_hash = filebase64sha256("${path.root}/app/handlers/data_validator.py")
 
   # Apply code signing configuration
@@ -34,7 +34,7 @@ resource "aws_lambda_function" "data_validator" {
 
   environment {
     variables = {
-      DATA_STORAGE_FUNCTION_NAME = aws_lambda_function.data_storer.function_name
+      SENSOR_DATA_STORAGE_S3 = aws_lambda_function.data_storer.function_name
     }
   }
 
@@ -170,6 +170,24 @@ resource "aws_iam_role_policy_attachment" "data_storer_basic_execution" {
 resource "aws_iam_role_policy_attachment" "data_validator_xray" {
   role       = aws_iam_role.data_validator_role.name
   policy_arn = "arn:aws:iam::aws:policy:AWSXRayDaemonWriteAccess"
+}
+
+resource "aws_iam_policy" "lambda_invoke_policy" {
+  name        = "lambda-invoke-policy"
+  description = "Allow invoking other Lambda functions"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action   = "lambda:InvokeFunction"
+      Resource = aws_lambda_function.data_storer.arn
+      Effect   = "Allow"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "validator_lambda_invoke" {
+  role       = aws_iam_role.data_validator_role.name
+  policy_arn = aws_iam_policy.lambda_invoke_policy.arn
 }
 
 #################################################
