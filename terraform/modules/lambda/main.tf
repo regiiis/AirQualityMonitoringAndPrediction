@@ -2,60 +2,55 @@
 # TERRAFORM CONFIGURATION
 #################################################
 terraform {
-  required_version = ">= 1.11.4"
+  required_version = ">= 1.11.4"                  # Minimum Terraform version required
 
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.94"
+      source  = "hashicorp/aws"                   # AWS provider source
+      version = ">= 5.94"                         # Minimum AWS provider version
     }
   }
 }
-module "data_validator" {
-  source = "./data_validator"
 
-  function_name     = var.data_validator_function_name
-  zip_path          = var.data_validator_zip_path
-  subnet_ids        = var.subnet_ids
-  security_group_id = var.security_group_id
-  api_gateway_arn   = var.api_gateway_execution_arn
-  storer_function_arn = module.data_storer.function_arn
-  storer_function_name = module.data_storer.function_name
+#################################################
+# DATA INGESTION LAMBDA MODULE
+#################################################
+module "data_ingestion" {
+  source = "./data_ingestion"                     # Path to module directory
+
+  # Required parameters for the module
+  function_name = var.data_ingestion_function_name # Lambda function name
+  zip_path = var.data_ingestion_zip_path          # Path to deployment package
+  bucket_name = var.data_ingestion_bucket_name    # S3 bucket for data storage
+  subnet_ids = var.subnet_ids                     # VPC subnets for Lambda
+  security_group_id = var.security_group_id       # Security group for Lambda
+  api_gateway_arn = var.api_gateway_execution_arn # API Gateway that invokes Lambda
 }
 
-module "data_storer" {
-  source = "./data_storer"
-
-  function_name     = var.data_storer_function_name
-  zip_path          = var.data_storer_zip_path
-  bucket_name       = var.data_storer_bucket_name
-  subnet_ids        = var.subnet_ids
-  security_group_id = var.security_group_id
-}
-
+#################################################
+# LAMBDA CODE PACKAGING
+#################################################
 resource "null_resource" "lambda_zip" {
   triggers = {
-    data_validator_code_hash = filemd5("${path.root}/app/handlers/data_validator.py")
-    data_storer_code_hash   = filemd5("${path.root}/app/handlers/data_storer.py")
+    # Re-run when the source code changes
+    data_ingestion_code_hash = filemd5("${path.root}/app/handlers/data_ingestion/data_ingestion.py")
   }
 
+  # Create zip package for Lambda deployment
   provisioner "local-exec" {
     command = <<EOT
-      mkdir -p ${path.root}/lambda
-      cd ${path.root}/app/handlers
-      zip -j ${path.root}/lambda/data_validator.zip data_validator.py
-      zip -j ${path.root}/lambda/data_storer.zip data_storer.py
+      mkdir -p ${path.root}/lambda              # Ensure directory exists
+      cd ${path.root}/app/handlers              # Change to handlers directory
+      zip -j ${path.root}/lambda/data_ingestion.zip data_ingestion.py  # Create deployment package
     EOT
   }
 }
 
+#################################################
+# LOGGING CONFIGURATION
+#################################################
 # Keep CloudWatch Log Groups in main module
-resource "aws_cloudwatch_log_group" "data_validator_logs" {
-  name              = "/aws/lambda/${var.data_validator_function_name}"
-  retention_in_days = 14
-}
-
-resource "aws_cloudwatch_log_group" "data_storer_logs" {
-  name              = "/aws/lambda/${var.data_storer_function_name}"
-  retention_in_days = 14
+resource "aws_cloudwatch_log_group" "data_ingestion_logs" {
+  name              = "/aws/lambda/${var.data_ingestion_function_name}"  # Standard Lambda log group naming
+  retention_in_days = 14                                                # Log retention policy
 }

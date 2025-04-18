@@ -1,20 +1,11 @@
 import json
 import logging
-import boto3
 import uuid
+import boto3
 
 # Set up logger
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-
-def format_response(status_code, body):
-    """Helper to format API response consistently"""
-    return {
-        "statusCode": status_code,
-        "body": json.dumps(body),
-        "headers": {"Content-Type": "application/json"},
-    }
 
 
 def store_data(data, bucket_name):

@@ -1,5 +1,5 @@
-from app.handlers.modules import data_validator
-from app.handlers.modules import data_storer
+from app.handlers.data_ingestion import data_validator
+from app.handlers.data_ingestion import data_storer
 import json
 import logging
 import os

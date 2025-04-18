@@ -39,25 +39,16 @@ variable "api_name" {
 #################################################
 # LAMBDA CONFIGURATION
 #################################################
-variable "data_validator_function_name" {
-  description = "Name of the data validator Lambda function"
+variable "data_ingestion_function_name" {
+  description = "Name of the data ingestion Lambda function"
   type        = string
 }
 
-variable "data_validator_zip_path" {
-  description = "Path to the data validator Lambda deployment package"
+variable "data_ingestion_zip_path" {
+  description = "Path to the data ingestion Lambda deployment package"
   type        = string
 }
 
-variable "data_storer_function_name" {
-  description = "Name of the data storer Lambda function"
-  type        = string
-}
-
-variable "data_storer_zip_path" {
-  description = "Path to the data storer Lambda deployment package"
-  type        = string
-}
 
 #################################################
 # VPC CONFIGURATION

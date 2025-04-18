@@ -1,10 +1,15 @@
 variable "function_name" {
-  description = "The name of the data_validator Lambda function"
+  description = "The name of the data_storer Lambda function"
   type        = string
 }
 
 variable "zip_path" {
-  description = "The path to the ZIP file for the data_validator Lambda function"
+  description = "The path to the ZIP file for the data_storer Lambda function"
+  type        = string
+}
+
+variable "bucket_name" {
+  description = "The name of the S3 bucket for storing validated data"
   type        = string
 }
 
@@ -20,15 +25,5 @@ variable "security_group_id" {
 
 variable "api_gateway_arn" {
   description = "The ARN of the API Gateway execution role"
-  type        = string
-}
-
-variable "storer_function_arn" {
-  description = "The ARN of the data_storer Lambda function"
-  type        = string
-}
-
-variable "storer_function_name" {
-  description = "The name of the data_storer Lambda function"
   type        = string
 }

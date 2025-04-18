@@ -10,6 +10,7 @@ micropython/libs/*
 !micropython/libs/__init__.py
 
 # AWS
+aws
 aws/*
 awscliv2.*
 
