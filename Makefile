@@ -24,16 +24,11 @@ test_logic:
 		--cov-report xml:reports/py-coverage.cobertura.xml
 
 # Deployment
-tf_init:
+tf_init_dev:
 	@echo "Initializing Terraform..."
 	cd terraform/environments/dev && \
 	terraform init
-	cd terraform/environments/prod && \
-	terraform init
 	@echo "Terraform initialization complete!"
-	cd ..
-	cd ..
-	cd ..
 
 # Before deploying, ensure you have the correct AWS credentials and permissions set up.
 deploy_dev:

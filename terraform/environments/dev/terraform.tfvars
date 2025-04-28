@@ -5,7 +5,7 @@ api_name                     = "air-quality-api-dev"
 data_ingestion_function_name = "air-quality-ingestion-dev"
 data_ingestion_zip_path      = "../../../lambda/data_ingestion.zip"
 
-tags                         = {
+tags = {
   Owner   = "Regis"
   Project = "AirQualityMonitoring"
 }

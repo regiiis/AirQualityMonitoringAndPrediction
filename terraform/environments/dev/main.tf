@@ -68,20 +68,23 @@ module "lambda" {
 #################################################
 # API GATEWAY
 #################################################
-# Create API Gateway for receiving data from ESP32 devices
 module "api_gateway" {
-  source = "../../modules/api_gateway"
-
-  # Add this line to fix the error:
-  environment = var.environment # Or use "dev" directly
-
-  # Your other parameters remain unchanged
+  source                           = "../../modules/api_gateway"
+  environment                      = var.environment
   api_name                         = var.api_name
   data_validator_lambda_invoke_arn = module.lambda.data_ingestion_function_invoke_arn
 }
 
 #################################################
-# OUTPUTS
+# LAMBDA-API GATEWAY INTEGRATION
 #################################################
-# These allow other Terraform configurations or CI/CD tools to reference this environment
-# They also make key information available in the Terraform output after deployment
+# Create permission for A
+resource "aws_lambda_permission" "api_gateway_invoke" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = module.lambda.data_ingestion_function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${module.api_gateway.api_gateway_arn}/*"
+
+  depends_on = [module.lambda, module.api_gateway]
+}

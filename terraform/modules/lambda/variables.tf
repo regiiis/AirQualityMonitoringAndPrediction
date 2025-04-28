@@ -16,6 +16,7 @@ variable "data_ingestion_bucket_name" {
 variable "api_gateway_execution_arn" {
   description = "The ARN of the API Gateway execution role"
   type        = string
+  default     = "" # Make it optional with a default value
 }
 
 variable "subnet_ids" {

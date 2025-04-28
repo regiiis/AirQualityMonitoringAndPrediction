@@ -62,7 +62,7 @@ def handler(event, context):
             )
 
         # Get S3 bucket name from environment variable
-        bucket_name = os.environ.get("S3_BUCKET_NAME")
+        bucket_name = os.environ.get("SENSOR_DATA_STORAGE_S3")
         if not bucket_name:
             return data_validator.format_response(
                 500, {"error": "config_error", "message": "S3 configuration error"}
