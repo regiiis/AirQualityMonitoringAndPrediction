@@ -1,7 +1,7 @@
 # lambda/validator/validator.py
 import json
 import logging
-from jsonschema import validate
+from jsonschema import validate  # type: ignore
 
 # Set up logger
 logger = logging.getLogger()

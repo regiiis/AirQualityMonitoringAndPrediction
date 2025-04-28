@@ -1,4 +1,4 @@
-aws_region                   = "eu-central-1"
+aws_region                   = "eu-central-2"
 environment                  = "dev"
 bucket_name                  = "air-quality-readings-bucket-dev"
 api_name                     = "air-quality-api-dev"

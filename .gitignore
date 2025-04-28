@@ -8,6 +8,7 @@ CP210*
 micropython/*micropython*installer*
 micropython/libs/*
 !micropython/libs/__init__.py
+*.zip
 
 # AWS
 aws
@@ -16,6 +17,9 @@ awscliv2.*
 
 # Terraform
 .terraform*
+terraform.tfstate
+terraform.tfstate.*
+tfplan
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

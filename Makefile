@@ -24,7 +24,7 @@ test_logic:
 		--cov-report xml:reports/py-coverage.cobertura.xml
 
 # Deployment
-tf_init_dev:
+init_dev:
 	@echo "Initializing Terraform..."
 	cd terraform/environments/dev && \
 	terraform init
@@ -33,6 +33,8 @@ tf_init_dev:
 # Before deploying, ensure you have the correct AWS credentials and permissions set up.
 deploy_dev:
 	@echo "Starting dev deployment process..."
+	sudo apt update -y
+	sudo apt install zip unzip -y
 	mkdir -p lambda
 	cd app/handlers/data_ingestion && \
 	zip -j ../../../lambda/data_ingestion.zip data_ingestion.py
@@ -45,6 +47,8 @@ deploy_dev:
 
 deploy_prod:
 	@echo "Starting production deployment process..."
+	sudo apt update -y
+	sudo apt install zip unzip -y
 	mkdir -p lambda
 	cd app/handlers && \
 	zip -r ../../lambda/data_ingestion.zip data_ingestion/

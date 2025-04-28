@@ -46,10 +46,11 @@ resource "aws_api_gateway_resource" "readings" {
 
 # Defines the POST method on the /readings resource
 resource "aws_api_gateway_method" "post_readings" {
-  rest_api_id   = aws_api_gateway_rest_api.air_quality_api.id # Links to parent API
-  resource_id   = aws_api_gateway_resource.readings.id        # Links to readings resource
-  http_method   = "POST"                                      # Only allow POST requests for data submission
-  authorization = "API_KEY"                                   # Requires API key for security
+  rest_api_id      = aws_api_gateway_rest_api.air_quality_api.id # Links to parent API
+  resource_id      = aws_api_gateway_resource.readings.id        # Links to readings resource
+  http_method      = "POST"                                      # Only allow POST requests for data submission
+  authorization    = "NONE"
+  api_key_required = true
 }
 
 #################################################
