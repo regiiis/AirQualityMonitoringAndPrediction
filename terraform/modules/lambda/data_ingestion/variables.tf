@@ -3,8 +3,13 @@ variable "function_name" {
   type        = string
 }
 
-variable "zip_path" {
-  description = "The path to the ZIP file for the data_storer Lambda function"
+variable "zip_s3_bucket" {
+  description = "The S3 bucket containing the Lambda ZIP file"
+  type        = string
+}
+
+variable "zip_s3_key" {
+  description = "The S3 key of the Lambda ZIP file"
   type        = string
 }
 

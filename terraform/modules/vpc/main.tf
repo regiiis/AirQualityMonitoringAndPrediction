@@ -6,8 +6,8 @@ terraform {
 
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.94"
+      source  = "hashicorp/aws" # AWS provider source
+      version = "~> 5.0"        # Any 5.x version
     }
   }
 }
@@ -21,9 +21,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name        = "${var.environment}-vpc"
-    Environment = var.environment
-    Project     = "AirQualityMonitoring"
+    Name = "${var.environment}-vpc"
   }
 }
 
@@ -35,9 +33,7 @@ resource "aws_subnet" "public" {
   availability_zone = var.availability_zones[count.index]
 
   tags = {
-    Name        = "${var.environment}-public-subnet-${count.index + 1}"
-    Environment = var.environment
-    Project     = "AirQualityMonitoring"
+    Name = "${var.environment}-public-subnet-${count.index + 1}"
   }
 }
 
@@ -49,9 +45,7 @@ resource "aws_subnet" "private" {
   availability_zone = var.availability_zones[count.index]
 
   tags = {
-    Name        = "${var.environment}-private-subnet-${count.index + 1}"
-    Environment = var.environment
-    Project     = "AirQualityMonitoring"
+    Name = "${var.environment}-private-subnet-${count.index + 1}"
   }
 }
 
@@ -60,9 +54,7 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${var.environment}-igw"
-    Environment = var.environment
-    Project     = "AirQualityMonitoring"
+    Name = "${var.environment}-igw"
   }
 }
 
@@ -76,9 +68,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name        = "${var.environment}-public-rt"
-    Environment = var.environment
-    Project     = "AirQualityMonitoring"
+    Name = "${var.environment}-public-rt"
   }
 }
 
@@ -88,9 +78,7 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${var.environment}-private-rt-${count.index + 1}"
-    Environment = var.environment
-    Project     = "AirQualityMonitoring"
+    Name = "${var.environment}-private-rt-${count.index + 1}"
   }
 }
 
@@ -126,9 +114,7 @@ resource "aws_security_group" "lambda_sg" {
   }
 
   tags = {
-    Name        = "${var.environment}-lambda-sg"
-    Environment = var.environment
-    Project     = "AirQualityMonitoring"
+    Name = "${var.environment}-lambda-sg"
   }
 }
 
@@ -138,4 +124,8 @@ resource "aws_vpc_endpoint" "s3" {
   service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = aws_route_table.private[*].id
+
+  tags = {
+    Name = "${var.environment}-s3-endpoint"
+  }
 }

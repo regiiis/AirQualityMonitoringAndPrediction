@@ -27,3 +27,8 @@ variable "security_group_id" {
   description = "Security group ID for Lambda VPC configuration"
   type        = string
 }
+
+variable "environment" {
+  description = "The environment for the Lambda function (e.g., dev, staging, prod)"
+  type        = string
+}

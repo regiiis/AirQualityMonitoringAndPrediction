@@ -1,5 +1,4 @@
-.PHONY: all lint type_check validate_api check_api_breaking_changes generate_api_docs
-
+.PHONY: lint lint_tf type_check validate_api test_logic deploy_dev deploy_prod clean check_all generate_api_docs
 
 # Code quality
 lint:
@@ -25,17 +24,52 @@ test_logic:
 		--cov-report xml:reports/py-coverage.cobertura.xml
 
 # Deployment
-deploy:
+tf_init:
+	@echo "Initializing Terraform..."
+	cd terraform/environments/dev && \
+	terraform init
+	cd terraform/environments/prod && \
+	terraform init
+	@echo "Terraform initialization complete!"
+	cd ..
+	cd ..
+	cd ..
+
+# Before deploying, ensure you have the correct AWS credentials and permissions set up.
+deploy_dev:
+	@echo "Starting dev deployment process..."
 	mkdir -p lambda
-	cd app/handlers
-	zip -r ../../../lambda/validator.zip validator.py
-	zip -r ../../../lambda/storage.zip storage.py
-	cd ../../..
+	cd app/handlers/data_ingestion && \
+	zip -j ../../../lambda/data_ingestion.zip data_ingestion.py
+	cd terraform/environments/dev && \
+	terraform init && \
+	terraform validate && \
+	terraform plan -out=tfplan && \
+	terraform apply tfplan
+	@echo "Dev deployment complete!"
+
+deploy_prod:
+	@echo "Starting production deployment process..."
+	mkdir -p lambda
+	cd app/handlers && \
+	zip -r ../../lambda/data_ingestion.zip data_ingestion/
+	cd terraform/environments/prod && \
+	terraform init && \
+	terraform validate && \
+	terraform plan -out=tfplan && \
+	terraform apply tfplan
+	@echo "Production deployment complete!"
+
+	clean:
+	@echo "Cleaning up..."
+	rm -rf lambda/*.zip
+	find terraform -name "tfplan" -type f -delete
+	@echo "Cleanup complete!"
 
 # Documentation
 generate_api_docs:
 	mkdir -p docs/api
 	npx @redocly/cli build-docs api-spec.yaml -o docs/api/index.html
 
-# Combined check target
+# Mass check
 check_all: lint type_check validate_api test_logic

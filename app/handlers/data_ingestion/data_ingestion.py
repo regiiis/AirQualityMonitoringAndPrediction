@@ -1,3 +1,13 @@
+"""
+Data Ingestion Lambda Function.
+
+This module provides the entry point for the Air Quality Monitoring system's data ingestion process.
+It receives data from API Gateway, validates the payload against a schema, and stores valid data in S3.
+
+Environment Variables:
+    S3_BUCKET_NAME: Name of the S3 bucket where sensor data will be stored
+"""
+
 from app.handlers.data_ingestion import data_validator
 from app.handlers.data_ingestion import data_storer
 import json
@@ -11,7 +21,27 @@ logger.setLevel(logging.INFO)
 
 def handler(event, context):
     """
-    Data ingestion handler function to validate incoming data and store it in S3.
+    Process incoming sensor data through validation and storage.
+
+    This function serves as the Lambda entry point that:
+    1. Parses and validates the incoming data against the sensor schema
+    2. Stores validated data to the configured S3 bucket
+    3. Returns appropriate HTTP responses for different scenarios
+
+    Args:
+        event (dict): Lambda event object containing the API Gateway request
+            Expected to contain a 'body' key with JSON payload or be a direct JSON payload
+        context (LambdaContext): AWS Lambda runtime context object providing
+            metadata about the invocation, function, and execution environment
+
+    Returns:
+        dict: API Gateway proxy response with:
+            statusCode (int): HTTP status code (201 success, 4xx/5xx errors)
+            body (str): JSON string with response data or error details
+            headers (dict): Response headers including Content-Type
+
+    Raises:
+        No exceptions are raised as all are caught and returned as error responses.
     """
     try:
         logger.info("Received event: %s", json.dumps(event))

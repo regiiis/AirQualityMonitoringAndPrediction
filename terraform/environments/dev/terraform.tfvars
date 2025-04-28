@@ -1,11 +1,14 @@
-aws_region              = "us-west-2"
-environment             = "dev"
-bucket_name             = "air-quality-readings-dev-bucket"
-api_name                = "air-quality-api-dev"
-data_validator_function_name = "air-quality-validator-dev"
-data_validator_zip_path      = "../../../lambda/data_validator.zip"
-data_storer_function_name   = "air-quality-storage-dev"
-data_storer_zip_path        = "../../../lambda/data_storer.zip"
+aws_region                   = "eu-central-1"
+environment                  = "dev"
+bucket_name                  = "air-quality-readings-bucket-dev"
+api_name                     = "air-quality-api-dev"
+data_ingestion_function_name = "air-quality-ingestion-dev"
+data_ingestion_zip_path      = "../../../lambda/data_ingestion.zip"
+
+tags                         = {
+  Owner   = "Regis"
+  Project = "AirQualityMonitoring"
+}
 
 # VPC configuration
 vpc_cidr             = "10.0.0.0/16"
