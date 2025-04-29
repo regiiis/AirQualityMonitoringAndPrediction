@@ -18,14 +18,20 @@ terraform {
 resource "aws_s3_bucket" "readings_storage" {
   bucket = var.bucket_name
 
-  tags = {
-    Name        = var.bucket_name
-    Environment = var.environment
-  }
   object_lock_enabled = true
   lifecycle {
     prevent_destroy = true
+    ignore_changes = [
+      bucket  # Prevents recreation attempts if bucket exists
+    ]
   }
+
+  tags = merge(
+    {
+      Name        = var.bucket_name
+    },
+    var.tags
+  )
 }
 
 #################################################

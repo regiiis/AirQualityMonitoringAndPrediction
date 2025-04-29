@@ -1,5 +1,8 @@
+# Get your AWS account ID
+data "aws_caller_identity" "current" {}
+
 #################################################
-# TERRAFORM CONFIGURATION
+# LAMBDA FUNCTION - HANDLER
 #################################################
 terraform {
   required_version = ">= 1.11.4"
@@ -11,6 +14,7 @@ terraform {
     }
   }
 }
+
 #################################################
 # DATA INGESTION LAMBDA
 #################################################
@@ -42,10 +46,12 @@ resource "aws_lambda_function" "data_ingestion" {
     subnet_ids         = var.subnet_ids          # VPC subnets for network isolation
     security_group_ids = [var.security_group_id] # Security group for network access control
   }
-
-  tags = {
-    Name = var.function_name
-  }
+  tags = merge(
+    {
+      Name        = var.function_name
+    },
+    var.tags
+  )
 }
 
 # Get metadata for the Lambda zip to detect changes
@@ -72,9 +78,12 @@ resource "aws_iam_role" "data_ingestion_role" {
     }]
   })
 
-  tags = {
-    Name = "${var.function_name}-role"
-  }
+  tags = merge(
+    {
+      Name        = "${var.function_name}-role"
+    },
+    var.tags
+  )
 }
 
 # Basic Lambda execution policy for CloudWatch logging
@@ -91,24 +100,26 @@ resource "aws_iam_role_policy_attachment" "xray" {
 
 # Custom S3 write policy for storing sensor data
 resource "aws_iam_policy" "s3_write_policy" {
-  name        = "s3-write-policy"
+  name        = "${var.environment}-s3-write-policy"
   description = "Allow writing to S3 bucket"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Action = [
-        "s3:PutObject",   # Permission to create objects
-        "s3:PutObjectAcl" # Permission to set object ACLs
+        "s3:PutObject",
+        "s3:PutObjectAcl"
       ]
-      Resource = "arn:aws:s3:::${var.bucket_name}/*" # Only allows access to specified bucket
+      Resource = "arn:aws:s3:::${var.bucket_name}/*"
       Effect   = "Allow"
     }]
   })
-
-  tags = {
-    Name = "${var.function_name}-s3-write-policy"
-  }
+  tags = merge(
+    {
+      Name = "${var.function_name}-s3-write-policy"
+    },
+    var.tags
+  )
 }
 
 # Attach the S3 write policy to the Lambda role
@@ -137,9 +148,12 @@ resource "aws_signer_signing_profile" "signing_profile" {
   name_prefix = "DataIngestionProfile"   # Prefix for the profile name
   platform_id = "AWSLambda-SHA384-ECDSA" # Signing algorithm and platform
 
-  tags = {
-    Name = "${var.function_name}-signing-profile"
-  }
+  tags = merge(
+    {
+      Name        = "${var.function_name}-signing-profile"
+    },
+    var.tags
+  )
 }
 
 # Create a signing job to sign the Lambda deployment package
@@ -149,19 +163,22 @@ resource "aws_signer_signing_job" "signing_job" {
   # Source code location to sign - using explicit bucket and key
   source {
     s3 {
-      bucket  = var.zip_s3_bucket # Use explicit bucket variable
-      key     = var.zip_s3_key    # Use explicit key variable
-      version = "LATEST"          # Use latest version
+      bucket  = var.zip_s3_bucket
+      key     = var.zip_s3_key
+      version = "LATEST"
     }
   }
 
-  # Destination for signed code
+  # Destination for the signed code
   destination {
     s3 {
-      bucket = var.zip_s3_bucket                    # Same bucket as source
-      prefix = "signed-lambda-code/data_ingestion/" # Prefix for signed code
+      bucket = var.signed_code_s3_bucket
+      prefix = var.signed_code_s3_prefix
     }
   }
+
+  # Make sure the signing job depends on the zip file upload
+  depends_on = [data.aws_s3_object.lambda_zip_metadata]
 }
 
 # Define code signing configuration for Lambda
@@ -175,8 +192,10 @@ resource "aws_lambda_code_signing_config" "signing_config" {
   }
 
   description = "Code signing configuration for data_ingestion Lambda"
-
-  tags = {
-    Name = "${var.function_name}-signing-config"
-  }
+  tags = merge(
+    {
+      Name        = "${var.function_name}-signing-config"
+    },
+    var.tags
+  )
 }

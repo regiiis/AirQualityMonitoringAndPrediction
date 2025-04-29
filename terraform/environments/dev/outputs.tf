@@ -28,3 +28,8 @@ output "bucket_name" {
   value       = module.database.bucket_name
   # This bucket stores all air quality data collected by devices
 }
+
+output "account_id" {
+  description = "The AWS account ID"
+  value       = data.aws_caller_identity.current.account_id
+}

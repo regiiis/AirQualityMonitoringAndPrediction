@@ -1,3 +1,17 @@
+# Get your AWS account ID
+data "aws_caller_identity" "current" {}
+
+# Import blocks for existing resources
+# import {
+#   to = module.lambda.aws_s3_bucket.lambda_deployments
+#   id = "${var.environment}-lambda-deployments"
+# }
+
+# import {
+#   to = module.lambda.module.data_ingestion.aws_iam_policy.s3_write_policy
+#   id = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.environment}-s3-write-policy"
+# }
+
 #################################################
 # DEV ENVIRONMENT CONFIGURATION
 #################################################
@@ -17,12 +31,10 @@ terraform {
   }
 }
 
-provider "awscc" {
-  region = var.aws_region
+provider "aws" {
+  region  = var.aws_region
 }
 
-# To get your AWS account ID
-data "aws_caller_identity" "current" {}
 
 #################################################
 # VPC
@@ -35,6 +47,7 @@ module "vpc" {
   vpc_cidr             = var.vpc_cidr                                 # IP address range for VPC
   private_subnet_cidrs = var.private_subnet_cidrs                     # IP ranges for private subnets (Lambda)
   public_subnet_cidrs  = var.public_subnet_cidrs                      # IP ranges for public subnets (NAT Gateway)
+  tags                 = var.tags
 }
 
 #################################################
@@ -45,6 +58,7 @@ module "database" {
   source      = "../../modules/database"
   bucket_name = "${var.environment}-${var.bucket_name}"
   environment = var.environment
+  tags        = var.tags
 }
 
 #################################################
@@ -61,6 +75,7 @@ module "lambda" {
   environment                  = var.environment
   api_gateway_execution_arn    = module.api_gateway.api_gateway_arn
   depends_on                   = [module.database, module.vpc]
+  tags                         = var.tags
 }
 
 #################################################
@@ -75,51 +90,5 @@ module "api_gateway" {
   stage_name                       = "v1"
   environment                      = var.environment
   data_validator_lambda_invoke_arn = module.lambda.data_ingestion_function_invoke_arn
-}
-
-resource "aws_cloudformation_stack" "air_quality_stack" {
-  name = "${var.environment}-air-quality-monitoring-stack"
-
-  template_body = <<EOT
-{
-  "Resources": {
-    "VPCReference": {
-      "Type": "AWS::CloudFormation::CustomResource",
-      "Properties": {
-        "ServiceToken": "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:dummy-function",
-        "VpcId": "${module.vpc.vpc_id}"
-      }
-    },
-    "S3Reference": {
-      "Type": "AWS::CloudFormation::CustomResource",
-      "Properties": {
-        "ServiceToken": "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:dummy-function",
-        "BucketName": "${module.database.bucket_name}"
-      }
-    },
-    "LambdaReference": {
-      "Type": "AWS::CloudFormation::CustomResource",
-      "Properties": {
-        "ServiceToken": "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:dummy-function",
-        "FunctionName": "${module.lambda.data_ingestion_function_name}"
-      }
-    },
-    "ApiGatewayReference": {
-      "Type": "AWS::CloudFormation::CustomResource",
-      "Properties": {
-        "ServiceToken": "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:dummy-function",
-        "ApiName": "${module.api_gateway.api_name}"
-      }
-    }
-  }
-}
-EOT
-
-  # Make sure this runs AFTER all your resources are created
-  depends_on = [
-    module.vpc,
-    module.database,
-    module.lambda,
-    module.api_gateway
-  ]
+  tags                             = var.tags
 }

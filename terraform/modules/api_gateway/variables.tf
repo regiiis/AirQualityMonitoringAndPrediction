@@ -1,3 +1,14 @@
+variable "tags" {
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "environment" {
+  description = "Environment name (e.g., dev, staging, prod)"
+  type        = string
+}
+
 variable "api_name" {
   description = "Name of the API Gateway"
   type        = string
@@ -22,11 +33,6 @@ variable "stage_name" {
   description = "Name of the API Gateway stage"
   type        = string
   default     = "v1"
-}
-
-variable "environment" {
-  description = "Environment name (e.g., dev, staging, prod)"
-  type        = string
 }
 
 variable "data_validator_lambda_invoke_arn" {

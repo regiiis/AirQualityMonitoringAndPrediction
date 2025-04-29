@@ -20,10 +20,12 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = {
-    Name        = "${var.environment}-vpc"
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = "${var.environment}-vpc"
+    },
+    var.tags
+  )
 }
 
 # Create public subnets for the API Gateway VPC endpoints (if needed)
@@ -33,10 +35,12 @@ resource "aws_subnet" "public" {
   cidr_block        = var.public_subnet_cidrs[count.index]
   availability_zone = var.availability_zones[count.index]
 
-  tags = {
-    Name        = "${var.environment}-public-subnet-${count.index + 1}"
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = "${var.environment}-public-subnet-${count.index + 1}"
+    },
+    var.tags
+  )
 }
 
 # Create private subnets for Lambda functions
@@ -46,20 +50,24 @@ resource "aws_subnet" "private" {
   cidr_block        = var.private_subnet_cidrs[count.index]
   availability_zone = var.availability_zones[count.index]
 
-  tags = {
-    Name        = "${var.environment}-private-subnet-${count.index + 1}"
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = "${var.environment}-private-subnet-${count.index + 1}"
+    },
+    var.tags
+  )
 }
 
 # Create Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Name        = "${var.environment}-igw"
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = "${var.environment}-igw"
+    },
+    var.tags
+  )
 }
 
 # Create route table for public subnets
@@ -71,10 +79,12 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.igw.id
   }
 
-  tags = {
-    Name        = "${var.environment}-public-rt"
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = "${var.environment}-public-rt"
+    },
+    var.tags
+  )
 }
 
 # Create route tables for private subnets
@@ -82,10 +92,12 @@ resource "aws_route_table" "private" {
   count  = length(var.private_subnet_cidrs)
   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Name        = "${var.environment}-private-rt-${count.index + 1}"
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = "${var.environment}-private-rt-${count.index + 1}"
+    },
+    var.tags
+  )
 }
 
 # Associate public subnets with public route table
@@ -117,10 +129,12 @@ resource "aws_security_group" "lambda_sg" {
     description     = "Allow traffic to private subnets and S3 via VPC endpoint"
   }
 
-  tags = {
-    Name        = "${var.environment}-lambda-sg"
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = "${var.environment}-lambda-sg"
+    },
+    var.tags
+  )
 }
 
 # Create VPC endpoints for AWS services
@@ -130,8 +144,10 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_endpoint_type = "Gateway"
   route_table_ids   = aws_route_table.private[*].id
 
-  tags = {
-    Name        = "${var.environment}-s3-endpoint"
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = "${var.environment}-s3-endpoint"
+    },
+    var.tags
+  )
 }

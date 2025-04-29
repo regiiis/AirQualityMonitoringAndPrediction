@@ -28,11 +28,12 @@ resource "aws_api_gateway_rest_api" "air_quality_api" {
   lifecycle {
     create_before_destroy = true # Creates new API before destroying old one
   }
-
-  tags = {
-    Name        = var.api_name
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = var.api_name
+    },
+    var.tags
+  )
 }
 
 #################################################
@@ -110,10 +111,12 @@ resource "aws_api_gateway_stage" "api_stage" {
     })
   }
 
-  tags = {
-    Name        = "${var.environment}-${var.api_name}-stage-${var.stage_name}"
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = "${var.environment}-${var.api_name}-stage-${var.stage_name}"
+    },
+    var.tags
+  )
 }
 
 #################################################
@@ -122,11 +125,12 @@ resource "aws_api_gateway_stage" "api_stage" {
 # Creates an API key for ESP32 device authentication
 resource "aws_api_gateway_api_key" "device_key" {
   name = var.api_key_name
-
-  tags = {
-    Name        = var.api_key_name
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = var.api_key_name
+    },
+    var.tags
+  )
 }
 
 # Defines usage limits and throttling settings for the API
@@ -151,11 +155,12 @@ resource "aws_api_gateway_usage_plan" "device_plan" {
     burst_limit = 5 # Allow bursts of up to 5 requests
     rate_limit  = 1 # Normal operation: 1 request per second
   }
-
-  tags = {
-    Name        = var.usage_plan_name
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = var.usage_plan_name
+    },
+    var.tags
+  )
 }
 
 # Links the ESP32 API key to the usage plan
@@ -169,9 +174,10 @@ resource "aws_api_gateway_usage_plan_key" "device_plan_key" {
 resource "aws_cloudwatch_log_group" "api_gateway_logs" {
   name              = var.log_group_name
   retention_in_days = 365
-
-  tags = {
-    Name        = var.log_group_name
-    Environment = var.environment
-  }
+  tags = merge(
+    {
+      Name        = var.log_group_name
+    },
+    var.tags
+  )
 }

@@ -1,21 +1,25 @@
 #################################################
-# S3 BUCKET CONFIGURATION
+# LAMBDA DEPLOYMENT BUCKET
 #################################################
 
 # Create bucket specifically for Lambda deployments
 resource "aws_s3_bucket" "lambda_deployments" {
-  bucket = "${var.environment}-lambda-deployments"
+  bucket = "${var.environment}-lambda-deployments-bucket"
 
+  object_lock_enabled = true
   lifecycle {
     prevent_destroy = true
     ignore_changes = [
-      tags["LastModified"]
+      bucket  # Prevents recreation attempts if bucket exists
     ]
   }
 
-  tags = {
-    Name = "${var.environment}-lambda-deployments"
-  }
+  tags = merge(
+    {
+      Name = "${var.environment}-lambda-deployments"
+    },
+    var.tags
+  )
 }
 
 #################################################

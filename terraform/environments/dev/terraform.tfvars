@@ -8,7 +8,7 @@ data_ingestion_zip_path      = "../../../lambda/data_ingestion.zip"
 tags = {
   Owner       = "Regis"
   Project     = "AirQualityMonitoring"
-  Environment = "dev"
+  Environment = "Dev"
 }
 
 # VPC configuration

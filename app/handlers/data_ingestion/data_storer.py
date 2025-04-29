@@ -1,7 +1,7 @@
 import json
 import logging
 import uuid
-import boto3  # type: ignore
+import boto3
 
 # Set up logger
 logger = logging.getLogger()

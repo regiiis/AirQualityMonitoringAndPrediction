@@ -25,3 +25,9 @@ output "api_key" {
   value       = aws_api_gateway_api_key.device_key.value
   sensitive   = true
 }
+
+# Add this missing output referenced in CloudFormation stack
+output "api_name" {
+  description = "Name of the API Gateway"
+  value       = aws_api_gateway_rest_api.air_quality_api.name
+}

@@ -59,7 +59,6 @@ variable "data_ingestion_zip_path" {
   type        = string
 }
 
-
 #################################################
 # VPC CONFIGURATION
 #################################################

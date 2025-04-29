@@ -1,3 +1,14 @@
+variable "tags" {
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "environment" {
+  description = "The environment for the Lambda function (e.g., dev, staging, prod)"
+  type        = string
+}
+
 variable "data_ingestion_function_name" {
   description = "The name of the data_ingestion Lambda function"
   type        = string
@@ -26,10 +37,5 @@ variable "subnet_ids" {
 
 variable "security_group_id" {
   description = "Security group ID for Lambda VPC configuration"
-  type        = string
-}
-
-variable "environment" {
-  description = "The environment for the Lambda function (e.g., dev, staging, prod)"
   type        = string
 }

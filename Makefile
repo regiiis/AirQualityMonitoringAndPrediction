@@ -24,17 +24,6 @@ test_logic:
 		--cov-report xml:reports/py-coverage.cobertura.xml
 
 # Deployment
-init_dev:
-	@echo "Initializing Terraform..."
-	cd terraform/environments/dev && terraform init
-	@echo "Terraform initialization complete!"
-
-validate_dev:
-	@echo "Validating Terraform configuration..."
-	cd terraform/environments/dev && terraform validate
-	@echo "Terraform validation complete!"
-
-# Before deploying, ensure you have the correct AWS credentials and permissions set up.
 deploy_dev:
 	@echo "Starting dev deployment process..."
 	sudo apt update -y
@@ -42,9 +31,15 @@ deploy_dev:
 	mkdir -p lambda
 	cd app/handlers/data_ingestion && \
 	zip -j ../../../lambda/data_ingestion.zip data_ingestion.py
+
+# Create bucket and upload zip first
 	cd terraform/environments/dev && \
 	terraform init && \
 	terraform validate && \
+	terraform apply -target=module.lambda.aws_s3_bucket.lambda_deployments -target=module.lambda.aws_s3_object.data_ingestion_zip
+
+# Then deploy everything
+	cd terraform/environments/dev && \
 	terraform plan -out=tfplan && \
 	terraform apply tfplan
 	@echo "Dev deployment complete!"

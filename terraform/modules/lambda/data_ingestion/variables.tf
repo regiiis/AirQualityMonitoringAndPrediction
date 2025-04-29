@@ -1,3 +1,14 @@
+variable "tags" {
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "environment" {
+  description = "The environment for the Lambda function"
+  type        = string
+}
+
 variable "function_name" {
   description = "The name of the Lambda function"
   type        = string
@@ -33,7 +44,13 @@ variable "api_gateway_arn" {
   type        = string
 }
 
-variable "environment" {
-  description = "The environment for the Lambda function"
+variable "signed_code_s3_bucket" {
+  description = "S3 bucket to store signed Lambda code"
   type        = string
+}
+
+variable "signed_code_s3_prefix" {
+  description = "Prefix for signed Lambda code in S3 bucket"
+  type        = string
+  default     = "signed/"
 }
