@@ -5,29 +5,31 @@
 # It provisions all AWS resources using the modules defined in the project
 
 terraform {
-  required_version = ">= 1.11.4" # Minimum Terraform version required
-
   required_providers {
     aws = {
-      source  = "hashicorp/aws" # AWS provider source
-      version = "~> 5.0"        # Any 5.x version
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    awscc = {
+      source  = "hashicorp/awscc"
+      version = "~> 0.57.0"
     }
   }
 }
 
-provider "aws" {
+provider "awscc" {
   region = var.aws_region
-  default_tags {
-    tags = var.tags
-  }
 }
+
+# To get your AWS account ID
+data "aws_caller_identity" "current" {}
 
 #################################################
 # VPC
 #################################################
 # Create VPC and networking components
 module "vpc" {
-  source = "../../modules/vpc" # Path to VPC module
+  source               = "../../modules/vpc"                          # Path to VPC module
   environment          = var.environment                              # Dev, staging, or prod
   availability_zones   = ["${var.aws_region}a", "${var.aws_region}b"] # Use 2 AZs for redundancy
   vpc_cidr             = var.vpc_cidr                                 # IP address range for VPC
@@ -40,7 +42,7 @@ module "vpc" {
 #################################################
 # Create S3 bucket for storing readings
 module "database" {
-  source = "../../modules/database"
+  source      = "../../modules/database"
   bucket_name = "${var.environment}-${var.bucket_name}"
   environment = var.environment
 }
@@ -73,4 +75,51 @@ module "api_gateway" {
   stage_name                       = "v1"
   environment                      = var.environment
   data_validator_lambda_invoke_arn = module.lambda.data_ingestion_function_invoke_arn
+}
+
+resource "aws_cloudformation_stack" "air_quality_stack" {
+  name = "${var.environment}-air-quality-monitoring-stack"
+
+  template_body = <<EOT
+{
+  "Resources": {
+    "VPCReference": {
+      "Type": "AWS::CloudFormation::CustomResource",
+      "Properties": {
+        "ServiceToken": "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:dummy-function",
+        "VpcId": "${module.vpc.vpc_id}"
+      }
+    },
+    "S3Reference": {
+      "Type": "AWS::CloudFormation::CustomResource",
+      "Properties": {
+        "ServiceToken": "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:dummy-function",
+        "BucketName": "${module.database.bucket_name}"
+      }
+    },
+    "LambdaReference": {
+      "Type": "AWS::CloudFormation::CustomResource",
+      "Properties": {
+        "ServiceToken": "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:dummy-function",
+        "FunctionName": "${module.lambda.data_ingestion_function_name}"
+      }
+    },
+    "ApiGatewayReference": {
+      "Type": "AWS::CloudFormation::CustomResource",
+      "Properties": {
+        "ServiceToken": "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:dummy-function",
+        "ApiName": "${module.api_gateway.api_name}"
+      }
+    }
+  }
+}
+EOT
+
+  # Make sure this runs AFTER all your resources are created
+  depends_on = [
+    module.vpc,
+    module.database,
+    module.lambda,
+    module.api_gateway
+  ]
 }

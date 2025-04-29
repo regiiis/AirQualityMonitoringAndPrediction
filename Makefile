@@ -26,9 +26,13 @@ test_logic:
 # Deployment
 init_dev:
 	@echo "Initializing Terraform..."
-	cd terraform/environments/dev && \
-	terraform init
+	cd terraform/environments/dev && terraform init
 	@echo "Terraform initialization complete!"
+
+validate_dev:
+	@echo "Validating Terraform configuration..."
+	cd terraform/environments/dev && terraform validate
+	@echo "Terraform validation complete!"
 
 # Before deploying, ensure you have the correct AWS credentials and permissions set up.
 deploy_dev:

@@ -1,5 +1,5 @@
 #################################################
-# TERRAFORM CONFIGURATION
+# DATABASE MODULE
 #################################################
 terraform {
   required_version = ">= 1.11.4" # Minimum Terraform version required

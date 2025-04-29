@@ -1,4 +1,4 @@
-aws_region                   = "eu-central-2"
+aws_region                   = "eu-central-1"
 environment                  = "dev"
 bucket_name                  = "air-quality-readings-bucket"
 api_name                     = "air-quality-api"
@@ -6,8 +6,8 @@ data_ingestion_function_name = "air-quality-ingestion"
 data_ingestion_zip_path      = "../../../lambda/data_ingestion.zip"
 
 tags = {
-  Owner   = "Regis"
-  Project = "AirQualityMonitoring"
+  Owner       = "Regis"
+  Project     = "AirQualityMonitoring"
   Environment = "dev"
 }
 

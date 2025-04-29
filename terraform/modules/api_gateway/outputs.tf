@@ -16,7 +16,7 @@ output "api_id" {
 # Add this missing output referenced in dev/outputs.tf
 output "api_gateway_url" {
   description = "The URL of the API Gateway"
-  value       = "${aws_api_gateway_stage.api_stage.invoke_url}"
+  value       = aws_api_gateway_stage.api_stage.invoke_url
 }
 
 # Add this missing output referenced in dev/outputs.tf

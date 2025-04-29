@@ -6,6 +6,13 @@
 resource "aws_s3_bucket" "lambda_deployments" {
   bucket = "${var.environment}-lambda-deployments"
 
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      tags["LastModified"]
+    ]
+  }
+
   tags = {
     Name = "${var.environment}-lambda-deployments"
   }

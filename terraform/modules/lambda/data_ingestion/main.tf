@@ -180,11 +180,3 @@ resource "aws_lambda_code_signing_config" "signing_config" {
     Name = "${var.function_name}-signing-config"
   }
 }
-
-#################################################
-# OUTPUTS
-#################################################
-output "function_invoke_arn" {
-  description = "The invoke ARN for the Lambda function"
-  value       = aws_lambda_function.data_ingestion.invoke_arn
-}
