@@ -16,10 +16,15 @@ terraform {
 # S3 BUCKET CONFIGURATION
 #################################################
 resource "aws_s3_bucket" "readings_storage" {
-  bucket = var.bucket_name # Bucket name from variables
+  bucket = var.bucket_name
 
   tags = {
-    Name = "${var.environment}-air-quality-readings"
+    Name        = var.bucket_name
+    Environment = var.environment
+  }
+  object_lock_enabled = true
+  lifecycle {
+    prevent_destroy = true
   }
 }
 

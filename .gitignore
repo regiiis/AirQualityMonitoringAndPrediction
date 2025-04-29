@@ -11,6 +11,8 @@ micropython/libs/*
 *.zip
 
 # AWS
+lambda
+lambda/*
 aws
 aws/*
 awscliv2.*

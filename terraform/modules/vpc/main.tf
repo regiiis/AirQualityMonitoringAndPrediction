@@ -21,7 +21,8 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "${var.environment}-vpc"
+    Name        = "${var.environment}-vpc"
+    Environment = var.environment
   }
 }
 
@@ -33,7 +34,8 @@ resource "aws_subnet" "public" {
   availability_zone = var.availability_zones[count.index]
 
   tags = {
-    Name = "${var.environment}-public-subnet-${count.index + 1}"
+    Name        = "${var.environment}-public-subnet-${count.index + 1}"
+    Environment = var.environment
   }
 }
 
@@ -45,7 +47,8 @@ resource "aws_subnet" "private" {
   availability_zone = var.availability_zones[count.index]
 
   tags = {
-    Name = "${var.environment}-private-subnet-${count.index + 1}"
+    Name        = "${var.environment}-private-subnet-${count.index + 1}"
+    Environment = var.environment
   }
 }
 
@@ -54,7 +57,8 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${var.environment}-igw"
+    Name        = "${var.environment}-igw"
+    Environment = var.environment
   }
 }
 
@@ -68,7 +72,8 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "${var.environment}-public-rt"
+    Name        = "${var.environment}-public-rt"
+    Environment = var.environment
   }
 }
 
@@ -78,7 +83,8 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${var.environment}-private-rt-${count.index + 1}"
+    Name        = "${var.environment}-private-rt-${count.index + 1}"
+    Environment = var.environment
   }
 }
 
@@ -112,7 +118,8 @@ resource "aws_security_group" "lambda_sg" {
   }
 
   tags = {
-    Name = "${var.environment}-lambda-sg"
+    Name        = "${var.environment}-lambda-sg"
+    Environment = var.environment
   }
 }
 
@@ -124,6 +131,7 @@ resource "aws_vpc_endpoint" "s3" {
   route_table_ids   = aws_route_table.private[*].id
 
   tags = {
-    Name = "${var.environment}-s3-endpoint"
+    Name        = "${var.environment}-s3-endpoint"
+    Environment = var.environment
   }
 }

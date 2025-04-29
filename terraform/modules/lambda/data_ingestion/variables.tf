@@ -1,20 +1,20 @@
 variable "function_name" {
-  description = "The name of the data_storer Lambda function"
+  description = "The name of the Lambda function"
   type        = string
 }
 
 variable "zip_s3_bucket" {
-  description = "The S3 bucket containing the Lambda ZIP file"
+  description = "S3 bucket containing the Lambda deployment package"
   type        = string
 }
 
 variable "zip_s3_key" {
-  description = "The S3 key of the Lambda ZIP file"
+  description = "S3 key for the Lambda deployment package"
   type        = string
 }
 
 variable "bucket_name" {
-  description = "The name of the S3 bucket for storing validated data"
+  description = "S3 bucket to store validated data"
   type        = string
 }
 
@@ -29,6 +29,11 @@ variable "security_group_id" {
 }
 
 variable "api_gateway_arn" {
-  description = "The ARN of the API Gateway execution role"
+  description = "ARN of the API Gateway for Lambda permission"
+  type        = string
+}
+
+variable "environment" {
+  description = "The environment for the Lambda function"
   type        = string
 }

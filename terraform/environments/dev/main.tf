@@ -15,11 +15,8 @@ terraform {
   }
 }
 
-#################################################
-# PROVIDER CONFIGURATION (AWS)
-#################################################
 provider "aws" {
-  region = var.aws_region # Use AWS region from variables
+  region = var.aws_region
   default_tags {
     tags = var.tags
   }
@@ -31,7 +28,6 @@ provider "aws" {
 # Create VPC and networking components
 module "vpc" {
   source = "../../modules/vpc" # Path to VPC module
-
   environment          = var.environment                              # Dev, staging, or prod
   availability_zones   = ["${var.aws_region}a", "${var.aws_region}b"] # Use 2 AZs for redundancy
   vpc_cidr             = var.vpc_cidr                                 # IP address range for VPC
@@ -44,10 +40,9 @@ module "vpc" {
 #################################################
 # Create S3 bucket for storing readings
 module "database" {
-  source = "../../modules/database" # Path to database module
-
-  bucket_name = var.bucket_name # Name for S3 bucket storing sensor data
-  environment = var.environment # Environment tag (dev)
+  source = "../../modules/database"
+  bucket_name = "${var.environment}-${var.bucket_name}"
+  environment = var.environment
 }
 
 #################################################
@@ -56,12 +51,13 @@ module "database" {
 # Create Lambda functions for processing data
 module "lambda" {
   source                       = "../../modules/lambda"
-  data_ingestion_function_name = var.data_ingestion_function_name
+  data_ingestion_function_name = "${var.environment}-${var.data_ingestion_function_name}"
+  data_ingestion_bucket_name   = "${var.environment}-${var.bucket_name}"
   data_ingestion_zip_path      = var.data_ingestion_zip_path
-  data_ingestion_bucket_name   = module.database.bucket_name
   subnet_ids                   = module.vpc.private_subnet_ids
   security_group_id            = module.vpc.lambda_security_group_id
   environment                  = var.environment
+  api_gateway_execution_arn    = module.api_gateway.api_gateway_arn
   depends_on                   = [module.database, module.vpc]
 }
 
@@ -70,21 +66,11 @@ module "lambda" {
 #################################################
 module "api_gateway" {
   source                           = "../../modules/api_gateway"
+  api_name                         = "${var.environment}-${var.api_name}"
+  api_key_name                     = "${var.environment}-esp32-device-key"
+  usage_plan_name                  = "${var.environment}-esp32-usage-plan"
+  log_group_name                   = "/aws/apigateway/${var.environment}-${var.api_name}"
+  stage_name                       = "v1"
   environment                      = var.environment
-  api_name                         = var.api_name
   data_validator_lambda_invoke_arn = module.lambda.data_ingestion_function_invoke_arn
-}
-
-#################################################
-# LAMBDA-API GATEWAY INTEGRATION
-#################################################
-# Create permission for A
-resource "aws_lambda_permission" "api_gateway_invoke" {
-  statement_id  = "AllowAPIGatewayInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = module.lambda.data_ingestion_function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${module.api_gateway.api_gateway_arn}/*"
-
-  depends_on = [module.lambda, module.api_gateway]
 }

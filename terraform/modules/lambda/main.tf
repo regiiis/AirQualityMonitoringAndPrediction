@@ -28,6 +28,7 @@ module "data_ingestion" {
   subnet_ids        = var.subnet_ids
   security_group_id = var.security_group_id
   api_gateway_arn   = var.api_gateway_execution_arn
+  environment       = var.environment
 }
 
 #################################################

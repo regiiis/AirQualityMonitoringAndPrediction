@@ -59,7 +59,7 @@ data "aws_s3_object" "lambda_zip_metadata" {
 #################################################
 resource "aws_iam_role" "data_ingestion_role" {
   # IAM role that Lambda assumes when executing
-  name = "data_ingestion_lambda_role"
+  name = "${lower(var.environment)}-data-ingestion-lambda-role"
 
   assume_role_policy = jsonencode({ # Trust policy defining who can assume this role
     Version = "2012-10-17"

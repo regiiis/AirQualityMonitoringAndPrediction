@@ -30,7 +30,8 @@ resource "aws_api_gateway_rest_api" "air_quality_api" {
   }
 
   tags = {
-    Name = "${var.environment}-air-quality-api"
+    Name        = var.api_name
+    Environment = var.environment
   }
 }
 
@@ -110,7 +111,8 @@ resource "aws_api_gateway_stage" "api_stage" {
   }
 
   tags = {
-    Name = "${var.environment}-api-stage-v1"
+    Name        = "${var.environment}-${var.api_name}-stage-${var.stage_name}"
+    Environment = var.environment
   }
 }
 
@@ -119,16 +121,17 @@ resource "aws_api_gateway_stage" "api_stage" {
 #################################################
 # Creates an API key for ESP32 device authentication
 resource "aws_api_gateway_api_key" "device_key" {
-  name = "esp32-device-key" # Name of the API key for devices
+  name = var.api_key_name
 
   tags = {
-    Name = "${var.environment}-esp32-device-key"
+    Name        = var.api_key_name
+    Environment = var.environment
   }
 }
 
 # Defines usage limits and throttling settings for the API
 resource "aws_api_gateway_usage_plan" "device_plan" {
-  name = "esp32-usage-plan" # Name of the usage plan
+  name = var.usage_plan_name
 
   # Associates this plan with the v1 stage of our API
   api_stages {
@@ -150,7 +153,8 @@ resource "aws_api_gateway_usage_plan" "device_plan" {
   }
 
   tags = {
-    Name = "${var.environment}-esp32-usage-plan"
+    Name        = var.usage_plan_name
+    Environment = var.environment
   }
 }
 
@@ -163,10 +167,11 @@ resource "aws_api_gateway_usage_plan_key" "device_plan_key" {
 
 # Create a CloudWatch Log Group for API Gateway logs
 resource "aws_cloudwatch_log_group" "api_gateway_logs" {
-  name              = "/aws/apigateway/${var.api_name}" # Standard naming for API Gateway logs
-  retention_in_days = 365                               # 1-year retention period for compliance
+  name              = var.log_group_name
+  retention_in_days = 365
 
   tags = {
-    Name = "${var.environment}-api-gateway-logs"
+    Name        = var.log_group_name
+    Environment = var.environment
   }
 }

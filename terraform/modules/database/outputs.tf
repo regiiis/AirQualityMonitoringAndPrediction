@@ -1,9 +1,15 @@
-output "bucket_name" {
-  description = "The name of the S3 bucket for air quality readings"
-  value       = aws_s3_bucket.readings_storage.bucket
+output "bucket_id" {
+  description = "The ID of the S3 bucket"
+  value       = aws_s3_bucket.readings_storage.id
 }
 
 output "bucket_arn" {
-  description = "The ARN of the S3 bucket for air quality readings"
+  description = "The ARN of the S3 bucket"
   value       = aws_s3_bucket.readings_storage.arn
+}
+
+# Add this missing output referenced in dev/outputs.tf
+output "bucket_name" {
+  description = "The name of the S3 bucket"
+  value       = aws_s3_bucket.readings_storage.id
 }
