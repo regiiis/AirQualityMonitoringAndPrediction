@@ -18,3 +18,8 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "resource_prefix" {
+  description = "Standardized prefix for all resources"
+  type        = string
+}

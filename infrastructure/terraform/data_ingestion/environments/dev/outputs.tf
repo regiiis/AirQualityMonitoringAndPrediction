@@ -1,35 +1,37 @@
 #################################################
-# ENVIRONMENT OUTPUTS
+# DATA INGESTION OUTPUTS
 #################################################
-# This file defines the outputs from the dev environment deployment
-# These values will be displayed after terraform apply completes
-# and can be used by other systems or for documentation
 
-#################################################
-# API GATEWAY OUTPUTS
-#################################################
+# Lambda function outputs
+output "data_ingestion_function_name" {
+  description = "The name of the data ingestion Lambda function"
+  value       = module.lambda.data_ingestion_function_name
+}
+
+output "data_ingestion_function_arn" {
+  description = "The ARN of the data ingestion Lambda function"
+  value       = module.lambda.data_ingestion_function_arn
+}
+
+# API endpoint outputs (from SSM parameters)
 output "api_gateway_url" {
-  description = "URL of the deployed API Gateway"
-  value       = module.api_gateway.api_gateway_url
-  # This URL can be used by ESP32 devices to submit readings
+  description = "The URL for the API Gateway"
+  value       = "${data.aws_ssm_parameter.api_invoke_url.value}/data-ingestion/readings"
 }
 
-output "api_key" {
-  description = "API key for ESP32 device authentication"
-  value       = module.api_gateway.api_key
-  sensitive   = true # Marked as sensitive to prevent showing in logs
+# Reference to shared resources
+output "shared_vpc_id" {
+  description = "The VPC ID from shared infrastructure"
+  value       = data.aws_ssm_parameter.vpc_id.value
 }
 
-#################################################
-# STORAGE OUTPUTS
-#################################################
-output "bucket_name" {
-  description = "S3 bucket name for air quality readings"
-  value       = module.database.bucket_name
-  # This bucket stores all air quality data collected by devices
+output "shared_bucket_name" {
+  description = "The name of the shared sensor data bucket"
+  value       = data.aws_ssm_parameter.readings_bucket_name.value
 }
 
-output "account_id" {
-  description = "The AWS account ID"
-  value       = data.aws_caller_identity.current.account_id
+# CloudFormation stack output
+output "cloudformation_stack_id" {
+  description = "The ID of the CloudFormation stack"
+  value       = aws_cloudformation_stack.data_ingestion_service.id
 }

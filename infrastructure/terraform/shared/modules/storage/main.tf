@@ -16,7 +16,7 @@ terraform {
 # S3 BUCKET FOR SENSOR DATA
 #################################################
 resource "aws_s3_bucket" "readings_storage" {
-  bucket = var.bucket_name
+  bucket = "${var.resource_prefix}-${var.bucket_name}"
 
   object_lock_enabled = true
   lifecycle {
@@ -28,7 +28,7 @@ resource "aws_s3_bucket" "readings_storage" {
 
   tags = merge(
     {
-      Name = var.bucket_name
+      Name = "${var.resource_prefix}-${var.bucket_name}"
       ResourceType = "SharedStorage"
     },
     var.tags

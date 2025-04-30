@@ -1,5 +1,5 @@
 #################################################
-# DATA INGESTION ENVIRONMENT VARIABLES
+# SHARED INFRASTRUCTURE VARIABLES
 #################################################
 
 #################################################
@@ -23,7 +23,6 @@ variable "project_prefix" {
 #################################################
 # TAG CONFIGURATION
 #################################################
-# These replace the single "tags" variable
 variable "common_tags" {
   description = "Common tags for all resources"
   type        = map(string)
@@ -36,39 +35,16 @@ variable "environment_tags" {
   default     = {}
 }
 
-variable "data_ingestion_tags" {
-  description = "Tags specific to data ingestion service"
+variable "shared_tags" {
+  description = "Tags for shared infrastructure resources"
   type        = map(string)
   default     = {}
 }
 
-#################################################
-# STORAGE CONFIGURATION
-#################################################
-variable "bucket_name" {
-  description = "Name of the S3 bucket for storing air quality readings"
-  type        = string
-}
-
-#################################################
-# API CONFIGURATION
-#################################################
-variable "api_name" {
-  description = "Name of the API Gateway"
-  type        = string
-}
-
-#################################################
-# LAMBDA CONFIGURATION
-#################################################
-variable "data_ingestion_function_name" {
-  description = "Name of the data ingestion Lambda function"
-  type        = string
-}
-
-variable "data_ingestion_zip_path" {
-  description = "Path to the data ingestion Lambda deployment package"
-  type        = string
+variable "data_ingestion_tags" {
+  description = "Tags for data ingestion resources"
+  type        = map(string)
+  default     = {}
 }
 
 #################################################
@@ -92,4 +68,20 @@ variable "public_subnet_cidrs" {
 variable "availability_zones" {
   description = "List of availability zones to use"
   type        = list(string)
+}
+
+#################################################
+# API CONFIGURATION
+#################################################
+variable "api_name" {
+  description = "Name of the API Gateway"
+  type        = string
+}
+
+#################################################
+# STORAGE CONFIGURATION
+#################################################
+variable "bucket_name" {
+  description = "Name of the S3 bucket for storing air quality readings"
+  type        = string
 }

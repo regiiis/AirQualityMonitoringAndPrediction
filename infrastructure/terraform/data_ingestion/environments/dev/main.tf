@@ -1,4 +1,30 @@
-# Get shared infrastructure details
+#################################################
+# TERRAFORM CONFIGURATION
+#################################################
+terraform {
+  required_version = ">= 1.11.4"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+#################################################
+# PROVIDER CONFIGURATION
+#################################################
+provider "aws" {
+  region = var.aws_region
+}
+
+#################################################
+# DATA SOURCES
+#################################################
+# Account information
+data "aws_caller_identity" "current" {}
+
+# VPC and networking parameters
 data "aws_ssm_parameter" "vpc_id" {
   name = "/shared/${var.environment}/vpc/id"
 }
@@ -11,14 +37,16 @@ data "aws_ssm_parameter" "lambda_security_group_id" {
   name = "/shared/${var.environment}/vpc/lambda-sg-id"
 }
 
-# Get shared storage details
+# Storage parameters
 data "aws_ssm_parameter" "readings_bucket_name" {
   name = "/shared/${var.environment}/storage/readings-bucket-name"
 }
 
-#################################################
-# Get shared API Gateway details
-#################################################
+# API Gateway parameters
+data "aws_ssm_parameter" "api_invoke_url" {
+  name = "/shared/${var.environment}/api-gateway/invoke-url"
+}
+
 data "aws_ssm_parameter" "api_id" {
   name = "/shared/${var.environment}/api-gateway/id"
 }
@@ -32,35 +60,54 @@ data "aws_ssm_parameter" "data_ingestion_resource_id" {
 }
 
 #################################################
-# LAMBDA FUNCTIONS
+# LOCAL VARIABLES
 #################################################
+locals {
+  # Create a globally unique prefix for resources
+  prefix = "${var.project_prefix}-${var.environment}"
+
+  # Merge tags for data ingestion service
+  tags = merge(
+    var.common_tags,
+    var.environment_tags,
+    var.data_ingestion_tags
+  )
+
+  # Resolve absolute path to Lambda zip file
+  lambda_zip_path = "${path.module}${var.data_ingestion_zip_path}"
+}
+
+#################################################
+# MODULES
+#################################################
+# LAMBDA FUNCTIONS
 module "lambda" {
-  source                       = "../../modules/lambda"
+  source                       = "../../modules/lambda_function"
+  resource_prefix = local.prefix
   data_ingestion_function_name = "${local.prefix}-${var.data_ingestion_function_name}"
   data_ingestion_bucket_name   = data.aws_ssm_parameter.readings_bucket_name.value
-  data_ingestion_zip_path      = var.data_ingestion_zip_path
+  data_ingestion_zip_path      = local.lambda_zip_path
   subnet_ids                   = split(",", data.aws_ssm_parameter.private_subnet_ids.value)
   security_group_id            = data.aws_ssm_parameter.lambda_security_group_id.value
   environment                  = var.environment
-  # Now use the shared API Gateway execution ARN
   api_gateway_execution_arn    = data.aws_ssm_parameter.api_execution_arn.value
-  tags                         = var.tags
+  tags                         = local.tags
 }
 
-#################################################
-# API RESOURCES FOR DATA INGESTION
-#################################################
+# API RESOURCES
 module "api_resources" {
-  source                       = "../../modules/api_resources"
-  api_id                       = data.aws_ssm_parameter.api_id.value
-  data_ingestion_resource_id   = data.aws_ssm_parameter.data_ingestion_resource_id.value
+  source                           = "../../modules/api_resources"
+  resource_prefix = local.prefix
+  api_id                           = data.aws_ssm_parameter.api_id.value
+  data_ingestion_resource_id       = data.aws_ssm_parameter.data_ingestion_resource_id.value
   data_validator_lambda_invoke_arn = module.lambda.data_ingestion_function_invoke_arn
-  tags                         = var.tags
+  tags                             = local.tags
 }
 
+#################################################
+# RESOURCES
 #################################################
 # DATA INGESTION SERVICE STACK
-#################################################
 resource "aws_cloudformation_stack" "data_ingestion_service" {
   name = "${local.prefix}-data-ingestion-service"
 
@@ -123,9 +170,5 @@ resource "aws_cloudformation_stack" "data_ingestion_service" {
 EOT
 
   capabilities = ["CAPABILITY_IAM"]
-
-  depends_on = [
-    module.lambda,
-    module.api_resources
-  ]
+  depends_on   = [module.lambda, module.api_resources]
 }

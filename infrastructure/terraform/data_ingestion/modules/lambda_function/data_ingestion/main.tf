@@ -1,28 +1,7 @@
-# Get your AWS account ID
-data "aws_caller_identity" "current" {}
-
 # Get metadata for the Lambda zip to detect changes
 data "aws_s3_object" "lambda_zip_metadata" {
   bucket = var.zip_s3_bucket
   key    = var.zip_s3_key
-}
-
-#################################################
-# LAMBDA FUNCTION - HANDLER
-#################################################
-terraform {
-  required_version = ">= 1.11.4"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws" # AWS provider source
-      version = "~> 5.0"        # Any 5.x version
-    }
-    time = {
-      source  = "hashicorp/time"
-      version = "~> 0.10.0"
-  }
-  }
 }
 
 #################################################
@@ -36,7 +15,7 @@ resource "aws_lambda_function" "data_ingestion" {
   role                           = aws_iam_role.data_ingestion_role.arn # Execution role
   timeout                        = 30                                   # Max execution time in seconds
   memory_size                    = 128                                  # Memory allocation in MB
-  reserved_concurrent_executions = 10                                    # Limits concurrent executions
+  reserved_concurrent_executions = 10                                   # Limits concurrent executions
 
   # Use signed code for enhanced security
   s3_bucket        = aws_signer_signing_job.signing_job.signed_object[0].s3[0].bucket # Bucket with signed code
@@ -58,7 +37,7 @@ resource "aws_lambda_function" "data_ingestion" {
   }
   tags = merge(
     {
-      Name        = var.function_name
+      Name = var.function_name
     },
     var.tags
   )
@@ -91,7 +70,7 @@ resource "aws_iam_role" "data_ingestion_role" {
 
   tags = merge(
     {
-      Name        = "${var.function_name}-role"
+      Name = "${var.function_name}-role"
     },
     var.tags
   )
@@ -172,7 +151,7 @@ resource "aws_signer_signing_profile" "signing_profile" {
 
   tags = merge(
     {
-      Name        = "${var.function_name}-signing-profile"
+      Name = "${var.function_name}-signing-profile"
     },
     var.tags
   )
@@ -216,7 +195,7 @@ resource "aws_lambda_code_signing_config" "signing_config" {
   description = "Code signing configuration for data_ingestion Lambda"
   tags = merge(
     {
-      Name        = "${var.function_name}-signing-config"
+      Name = "${var.function_name}-signing-config"
     },
     var.tags
   )

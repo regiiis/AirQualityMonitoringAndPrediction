@@ -16,7 +16,7 @@ terraform {
 # API GATEWAY CORE CONFIGURATION
 #################################################
 resource "aws_api_gateway_rest_api" "shared_api" {
-  name        = var.api_name
+  name = "${var.resource_prefix}-api"
   description = "Shared API Gateway for Air Quality Monitoring System"
 
   endpoint_configuration {
@@ -29,7 +29,7 @@ resource "aws_api_gateway_rest_api" "shared_api" {
 
   tags = merge(
     {
-      Name = var.api_name
+      Name = "${var.resource_prefix}-api"
       ResourceType = "SharedInfrastructure"
     },
     var.tags
@@ -110,7 +110,7 @@ resource "aws_api_gateway_resource" "visualization" {
 # API KEYS AND USAGE PLAN
 #################################################
 resource "aws_api_gateway_api_key" "device_key" {
-  name = var.api_key_name
+  name = "${var.resource_prefix}-device-key"
   tags = merge(
     {
       Name = var.api_key_name

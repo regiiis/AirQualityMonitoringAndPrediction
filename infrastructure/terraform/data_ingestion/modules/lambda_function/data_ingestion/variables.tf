@@ -60,3 +60,8 @@ variable "zip_s3_version" {
   type        = string
   default     = "LATEST"
 }
+
+variable "resource_prefix" {
+  description = "Standardized prefix for all resources"
+  type        = string
+}

@@ -39,3 +39,8 @@ variable "security_group_id" {
   description = "Security group ID for Lambda VPC configuration"
   type        = string
 }
+
+variable "resource_prefix" {
+  description = "Standardized prefix for all resources"
+  type        = string
+}

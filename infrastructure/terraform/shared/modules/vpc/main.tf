@@ -2,6 +2,8 @@
 # SHARED VPC MODULE
 #################################################
 terraform {
+  required_version = ">= 1.11.4"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -22,7 +24,7 @@ resource "aws_vpc" "main" {
 
   tags = merge(
     {
-      Name = "${var.environment}-vpc"
+      Name = "${var.resource_prefix}-vpc"
     },
     var.tags
   )
@@ -34,7 +36,7 @@ resource "aws_internet_gateway" "igw" {
 
   tags = merge(
     {
-      Name = "${var.environment}-igw"
+      Name = "${var.resource_prefix}-igw"
     },
     var.tags
   )
@@ -42,15 +44,15 @@ resource "aws_internet_gateway" "igw" {
 
 # Create public subnets
 resource "aws_subnet" "public" {
-  count             = length(var.public_subnet_cidrs)
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.public_subnet_cidrs[count.index]
-  availability_zone = var.availability_zones[count.index % length(var.availability_zones)]
-  map_public_ip_on_launch = true
+  count                   = length(var.public_subnet_cidrs)
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.public_subnet_cidrs[count.index]
+  availability_zone       = var.availability_zones[count.index % length(var.availability_zones)]
+  map_public_ip_on_launch = false # Change to false for better security
 
   tags = merge(
     {
-      Name = "${var.environment}-public-subnet-${count.index + 1}"
+      Name = "${var.resource_prefix}-public-subnet-${count.index + 1}"
     },
     var.tags
   )
@@ -65,7 +67,7 @@ resource "aws_subnet" "private" {
 
   tags = merge(
     {
-      Name = "${var.environment}-private-subnet-${count.index + 1}"
+      Name = "${var.resource_prefix}-private-subnet-${count.index + 1}"
     },
     var.tags
   )
@@ -77,7 +79,7 @@ resource "aws_eip" "nat" {
 
   tags = merge(
     {
-      Name = "${var.environment}-nat-eip"
+      Name = "${var.resource_prefix}-nat-eip"
     },
     var.tags
   )
@@ -92,7 +94,7 @@ resource "aws_nat_gateway" "nat" {
 
   tags = merge(
     {
-      Name = "${var.environment}-nat-gateway"
+      Name = "${var.resource_prefix}-nat-gateway"
     },
     var.tags
   )
@@ -111,7 +113,7 @@ resource "aws_route_table" "public" {
 
   tags = merge(
     {
-      Name = "${var.environment}-public-route-table"
+      Name = "${var.resource_prefix}-public-route-table"
     },
     var.tags
   )
@@ -122,13 +124,13 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.nat.id
   }
 
   tags = merge(
     {
-      Name = "${var.environment}-private-route-table"
+      Name = "${var.resource_prefix}-private-route-table"
     },
     var.tags
   )
@@ -150,20 +152,70 @@ resource "aws_route_table_association" "private" {
 
 # Create security group for Lambda functions
 resource "aws_security_group" "lambda_sg" {
-  name        = "${var.environment}-lambda-sg"
+  name        = "${var.resource_prefix}-lambda-sg"
   description = "Security group for Lambda functions"
   vpc_id      = aws_vpc.main.id
 
+  # Allow HTTPS to S3 VPC endpoint
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    prefix_list_ids = [aws_vpc_endpoint.s3.prefix_list_id]
+    description     = "Allow HTTPS access to S3 via VPC endpoint"
+  }
+
+  # Allow HTTPS to CloudWatch Logs VPC endpoint
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = aws_subnet.private[*].cidr_block # Allow to all private subnet CIDRs
+    description = "Allow HTTPS access to CloudWatch Logs via VPC endpoint"
   }
 
   tags = merge(
     {
-      Name = "${var.environment}-lambda-sg"
+      Name = "${var.resource_prefix}-lambda-sg"
+    },
+    var.tags
+  )
+}
+
+# Add a CloudWatch Logs VPC endpoint to allow Lambda to log directly
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.logs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoint_sg.id]
+  private_dns_enabled = true
+
+  tags = merge(
+    {
+      Name = "${var.resource_prefix}-logs-endpoint"
+    },
+    var.tags
+  )
+}
+
+# Security group for VPC endpoints
+resource "aws_security_group" "vpc_endpoint_sg" {
+  name        = "${var.resource_prefix}-vpc-endpoint-sg"
+  description = "Security group for VPC endpoints"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.lambda_sg.id]
+    description     = "Allow HTTPS access from Lambda"
+  }
+
+  tags = merge(
+    {
+      Name = "${var.resource_prefix}-vpc-endpoint-sg"
     },
     var.tags
   )
@@ -178,7 +230,7 @@ resource "aws_vpc_endpoint" "s3" {
 
   tags = merge(
     {
-      Name = "${var.environment}-s3-endpoint"
+      Name = "${var.resource_prefix}-s3-endpoint"
     },
     var.tags
   )

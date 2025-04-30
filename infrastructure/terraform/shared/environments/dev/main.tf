@@ -1,7 +1,8 @@
 #################################################
-# SHARED INFRASTRUCTURE CONFIGURATION
+# TERRAFORM CONFIGURATION
 #################################################
 terraform {
+  required_version = ">= 1.11.4"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -10,45 +11,69 @@ terraform {
   }
 }
 
+#################################################
+# PROVIDER CONFIGURATION
+#################################################
 provider "aws" {
   region = var.aws_region
 }
 
-# Get AWS account ID for globally unique naming
-data "aws_caller_identity" "current" {}
-
+#################################################
+# LOCAL VARIABLES
+#################################################
 locals {
   # Create a globally unique prefix for resources
-  prefix = "${var.project_prefix}-${data.aws_caller_identity.current.account_id}-${var.environment}"
-  short_prefix = "${var.project_prefix}-${var.environment}"
+  prefix = "${var.project_prefix}-${var.environment}"
+
+  # Merge tags for shared infrastructure
+  tags = merge(
+    var.common_tags,
+    var.environment_tags,
+    var.shared_tags
+  )
 }
 
 #################################################
-# VPC AND NETWORKING
+# MODULES
 #################################################
+# VPC AND NETWORKING
 module "vpc" {
   source               = "../../modules/vpc"
+  resource_prefix = local.prefix
   environment          = var.environment
-  availability_zones   = ["${var.aws_region}a", "${var.aws_region}b"]
+  availability_zones   = var.availability_zones
   vpc_cidr             = var.vpc_cidr
   private_subnet_cidrs = var.private_subnet_cidrs
   public_subnet_cidrs  = var.public_subnet_cidrs
-  tags                 = var.tags
+  tags                 = local.tags
 }
 
-#################################################
 # SHARED STORAGE
-#################################################
 module "storage" {
   source      = "../../modules/storage"
-  bucket_name = "${local.prefix}-sensor-data"
+  resource_prefix = local.prefix
+  bucket_name = "${local.prefix}-${var.bucket_name}"
   environment = var.environment
-  tags        = var.tags
+  tags        = local.tags
+}
+
+# API GATEWAY
+module "api_gateway" {
+  source          = "../../modules/api_gateway"
+  resource_prefix = local.prefix
+  api_name        = "${local.short_prefix}-${var.api_name}"
+  api_key_name    = "${local.short_prefix}-device-key"
+  usage_plan_name = "${var.environment}-device-usage-plan"
+  log_group_name  = "/aws/apigateway/${var.environment}-${var.api_name}"
+  stage_name      = "v1"
+  environment     = var.environment
+  tags            = local.tags
 }
 
 #################################################
-# CLOUDFORMATION STACK FOR SHARED INFRASTRUCTURE
+# RESOURCES
 #################################################
+# CLOUDFORMATION STACK FOR SHARED INFRASTRUCTURE
 resource "aws_cloudformation_stack" "shared_infrastructure" {
   name = "${local.short_prefix}-shared-infrastructure"
 
@@ -109,32 +134,5 @@ resource "aws_cloudformation_stack" "shared_infrastructure" {
 EOT
 
   capabilities = ["CAPABILITY_IAM", "CAPABILITY_NAMED_IAM"]
-
-  depends_on = [
-    module.vpc,
-    module.storage
-  ]
-}
-
-# Export outputs for easy access
-output "vpc_id" {
-  value = module.vpc.vpc_id
-}
-
-output "sensor_data_bucket" {
-  value = module.storage.bucket_name
-}
-
-#################################################
-# API GATEWAY
-#################################################
-module "api_gateway" {
-  source         = "../../modules/api_gateway"
-  api_name       = "${local.short_prefix}-shared-api"
-  api_key_name   = "${local.short_prefix}-device-key"
-  usage_plan_name = "${var.environment}-device-usage-plan"
-  log_group_name = "/aws/apigateway/${var.environment}-shared-api"
-  stage_name     = "v1"
-  environment    = var.environment
-  tags           = var.tags
+  depends_on   = [module.vpc, module.storage]
 }

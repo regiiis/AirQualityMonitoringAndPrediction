@@ -2,16 +2,20 @@
 # LAMBDA FUNCTION - MAIN
 #################################################
 terraform {
-  required_version = ">= 1.11.4" # Minimum Terraform version required
+  required_version = ">= 1.11.4"
 
   required_providers {
     aws = {
-      source  = "hashicorp/aws" # AWS provider source
-      version = "~> 5.0"        # Any 5.x version
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
     }
     null = {
       source  = "hashicorp/null"
       version = ">= 3.2.0"
+    }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.10.0"
     }
   }
 }
@@ -21,7 +25,8 @@ terraform {
 #################################################
 module "data_ingestion" {
   source            = "./data_ingestion"
-  function_name     = var.data_ingestion_function_name
+  resource_prefix   = var.resource_prefix
+  function_name     = "${var.resource_prefix}-data-ingestion"
   bucket_name       = var.data_ingestion_bucket_name
   subnet_ids        = var.subnet_ids
   security_group_id = var.security_group_id
@@ -31,7 +36,7 @@ module "data_ingestion" {
   # Pass the correct S3 bucket and key
   zip_s3_bucket  = aws_s3_bucket.lambda_deployments.id
   zip_s3_key     = aws_s3_object.data_ingestion_zip.key
-  zip_s3_version = "LATEST"  # Add this line to pass the version parameter
+  zip_s3_version = "LATEST" # Add this line to pass the version parameter
 
   signed_code_s3_bucket = aws_s3_bucket.lambda_deployments.id
   signed_code_s3_prefix = "signed"
@@ -46,14 +51,14 @@ module "data_ingestion" {
 
 # Simplify this to just reference the zip file created by your Makefile
 resource "aws_s3_object" "data_ingestion_zip" {
-  bucket     = aws_s3_bucket.lambda_deployments.id
-  key        = "lambda/data_ingestion.zip"
-  source     = var.data_ingestion_zip_path
-  etag       = filemd5(var.data_ingestion_zip_path)
+  bucket = aws_s3_bucket.lambda_deployments.id
+  key    = "lambda/data_ingestion.zip"
+  source = var.data_ingestion_zip_path
+  etag   = filemd5(var.data_ingestion_zip_path)
 
   tags = merge(
     {
-      Name = "${var.environment}-data-ingestion-zip"
+      Name = "${var.resource_prefix}-data-ingestion-zip"
     },
     var.tags
   )
@@ -68,7 +73,7 @@ resource "aws_cloudwatch_log_group" "data_ingestion_logs" {
 
   tags = merge(
     {
-      Name        = "${var.environment}-data-ingestion-lambda-logs"
+      Name = "${var.environment}-data-ingestion-lambda-logs"
     },
     var.tags
   )

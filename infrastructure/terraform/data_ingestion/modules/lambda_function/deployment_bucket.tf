@@ -4,7 +4,7 @@
 
 # Create bucket specifically for Lambda deployments
 resource "aws_s3_bucket" "lambda_deployments" {
-  bucket = "${var.environment}-lambda-deployments-bucket"
+  bucket = "${var.resource_prefix}-lambda-deployments"
 
   # Comment out object lock for now
   # object_lock_enabled = true
@@ -18,7 +18,7 @@ resource "aws_s3_bucket" "lambda_deployments" {
 
   tags = merge(
     {
-      Name = "${var.environment}-lambda-deployments"
+      Name = "${var.resource_prefix}-lambda-deployments"
     },
     var.tags
   )
@@ -88,15 +88,15 @@ resource "aws_s3_bucket_policy" "lambda_deployments_signer_access" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect    = "Allow"
+        Effect = "Allow"
         Principal = {
           Service = "signer.amazonaws.com"
         }
-        Action    = [
+        Action = [
           "s3:GetObject",
           "s3:PutObject"
         ]
-        Resource  = [
+        Resource = [
           "${aws_s3_bucket.lambda_deployments.arn}/*"
         ]
       }
