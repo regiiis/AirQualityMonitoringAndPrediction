@@ -79,3 +79,8 @@ variable "public_subnet_cidrs" {
   description = "CIDR blocks for public subnets"
   type        = list(string)
 }
+
+variable "project_prefix" {
+  description = "Project prefix for all resources"
+  type        = string
+}

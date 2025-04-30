@@ -1,5 +1,6 @@
 aws_region                   = "eu-central-1"
 environment                  = "dev"
+project_prefix               = "airq"
 bucket_name                  = "air-quality-readings-bucket"
 api_name                     = "air-quality-api"
 data_ingestion_function_name = "air-quality-ingestion"

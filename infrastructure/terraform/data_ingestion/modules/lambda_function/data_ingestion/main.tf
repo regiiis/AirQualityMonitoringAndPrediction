@@ -1,6 +1,12 @@
 # Get your AWS account ID
 data "aws_caller_identity" "current" {}
 
+# Get metadata for the Lambda zip to detect changes
+data "aws_s3_object" "lambda_zip_metadata" {
+  bucket = var.zip_s3_bucket
+  key    = var.zip_s3_key
+}
+
 #################################################
 # LAMBDA FUNCTION - HANDLER
 #################################################
@@ -12,6 +18,10 @@ terraform {
       source  = "hashicorp/aws" # AWS provider source
       version = "~> 5.0"        # Any 5.x version
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.10.0"
+  }
   }
 }
 
@@ -26,7 +36,7 @@ resource "aws_lambda_function" "data_ingestion" {
   role                           = aws_iam_role.data_ingestion_role.arn # Execution role
   timeout                        = 30                                   # Max execution time in seconds
   memory_size                    = 128                                  # Memory allocation in MB
-  reserved_concurrent_executions = 5                                    # Limits concurrent executions
+  reserved_concurrent_executions = 10                                    # Limits concurrent executions
 
   # Use signed code for enhanced security
   s3_bucket        = aws_signer_signing_job.signing_job.signed_object[0].s3[0].bucket # Bucket with signed code
@@ -52,12 +62,13 @@ resource "aws_lambda_function" "data_ingestion" {
     },
     var.tags
   )
-}
 
-# Get metadata for the Lambda zip to detect changes
-data "aws_s3_object" "lambda_zip_metadata" {
-  bucket = var.zip_s3_bucket
-  key    = var.zip_s3_key
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  # Add this depends_on block to ensure IAM permissions are fully propagated
+  depends_on = [time_sleep.iam_propagation]
 }
 
 ###############################################
@@ -128,6 +139,12 @@ resource "aws_iam_role_policy_attachment" "s3_policy_attachment" {
   policy_arn = aws_iam_policy.s3_write_policy.arn # Links custom S3 policy to role
 }
 
+# VPC networking permissions for Lambda
+resource "aws_iam_role_policy_attachment" "vpc_access" {
+  role       = aws_iam_role.data_ingestion_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 #################################################
 # LAMBDA PERMISSIONS
 #################################################
@@ -148,6 +165,11 @@ resource "aws_signer_signing_profile" "signing_profile" {
   name_prefix = "DataIngestionProfile"   # Prefix for the profile name
   platform_id = "AWSLambda-SHA384-ECDSA" # Signing algorithm and platform
 
+  signature_validity_period {
+    value = 135
+    type  = "MONTHS"
+  }
+
   tags = merge(
     {
       Name        = "${var.function_name}-signing-profile"
@@ -156,20 +178,18 @@ resource "aws_signer_signing_profile" "signing_profile" {
   )
 }
 
-# Create a signing job to sign the Lambda deployment package
+# Update signing job to use a specific source
 resource "aws_signer_signing_job" "signing_job" {
   profile_name = aws_signer_signing_profile.signing_profile.name
 
-  # Source code location to sign - using explicit bucket and key
   source {
     s3 {
       bucket  = var.zip_s3_bucket
       key     = var.zip_s3_key
-      version = "LATEST"
+      version = data.aws_s3_object.lambda_zip_metadata.version_id
     }
   }
 
-  # Destination for the signed code
   destination {
     s3 {
       bucket = var.signed_code_s3_bucket
@@ -177,8 +197,10 @@ resource "aws_signer_signing_job" "signing_job" {
     }
   }
 
-  # Make sure the signing job depends on the zip file upload
-  depends_on = [data.aws_s3_object.lambda_zip_metadata]
+  depends_on = [
+    data.aws_s3_object.lambda_zip_metadata,
+    aws_signer_signing_profile.signing_profile
+  ]
 }
 
 # Define code signing configuration for Lambda
@@ -198,4 +220,16 @@ resource "aws_lambda_code_signing_config" "signing_config" {
     },
     var.tags
   )
+}
+
+# Add this resource for IAM propagation delay
+resource "time_sleep" "iam_propagation" {
+  depends_on = [
+    aws_iam_role_policy_attachment.vpc_access,
+    aws_iam_role_policy_attachment.basic_execution,
+    aws_iam_role_policy_attachment.xray,
+    aws_iam_role_policy_attachment.s3_policy_attachment
+  ]
+
+  create_duration = "10s"
 }

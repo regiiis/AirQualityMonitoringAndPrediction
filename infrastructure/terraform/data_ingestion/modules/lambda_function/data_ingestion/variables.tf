@@ -54,3 +54,9 @@ variable "signed_code_s3_prefix" {
   type        = string
   default     = "signed/"
 }
+
+variable "zip_s3_version" {
+  description = "S3 object version for Lambda ZIP file"
+  type        = string
+  default     = "LATEST"
+}

@@ -8,8 +8,15 @@ Environment Variables:
     S3_BUCKET_NAME: Name of the S3 bucket where sensor data will be stored
 """
 
-from app.handlers.data_ingestion import data_validator
-from app.handlers.data_ingestion import data_storer
+try:
+    import data_validator
+except ImportError:
+    from app.handlers.data_ingestion import data_validator
+try:
+    import data_storer
+except ImportError:
+    from app.handlers.data_ingestion import data_storer
+
 import json
 import logging
 import os

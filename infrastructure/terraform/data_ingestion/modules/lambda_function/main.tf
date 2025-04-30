@@ -29,8 +29,9 @@ module "data_ingestion" {
   environment       = var.environment
 
   # Pass the correct S3 bucket and key
-  zip_s3_bucket = aws_s3_bucket.lambda_deployments.id
-  zip_s3_key    = aws_s3_object.data_ingestion_zip.key
+  zip_s3_bucket  = aws_s3_bucket.lambda_deployments.id
+  zip_s3_key     = aws_s3_object.data_ingestion_zip.key
+  zip_s3_version = "LATEST"  # Add this line to pass the version parameter
 
   signed_code_s3_bucket = aws_s3_bucket.lambda_deployments.id
   signed_code_s3_prefix = "signed"
@@ -42,29 +43,13 @@ module "data_ingestion" {
 #################################################
 # LAMBDA CODE PACKAGING
 #################################################
-resource "null_resource" "lambda_zip" {
-  triggers = {
-    always_run = timestamp()
-  }
 
-  provisioner "local-exec" {
-    command     = <<EOT
-      mkdir -p $(dirname ${var.data_ingestion_zip_path})
-      cd ${abspath(path.root)}/../../app/handlers
-      ls -la
-      zip -j ${var.data_ingestion_zip_path} data_ingestion/data_ingestion.py || echo "Warning: Zip failed, but continuing..."
-    EOT
-    interpreter = ["bash", "-c"]
-  }
-}
-
-# Make sure this code creates the S3 object before passing it to the data_ingestion module
+# Simplify this to just reference the zip file created by your Makefile
 resource "aws_s3_object" "data_ingestion_zip" {
   bucket     = aws_s3_bucket.lambda_deployments.id
   key        = "lambda/data_ingestion.zip"
   source     = var.data_ingestion_zip_path
   etag       = filemd5(var.data_ingestion_zip_path)
-  depends_on = [null_resource.lambda_zip]
 
   tags = merge(
     {

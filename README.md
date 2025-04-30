@@ -277,6 +277,15 @@ sudo apt install nodejs npm
 # Activate Python virtual environment
 source .venv/bin/activate
 
+# Set AWS profile for TF deployment
+# unset AWS_PROFILE
+# aws sts get-caller-identity
+# aws sso login
+
+export AWS_PROFILE="profile.name"
+export AWS_REGION="eu-central-1"
+export AWS_URL="url"
+
 # Install Python packages
 pip install -r requirements.txt
 pip install -r requirements-dev.txt

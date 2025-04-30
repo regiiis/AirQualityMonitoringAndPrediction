@@ -6,11 +6,13 @@
 resource "aws_s3_bucket" "lambda_deployments" {
   bucket = "${var.environment}-lambda-deployments-bucket"
 
-  object_lock_enabled = true
+  # Comment out object lock for now
+  # object_lock_enabled = true
+
   lifecycle {
     prevent_destroy = true
     ignore_changes = [
-      bucket  # Prevents recreation attempts if bucket exists
+      bucket
     ]
   }
 
@@ -20,6 +22,13 @@ resource "aws_s3_bucket" "lambda_deployments" {
     },
     var.tags
   )
+}
+
+resource "aws_s3_bucket_versioning" "lambda_deployments_versioning" {
+  bucket = aws_s3_bucket.lambda_deployments.id
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 #################################################
@@ -69,4 +78,31 @@ resource "aws_s3_bucket_lifecycle_configuration" "lambda_deployments_lifecycle" 
       noncurrent_days = 7 # Remove old versions after a week
     }
   }
+}
+
+# Add a bucket policy allowing AWS Signer to read objects
+resource "aws_s3_bucket_policy" "lambda_deployments_signer_access" {
+  bucket = aws_s3_bucket.lambda_deployments.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = {
+          Service = "signer.amazonaws.com"
+        }
+        Action    = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource  = [
+          "${aws_s3_bucket.lambda_deployments.arn}/*"
+        ]
+      }
+    ]
+  })
+
+  # Apply this policy after versioning is enabled
+  depends_on = [aws_s3_bucket_versioning.lambda_deployments_versioning]
 }
