@@ -9,13 +9,13 @@ Environment Variables:
 """
 
 try:
-    import data_validator
+    import data_validator  # type: ignore
 except ImportError:
-    from app.handlers.data_ingestion import data_validator
+    from app.handlers.data_ingestion import data_validator  # type: ignore
 try:
-    import data_storer
+    import data_storer  # type: ignore
 except ImportError:
-    from app.handlers.data_ingestion import data_storer
+    from app.handlers.data_ingestion import data_storer  # type: ignore
 
 import json
 import logging
