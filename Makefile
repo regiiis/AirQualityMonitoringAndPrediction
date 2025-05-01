@@ -1,4 +1,4 @@
-.PHONY: lint lint_tf type_check validate_api test_logic deploy_dev deploy_prod clean check_all generate_api_docs
+.PHONY: lint lint_tf type_check validate_api test_logic deploy_dev deploy_prod clean check_all generate_api_docs debug_lambda_paths upload_lambda_zip
 
 # Code quality
 lint:
@@ -26,7 +26,7 @@ test_logic:
 # Infrastructure Deployments - call into infrastructure Makefile
 deploy_dev:
 	@echo "Starting dev deployment process..."
-	$(MAKE) -C infrastructure/deployment deploy-all ENV=dev
+	$(MAKE) -f infrastructure/deployment/Makefile deploy-all ENV=dev
 
 deploy_shared_dev:
 	$(MAKE) -C infrastructure/deployment deploy-shared ENV=dev
@@ -54,3 +54,15 @@ generate_api_docs:
 
 # Mass check
 check_all: lint type_check validate_api test_logic
+
+# Add this new target for debugging Lambda paths
+# This will call the infrastructure Makefile's debug_zip_path target
+debug_lambda_paths:
+	@echo "===== RUNNING LAMBDA PATH DEBUG FROM ROOT PROJECT ====="
+	@echo "Current directory: $$(pwd)"
+	@echo "Calling infrastructure debugging target..."
+	$(MAKE) -C infrastructure/deployment debug_zip_path ENV=dev
+	@echo "===== PATH DEBUGGING COMPLETE ====="
+
+upload_lambda_zip:
+	$(MAKE) -C infrastructure/deployment upload-lambda-zip ENV=dev

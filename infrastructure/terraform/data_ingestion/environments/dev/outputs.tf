@@ -17,17 +17,20 @@ output "data_ingestion_function_arn" {
 output "api_gateway_url" {
   description = "The URL for the API Gateway"
   value       = "${data.aws_ssm_parameter.api_invoke_url.value}/data-ingestion/readings"
+  sensitive = true
 }
 
 # Reference to shared resources
 output "shared_vpc_id" {
   description = "The VPC ID from shared infrastructure"
   value       = data.aws_ssm_parameter.vpc_id.value
+  sensitive = true
 }
 
 output "shared_bucket_name" {
   description = "The name of the shared sensor data bucket"
   value       = data.aws_ssm_parameter.readings_bucket_name.value
+  sensitive = true
 }
 
 # CloudFormation stack output

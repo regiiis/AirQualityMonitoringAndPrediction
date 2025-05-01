@@ -61,8 +61,8 @@ module "storage" {
 module "api_gateway" {
   source          = "../../modules/api_gateway"
   resource_prefix = local.prefix
-  api_name        = "${local.short_prefix}-${var.api_name}"
-  api_key_name    = "${local.short_prefix}-device-key"
+  api_name        = "${local.prefix}-${var.api_name}"
+  api_key_name    = "${local.prefix}-device-key"
   usage_plan_name = "${var.environment}-device-usage-plan"
   log_group_name  = "/aws/apigateway/${var.environment}-${var.api_name}"
   stage_name      = "v1"
@@ -75,7 +75,7 @@ module "api_gateway" {
 #################################################
 # CLOUDFORMATION STACK FOR SHARED INFRASTRUCTURE
 resource "aws_cloudformation_stack" "shared_infrastructure" {
-  name = "${local.short_prefix}-shared-infrastructure"
+  name = "${local.prefix}-shared-infrastructure"
 
   template_body = <<EOT
 {
@@ -95,7 +95,7 @@ resource "aws_cloudformation_stack" "shared_infrastructure" {
     "SharedResourceGroup": {
       "Type": "AWS::ResourceGroups::Group",
       "Properties": {
-        "Name": "${local.short_prefix}-shared-resources",
+        "Name": "${local.prefix}-shared-resources",
         "Description": "Group containing all shared infrastructure resources",
         "ResourceQuery": {
           "Type": "TAG_FILTERS_1_0",

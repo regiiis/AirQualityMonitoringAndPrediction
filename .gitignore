@@ -17,11 +17,22 @@ aws
 aws/*
 awscliv2.*
 
-# Terraform
+# Infrastructure
+infrastructure/deployment/temp_dir/*
 .terraform*
 terraform.tfstate
 terraform.tfstate.*
 tfplan
+# Local .terraform directories
+**/.terraform/*
+# .tfstate files
+*.tfstate*.tfstate.*
+# Crash log files
+crash.log
+crash.*.log
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

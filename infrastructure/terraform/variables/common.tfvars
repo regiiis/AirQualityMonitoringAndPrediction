@@ -8,7 +8,7 @@ api_name = "air-quality-api"
 bucket_name = "air-quality-readings"
 
 # Lambda config
-data_ingestion_zip_path = "../../../lambda/data_ingestion.zip"
+data_ingestion_zip_path = "../../../../deployment/deployment_packages/data_ingestion.zip"
 
 # Common tags
 common_tags = {

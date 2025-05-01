@@ -73,8 +73,8 @@ locals {
     var.data_ingestion_tags
   )
 
-  # Resolve absolute path to Lambda zip file
-  lambda_zip_path = "${path.module}${var.data_ingestion_zip_path}"
+
+  lambda_zip_path = "${path.module}/${var.data_ingestion_zip_path}"
 }
 
 #################################################

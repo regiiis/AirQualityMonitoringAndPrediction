@@ -12,6 +12,8 @@ terraform {
   }
 }
 
+data "aws_region" "current" {}
+
 #################################################
 # API GATEWAY CORE CONFIGURATION
 #################################################
@@ -40,6 +42,8 @@ resource "aws_api_gateway_rest_api" "shared_api" {
 # DEPLOYMENT CONFIGURATION
 #################################################
 resource "aws_api_gateway_deployment" "api_deployment" {
+  depends_on = [aws_api_gateway_integration.mock_integration]
+
   rest_api_id = aws_api_gateway_rest_api.shared_api.id
 
   # This will force a new deployment on any change
@@ -53,6 +57,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 }
 
 resource "aws_api_gateway_stage" "api_stage" {
+  depends_on = [aws_api_gateway_account.api_gateway_account]
+
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.shared_api.id
   stage_name    = var.stage_name
@@ -61,7 +67,7 @@ resource "aws_api_gateway_stage" "api_stage" {
   cache_cluster_enabled = false
 
   access_log_settings {
-    destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
+    destination_arn = data.aws_cloudwatch_log_group.api_gateway_logs.arn
     format = jsonencode({
       requestId               = "$context.requestId"
       sourceIp                = "$context.identity.sourceIp"
@@ -104,6 +110,27 @@ resource "aws_api_gateway_resource" "visualization" {
   rest_api_id = aws_api_gateway_rest_api.shared_api.id
   parent_id   = aws_api_gateway_rest_api.shared_api.root_resource_id
   path_part   = "visualization"
+}
+
+#################################################
+# MOCK INTEGRATION FOR DEPLOYMENT
+#################################################
+resource "aws_api_gateway_method" "mock_method" {
+  rest_api_id   = aws_api_gateway_rest_api.shared_api.id
+  resource_id   = aws_api_gateway_resource.data_ingestion.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "mock_integration" {
+  rest_api_id = aws_api_gateway_rest_api.shared_api.id
+  resource_id = aws_api_gateway_resource.data_ingestion.id
+  http_method = aws_api_gateway_method.mock_method.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
 }
 
 #################################################
@@ -151,16 +178,76 @@ resource "aws_api_gateway_usage_plan_key" "device_plan_key" {
   usage_plan_id = aws_api_gateway_usage_plan.device_plan.id
 }
 
-# Create a CloudWatch Log Group for API Gateway logs
-resource "aws_cloudwatch_log_group" "api_gateway_logs" {
-  name              = var.log_group_name
-  retention_in_days = 365
+# First, check if log group exists
+data "aws_cloudwatch_log_group" "existing_logs" {
+  name = var.log_group_name
+  count = 1
+
   tags = merge(
     {
       Name = var.log_group_name
     },
     var.tags
   )
+}
+
+# Attempt to create the log group only if it doesn't exist
+resource "null_resource" "create_log_group_if_needed" {
+  # This will run every time, but the AWS CLI command will fail gracefully if the group exists
+  provisioner "local-exec" {
+    command = "aws logs create-log-group --log-group-name ${var.log_group_name} --region ${data.aws_region.current.name} || true"
+  }
+
+  # Set appropriate tags via AWS CLI
+  provisioner "local-exec" {
+    command = "aws logs tag-log-group --log-group-name ${var.log_group_name} --tags Project=${lookup(var.tags, "Project", "AirQualityMonitoring")} --region ${data.aws_region.current.name} || true"
+  }
+
+  # Ensure retention period is set
+  provisioner "local-exec" {
+    command = "aws logs put-retention-policy --log-group-name ${var.log_group_name} --retention-in-days 365 --region ${data.aws_region.current.name} || true"
+  }
+}
+
+# Reference the log group with a data source for other resources to use
+data "aws_cloudwatch_log_group" "api_gateway_logs" {
+  name = var.log_group_name
+  depends_on = [null_resource.create_log_group_if_needed]
+}
+
+#################################################
+# CLOUDWATCH LOGS CONFIGURATION FOR API GATEWAY
+#################################################
+
+# Create IAM role for API Gateway to write to CloudWatch Logs
+resource "aws_iam_role" "api_gateway_cloudwatch_role" {
+  name = "${var.resource_prefix}-api-gateway-cloudwatch-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "apigateway.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = var.tags
+}
+
+# Attach the CloudWatch Logs policy to the role
+resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
+  role       = aws_iam_role.api_gateway_cloudwatch_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+}
+
+# Set the account-level setting for API Gateway CloudWatch Logs
+resource "aws_api_gateway_account" "api_gateway_account" {
+  cloudwatch_role_arn = aws_iam_role.api_gateway_cloudwatch_role.arn
 }
 
 #################################################

@@ -49,17 +49,13 @@ module "data_ingestion" {
 # LAMBDA CODE PACKAGING
 #################################################
 
-# Simplify this to just reference the zip file created by your Makefile
 resource "aws_s3_object" "data_ingestion_zip" {
-  bucket = aws_s3_bucket.lambda_deployments.id
-  key    = "lambda/data_ingestion.zip"
-  source = var.data_ingestion_zip_path
-  etag   = filemd5(var.data_ingestion_zip_path)
-
-  tags = merge(
-    {
-      Name = "${var.resource_prefix}-data-ingestion-zip"
-    },
+  bucket      = aws_s3_bucket.lambda_deployments.id
+  key         = "lambda/data_ingestion.zip"
+  source      = var.data_ingestion_zip_path
+  source_hash = uuid() # or base64sha256(file(var.data_ingestion_zip_path))
+  tags        = merge(
+    { Name = "${var.resource_prefix}-data-ingestion-zip" },
     var.tags
   )
 }
