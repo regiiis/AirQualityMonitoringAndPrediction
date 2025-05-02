@@ -1,4 +1,4 @@
-.PHONY: deploy-all deploy-shared deploy-data-ingestion clean validate-all plan-all package-lambda debug_zip_path check-aws-credentials upload-lambda-zip
+.PHONY: deploy-all deploy-shared deploy-data-ingestion clean validate-all plan-all package-lambda debug_zip_path check-aws-credentials upload-lambda-zip destroy-all
 
 # Variables
 SHARED_DIR = infrastructure/terraform/shared/environments
@@ -97,14 +97,6 @@ plan-all:
 		-var-file=$(VARIABLES_DIR)/common.tfvars \
 		-var-file=$(VARIABLES_DIR)/$(ENV).tfvars
 
-# Clean up deployment artifacts
-clean:
-	@echo "Cleaning up deployment artifacts..."
-	rm -rf $(PACKAGE_DIR)
-	find infrastructure/terraform -name "*.tfplan" -type f -delete
-	find infrastructure/terraform -name ".terraform" -type d -exec rm -rf {} +
-	@echo "✅ Cleanup complete!"
-
 # Initialize all Terraform directories
 init-all:
 	@echo "Initializing all Terraform directories..."
@@ -112,10 +104,22 @@ init-all:
 	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) init
 	@echo "✅ All directories initialized!"
 
-# Display infrastructure endpoints and info
-show-endpoints:
-	@echo "🔍 Fetching infrastructure endpoints..."
-	@echo "API Gateway URL:"
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) output -raw api_gateway_url
-	@echo "S3 Bucket Name:"
-	terraform -chdir=$(SHARED_DIR)/$(ENV) output -raw sensor_data_bucket
+# Destroy all infrastructure
+destroy-all: check-aws-credentials
+	@echo "Destroying shared infrastructure in $(ENV) environment..."
+	terraform -chdir=$(SHARED_DIR)/$(ENV) destroy -auto-approve \
+		-var-file=../../../variables/common.tfvars \
+		-var-file=../../../variables/$(ENV).tfvars
+	@echo "Destroying data ingestion infrastructure in $(ENV) environment..."
+	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) destroy -auto-approve \
+		-var-file=../../../variables/common.tfvars \
+		-var-file=../../../variables/$(ENV).tfvars
+	@echo "✅ Teardown complete!"
+
+# Clean up deployment artifacts
+clean:
+	@echo "Cleaning up deployment artifacts..."
+	rm -rf $(PACKAGE_DIR)
+	find infrastructure/terraform -name "*.tfplan" -type f -delete
+	find infrastructure/terraform -name ".terraform" -type d -exec rm -rf {} +
+	@echo "✅ Cleanup complete!"

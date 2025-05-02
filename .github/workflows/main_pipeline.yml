@@ -39,11 +39,9 @@ jobs:
 
       - name: Check for breaking changes
         if: github.event_name == 'pull_request'
-        uses: char0n/swagger-diff-action@v1
-        with:
-          old: origin/${{ github.base_ref }}:api-spec.yaml
-          new: api-spec.yaml
-          fail-on-incompatible: true
+        run: |
+          npm install -g swagger-diff
+          swagger-diff -b origin/${{ github.base_ref }}:api-spec.yaml -n api-spec.yaml --fail-on-incompatible
 
   # Add documentation generation job
   api-docs:

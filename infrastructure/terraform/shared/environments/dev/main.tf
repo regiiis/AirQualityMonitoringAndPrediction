@@ -9,6 +9,14 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket         = var.tf_state_bucket
+    key            = "${var.environment}/shared/terraform.tfstate"
+    region         = var.aws_region
+    dynamodb_table = "airq-terraform-lock"
+    encrypt        = true
+  }
 }
 
 #################################################
@@ -39,22 +47,21 @@ locals {
 # VPC AND NETWORKING
 module "vpc" {
   source               = "../../modules/vpc"
-  resource_prefix = local.prefix
+  resource_prefix      = local.prefix
   environment          = var.environment
   availability_zones   = var.availability_zones
   vpc_cidr             = var.vpc_cidr
   private_subnet_cidrs = var.private_subnet_cidrs
-  public_subnet_cidrs  = var.public_subnet_cidrs
   tags                 = local.tags
 }
 
 # SHARED STORAGE
 module "storage" {
-  source      = "../../modules/storage"
+  source          = "../../modules/storage"
   resource_prefix = local.prefix
-  bucket_name = "${local.prefix}-${var.bucket_name}"
-  environment = var.environment
-  tags        = local.tags
+  bucket_name     = "${local.prefix}-${var.bucket_name}"
+  environment     = var.environment
+  tags            = local.tags
 }
 
 # API GATEWAY

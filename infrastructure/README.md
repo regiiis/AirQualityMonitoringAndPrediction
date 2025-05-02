@@ -1,6 +1,23 @@
 # Cloud Infrastructure
 This project has a cloud-based backend and web-frontend. The infrastructure is hosted on AWS using Terraform as Infrasture as Code.
 
+## About AWS
+- Root Account
+- User Accounts
+- Access Portal Accounts
+- Security Group
+- MFA
+- Access Key Tokens
+-
+
+## About Terraform
+Best practice guide: https://buildkite.com/resources/blog/best-practices-for-terraform-ci-cd/
+https://www.terraform.io/docs/cloud/index.html
+
+- main.tf, variables.tf, outputs.tf
+- Deployment - Run environment/main.tf
+- State Files - S3 Buckets
+
 ## Dev Environment
 Terraform commands:
 ```Bash
@@ -27,7 +44,7 @@ sudo ./aws/install
 aws --version
 ```
 
-### AWS Credential Managment
+### ```AWS Credential Managment```
 Set up AWS IAM identity center for temporary credentials. You need this in order to be able to deploy the infrastructure to AWS.
 1. Go to the AWS Management Console and log in to your AWS account.
 2. Navigate to the "IAM Identity Center"
@@ -84,7 +101,7 @@ sudo apt-get install terraform
 terraform --version
 ```
 
-### Deploying the infrastructure
+### ```Deploying the infrastructure```
 1. Navigate to the `terraform` environment directory:
 ```Bash
 cd terraform/environments/dev
@@ -105,6 +122,11 @@ terraform plan
 ```Bash
 terraform apply
 ```
+
+### One time setup
+In order to keep track of the Terraform state files, you need to/should set up a remote backend. This is done by creating an S3 bucket and a DynamoDB table for state locking.
+
+This needs to be done only once for the project. The following file sets up the S3 bucket: `infrastructure/terraform/deployment/s3_backend_one_timer/s3_backend_setup.tf`
 
 
 ## TF Code Quality - .pre-commit-config-terraform.yaml

@@ -20,6 +20,11 @@ variable "project_prefix" {
   type        = string
 }
 
+variable "tf_state_bucket" {
+  description = "S3 bucket for Terraform state files"
+  type        = string
+}
+
 #################################################
 # TAG CONFIGURATION
 #################################################
@@ -43,22 +48,6 @@ variable "data_ingestion_tags" {
 }
 
 #################################################
-# STORAGE CONFIGURATION
-#################################################
-variable "bucket_name" {
-  description = "Name of the S3 bucket for storing air quality readings"
-  type        = string
-}
-
-#################################################
-# API CONFIGURATION
-#################################################
-variable "api_name" {
-  description = "Name of the API Gateway"
-  type        = string
-}
-
-#################################################
 # LAMBDA CONFIGURATION
 #################################################
 variable "data_ingestion_function_name" {
@@ -74,22 +63,7 @@ variable "data_ingestion_zip_path" {
 #################################################
 # VPC CONFIGURATION
 #################################################
-variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
-  type        = string
-}
-
 variable "private_subnet_cidrs" {
   description = "CIDR blocks for private subnets"
-  type        = list(string)
-}
-
-variable "public_subnet_cidrs" {
-  description = "CIDR blocks for public subnets"
-  type        = list(string)
-}
-
-variable "availability_zones" {
-  description = "List of availability zones to use"
   type        = list(string)
 }

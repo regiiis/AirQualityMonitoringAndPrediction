@@ -15,7 +15,7 @@ resource "aws_lambda_function" "data_ingestion" {
   role                           = aws_iam_role.data_ingestion_role.arn # Execution role
   timeout                        = 30                                   # Max execution time in seconds
   memory_size                    = 128                                  # Memory allocation in MB
-  reserved_concurrent_executions = 10                                   # Limits concurrent executions
+  reserved_concurrent_executions = 2                                    # Limits concurrent executions
 
   # Use signed code for enhanced security
   s3_bucket        = aws_signer_signing_job.signing_job.signed_object[0].s3[0].bucket # Bucket with signed code
@@ -37,7 +37,7 @@ resource "aws_lambda_function" "data_ingestion" {
   }
   tags = merge(
     {
-      Name = var.function_name
+      Name = "${var.resource_prefix}-$var.function_name"
     },
     var.tags
   )
@@ -55,7 +55,7 @@ resource "aws_lambda_function" "data_ingestion" {
 #################################################
 resource "aws_iam_role" "data_ingestion_role" {
   # IAM role that Lambda assumes when executing
-  name = "${lower(var.environment)}-data-ingestion-lambda-role"
+  name = "${var.resource_prefix}-data-ingestion-lambda-role"
 
   assume_role_policy = jsonencode({ # Trust policy defining who can assume this role
     Version = "2012-10-17"
@@ -70,7 +70,7 @@ resource "aws_iam_role" "data_ingestion_role" {
 
   tags = merge(
     {
-      Name = "${var.function_name}-role"
+      Name = "${var.resource_prefix}-${var.function_name}-role"
     },
     var.tags
   )
@@ -90,7 +90,7 @@ resource "aws_iam_role_policy_attachment" "xray" {
 
 # Custom S3 write policy for storing sensor data
 resource "aws_iam_policy" "s3_write_policy" {
-  name        = "${var.environment}-s3-write-policy"
+  name        = "${var.resource_prefix}-s3-write-policy"
   description = "Allow writing to S3 bucket"
 
   policy = jsonencode({
@@ -106,7 +106,7 @@ resource "aws_iam_policy" "s3_write_policy" {
   })
   tags = merge(
     {
-      Name = "${var.function_name}-s3-write-policy"
+      Name = "${var.resource_prefix}-${var.function_name}-s3-write-policy"
     },
     var.tags
   )
@@ -141,7 +141,7 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
 #################################################
 # Create a signing profile for digitally signing Lambda code
 resource "aws_signer_signing_profile" "signing_profile" {
-  name_prefix = "DataIngestionProfile"   # Prefix for the profile name
+  name_prefix = "${replace(var.resource_prefix, "-", "")}DataIngestionProfile"
   platform_id = "AWSLambda-SHA384-ECDSA" # Signing algorithm and platform
 
   signature_validity_period {
@@ -151,7 +151,7 @@ resource "aws_signer_signing_profile" "signing_profile" {
 
   tags = merge(
     {
-      Name = "${var.function_name}-signing-profile"
+      Name = "${var.resource_prefix}-${var.function_name}-signing-profile"
     },
     var.tags
   )
@@ -195,7 +195,7 @@ resource "aws_lambda_code_signing_config" "signing_config" {
   description = "Code signing configuration for data_ingestion Lambda"
   tags = merge(
     {
-      Name = "${var.function_name}-signing-config"
+      Name = "${var.resource_prefix}-${var.function_name}-signing-config"
     },
     var.tags
   )

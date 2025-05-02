@@ -28,7 +28,7 @@ resource "aws_s3_bucket" "readings_storage" {
 
   tags = merge(
     {
-      Name = "${var.resource_prefix}-${var.bucket_name}"
+      Name         = "${var.resource_prefix}-${var.bucket_name}"
       ResourceType = "SharedStorage"
     },
     var.tags

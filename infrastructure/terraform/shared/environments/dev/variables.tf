@@ -41,12 +41,6 @@ variable "shared_tags" {
   default     = {}
 }
 
-variable "data_ingestion_tags" {
-  description = "Tags for data ingestion resources"
-  type        = map(string)
-  default     = {}
-}
-
 #################################################
 # VPC CONFIGURATION
 #################################################
@@ -60,10 +54,6 @@ variable "private_subnet_cidrs" {
   type        = list(string)
 }
 
-variable "public_subnet_cidrs" {
-  description = "CIDR blocks for public subnets"
-  type        = list(string)
-}
 
 variable "availability_zones" {
   description = "List of availability zones to use"

@@ -12,11 +12,6 @@ output "vpc_cidr" {
   value       = aws_vpc.main.cidr_block
 }
 
-output "public_subnet_ids" {
-  description = "List of IDs of public subnets"
-  value       = aws_subnet.public[*].id
-}
-
 output "private_subnet_ids" {
   description = "List of IDs of private subnets"
   value       = aws_subnet.private[*].id
@@ -25,16 +20,6 @@ output "private_subnet_ids" {
 output "lambda_security_group_id" {
   description = "ID of the Lambda security group"
   value       = aws_security_group.lambda_sg.id
-}
-
-output "nat_gateway_ip" {
-  description = "Public IP address of the NAT Gateway"
-  value       = aws_eip.nat.public_ip
-}
-
-output "public_route_table_id" {
-  description = "ID of the public route table"
-  value       = aws_route_table.public.id
 }
 
 output "private_route_table_id" {

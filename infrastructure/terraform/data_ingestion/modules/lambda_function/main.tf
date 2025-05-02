@@ -54,7 +54,7 @@ resource "aws_s3_object" "data_ingestion_zip" {
   key         = "lambda/data_ingestion.zip"
   source      = var.data_ingestion_zip_path
   source_hash = uuid() # or base64sha256(file(var.data_ingestion_zip_path))
-  tags        = merge(
+  tags = merge(
     { Name = "${var.resource_prefix}-data-ingestion-zip" },
     var.tags
   )
@@ -64,12 +64,12 @@ resource "aws_s3_object" "data_ingestion_zip" {
 # LOGGING CONFIGURATION
 #################################################
 resource "aws_cloudwatch_log_group" "data_ingestion_logs" {
-  name              = "/aws/lambda/${var.data_ingestion_function_name}"
+  name              = "/aws/lambda/${var.resource_prefix}-${var.data_ingestion_function_name}"
   retention_in_days = 14
 
   tags = merge(
     {
-      Name = "${var.environment}-data-ingestion-lambda-logs"
+      Name = "${var.resource_prefix}-data-ingestion-lambda-logs"
     },
     var.tags
   )

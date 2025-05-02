@@ -18,7 +18,7 @@ data "aws_region" "current" {}
 # API GATEWAY CORE CONFIGURATION
 #################################################
 resource "aws_api_gateway_rest_api" "shared_api" {
-  name = "${var.resource_prefix}-api"
+  name        = "${var.resource_prefix}-api"
   description = "Shared API Gateway for Air Quality Monitoring System"
 
   endpoint_configuration {
@@ -31,7 +31,7 @@ resource "aws_api_gateway_rest_api" "shared_api" {
 
   tags = merge(
     {
-      Name = "${var.resource_prefix}-api"
+      Name         = "${var.resource_prefix}-api"
       ResourceType = "SharedInfrastructure"
     },
     var.tags
@@ -180,7 +180,7 @@ resource "aws_api_gateway_usage_plan_key" "device_plan_key" {
 
 # First, check if log group exists
 data "aws_cloudwatch_log_group" "existing_logs" {
-  name = var.log_group_name
+  name  = var.log_group_name
   count = 1
 
   tags = merge(
@@ -211,7 +211,7 @@ resource "null_resource" "create_log_group_if_needed" {
 
 # Reference the log group with a data source for other resources to use
 data "aws_cloudwatch_log_group" "api_gateway_logs" {
-  name = var.log_group_name
+  name       = var.log_group_name
   depends_on = [null_resource.create_log_group_if_needed]
 }
 

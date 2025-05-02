@@ -9,6 +9,14 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket         = var.tf_state_bucket
+    key            = "${var.environment}/data_ingestion/terraform.tfstate"
+    region         = var.aws_region
+    dynamodb_table = "airq-terraform-lock"
+    encrypt        = true
+  }
 }
 
 #################################################
@@ -21,9 +29,6 @@ provider "aws" {
 #################################################
 # DATA SOURCES
 #################################################
-# Account information
-data "aws_caller_identity" "current" {}
-
 # VPC and networking parameters
 data "aws_ssm_parameter" "vpc_id" {
   name = "/shared/${var.environment}/vpc/id"
@@ -83,7 +88,7 @@ locals {
 # LAMBDA FUNCTIONS
 module "lambda" {
   source                       = "../../modules/lambda_function"
-  resource_prefix = local.prefix
+  resource_prefix              = local.prefix
   data_ingestion_function_name = "${local.prefix}-${var.data_ingestion_function_name}"
   data_ingestion_bucket_name   = data.aws_ssm_parameter.readings_bucket_name.value
   data_ingestion_zip_path      = local.lambda_zip_path
@@ -97,7 +102,7 @@ module "lambda" {
 # API RESOURCES
 module "api_resources" {
   source                           = "../../modules/api_resources"
-  resource_prefix = local.prefix
+  resource_prefix                  = local.prefix
   api_id                           = data.aws_ssm_parameter.api_id.value
   data_ingestion_resource_id       = data.aws_ssm_parameter.data_ingestion_resource_id.value
   data_validator_lambda_invoke_arn = module.lambda.data_ingestion_function_invoke_arn

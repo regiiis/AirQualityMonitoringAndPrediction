@@ -28,24 +28,18 @@ deploy_dev:
 	@echo "Starting dev deployment process..."
 	$(MAKE) -f infrastructure/deployment/Makefile deploy-all ENV=dev
 
-deploy_shared_dev:
-	$(MAKE) -C infrastructure/deployment deploy-shared ENV=dev
-
-deploy_data_ingestion_dev:
-	$(MAKE) -C infrastructure/deployment deploy-data-ingestion ENV=dev
-
 deploy_prod:
 	@echo "Starting production deployment process..."
 	$(MAKE) -C infrastructure/deployment deploy-all ENV=prod
-
-# Show infrastructure endpoints
-show_endpoints:
-	$(MAKE) -C infrastructure/deployment show-endpoints
 
 # Clean up deployment artifacts
 clean:
 	$(MAKE) -C infrastructure/deployment clean
 	rm -rf reports
+
+destroy_dev:
+	@echo "Starting dev destroyment process..."
+	$(MAKE) -f infrastructure/deployment/Makefile destroy-all ENV=dev
 
 # Documentation
 generate_api_docs:
@@ -54,15 +48,3 @@ generate_api_docs:
 
 # Mass check
 check_all: lint type_check validate_api test_logic
-
-# Add this new target for debugging Lambda paths
-# This will call the infrastructure Makefile's debug_zip_path target
-debug_lambda_paths:
-	@echo "===== RUNNING LAMBDA PATH DEBUG FROM ROOT PROJECT ====="
-	@echo "Current directory: $$(pwd)"
-	@echo "Calling infrastructure debugging target..."
-	$(MAKE) -C infrastructure/deployment debug_zip_path ENV=dev
-	@echo "===== PATH DEBUGGING COMPLETE ====="
-
-upload_lambda_zip:
-	$(MAKE) -C infrastructure/deployment upload-lambda-zip ENV=dev
