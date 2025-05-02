@@ -18,11 +18,6 @@ output "private_subnet_ids" {
   value       = module.vpc.private_subnet_ids
 }
 
-output "public_subnet_ids" {
-  description = "The IDs of the public subnets"
-  value       = module.vpc.public_subnet_ids
-}
-
 output "lambda_security_group_id" {
   description = "The ID of the Lambda security group"
   value       = module.vpc.lambda_security_group_id

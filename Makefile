@@ -28,18 +28,22 @@ deploy_dev:
 	@echo "Starting dev deployment process..."
 	$(MAKE) -f infrastructure/deployment/Makefile deploy-all ENV=dev
 
+destroy_dev:
+	@echo "Starting dev destroyment process..."
+	$(MAKE) -f infrastructure/deployment/Makefile destroy-all ENV=dev
+
 deploy_prod:
 	@echo "Starting production deployment process..."
 	$(MAKE) -C infrastructure/deployment deploy-all ENV=prod
+
+destroy_dev:
+	@echo "Starting dev destroyment process..."
+	$(MAKE) -f infrastructure/deployment/Makefile destroy-all ENV=prod
 
 # Clean up deployment artifacts
 clean:
 	$(MAKE) -C infrastructure/deployment clean
 	rm -rf reports
-
-destroy_dev:
-	@echo "Starting dev destroyment process..."
-	$(MAKE) -f infrastructure/deployment/Makefile destroy-all ENV=dev
 
 # Documentation
 generate_api_docs:

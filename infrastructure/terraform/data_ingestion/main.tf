@@ -11,10 +11,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = var.tf_state_bucket
-    key            = "${var.environment}/data_ingestion/terraform.tfstate"
-    region         = var.aws_region
-    dynamodb_table = var.dynamodb_table
+    bucket         = "airq-terraform-state-bucket"
+    region         = "eu-central-1"
+    dynamodb_table = "airq-terraform-lock-table"
     encrypt        = true
   }
 }
@@ -87,7 +86,7 @@ locals {
 #################################################
 # LAMBDA FUNCTIONS
 module "lambda" {
-  source                       = "../../modules/lambda_function"
+  source                       = "./modules/lambda_function"
   resource_prefix              = local.prefix
   data_ingestion_function_name = "${local.prefix}-${var.data_ingestion_function_name}"
   data_ingestion_bucket_name   = data.aws_ssm_parameter.readings_bucket_name.value
@@ -101,12 +100,11 @@ module "lambda" {
 
 # API RESOURCES
 module "api_resources" {
-  source                           = "../../modules/api_resources"
+  source                           = "./modules/api_resources"
   resource_prefix                  = local.prefix
   api_id                           = data.aws_ssm_parameter.api_id.value
   data_ingestion_resource_id       = data.aws_ssm_parameter.data_ingestion_resource_id.value
   data_validator_lambda_invoke_arn = module.lambda.data_ingestion_function_invoke_arn
-  tags                             = local.tags
 }
 
 #################################################

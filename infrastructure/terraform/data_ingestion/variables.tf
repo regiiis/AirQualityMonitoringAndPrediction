@@ -1,5 +1,5 @@
 #################################################
-# SHARED INFRASTRUCTURE VARIABLES
+# DATA INGESTION ENVIRONMENT VARIABLES
 #################################################
 
 #################################################
@@ -20,19 +20,10 @@ variable "project_prefix" {
   type        = string
 }
 
-variable "tf_state_bucket" {
-  description = "S3 bucket for Terraform state files"
-  type        = string
-}
-
-variable "dynamodb_table" {
-  description = "DynamoDB table for Terraform state locking"
-  type        = string
-}
-
 #################################################
 # TAG CONFIGURATION
 #################################################
+# These replace the single "tags" variable
 variable "common_tags" {
   description = "Common tags for all resources"
   type        = map(string)
@@ -45,43 +36,21 @@ variable "environment_tags" {
   default     = {}
 }
 
-variable "shared_tags" {
-  description = "Tags for shared infrastructure resources"
+variable "data_ingestion_tags" {
+  description = "Tags specific to data ingestion service"
   type        = map(string)
   default     = {}
 }
 
 #################################################
-# VPC CONFIGURATION
+# LAMBDA CONFIGURATION
 #################################################
-variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
+variable "data_ingestion_function_name" {
+  description = "Name of the data ingestion Lambda function"
   type        = string
 }
 
-variable "private_subnet_cidrs" {
-  description = "CIDR blocks for private subnets"
-  type        = list(string)
-}
-
-
-variable "availability_zones" {
-  description = "List of availability zones to use"
-  type        = list(string)
-}
-
-#################################################
-# API CONFIGURATION
-#################################################
-variable "api_name" {
-  description = "Name of the API Gateway"
-  type        = string
-}
-
-#################################################
-# STORAGE CONFIGURATION
-#################################################
-variable "bucket_name" {
-  description = "Name of the S3 bucket for storing air quality readings"
+variable "data_ingestion_zip_path" {
+  description = "Path to the data ingestion Lambda deployment package"
   type        = string
 }

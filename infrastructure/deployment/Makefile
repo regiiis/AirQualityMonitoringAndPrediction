@@ -1,11 +1,10 @@
 .PHONY: deploy-all deploy-shared deploy-data-ingestion clean validate-all plan-all package-lambda check-aws-credentials destroy-all
 
 # Variables
-SHARED_DIR = infrastructure/terraform/shared/environments
-DATA_INGESTION_DIR = infrastructure/terraform/data_ingestion/environments
+SHARED_DIR = infrastructure/terraform/shared
+DATA_INGESTION_DIR = infrastructure/terraform/data_ingestion
 VARIABLES_DIR = infrastructure/terraform/variables
 PACKAGE_DIR = infrastructure/deployment/deployment_packages
-ENV ?= dev
 
 # Check if AWS credentials are valid
 check-aws-credentials:
@@ -23,11 +22,12 @@ deploy-all: check-aws-credentials deploy-shared deploy-data-ingestion
 # Deploy shared infrastructure only
 deploy-shared: check-aws-credentials
 	@echo "Deploying shared infrastructure to $(ENV) environment..."
-	terraform -chdir=$(SHARED_DIR)/$(ENV) init
-	terraform -chdir=$(SHARED_DIR)/$(ENV) validate
-	terraform -chdir=$(SHARED_DIR)/$(ENV) apply -auto-approve \
-		-var-file=../../../variables/common.tfvars \
-		-var-file=../../../variables/$(ENV).tfvars
+	terraform -chdir=$(SHARED_DIR) init -reconfigure\
+	  -backend-config="key=$(ENV)/shared/terraform.tfstate"
+	terraform -chdir=$(SHARED_DIR) validate
+	terraform -chdir=$(SHARED_DIR) apply -auto-approve \
+		-var-file=./../variables/common.tfvars \
+		-var-file=./../variables/$(ENV).tfvars
 	@echo "✅ Shared infrastructure deployment complete!"
 
 # Package the Lambda function into a zip
@@ -48,47 +48,47 @@ package-lambda:
 # Deploy data ingestion service only
 deploy-data-ingestion: check-aws-credentials package-lambda
 	@echo "Deploying data ingestion service to $(ENV) environment..."
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) init
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) validate
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) apply -auto-approve \
-		-var-file=../../../variables/common.tfvars \
-		-var-file=../../../variables/$(ENV).tfvars
+	terraform -chdir=$(DATA_INGESTION_DIR) init -reconfigure
+	terraform -chdir=$(DATA_INGESTION_DIR) validate
+	terraform -chdir=$(DATA_INGESTION_DIR) apply -auto-approve \
+		-var-file=../../variables/common.tfvars \
+		-var-file=../../variables/$(ENV).tfvars
 
 # Validate all Terraform configurations
 validate-all:
 	@echo "Validating all Terraform configurations..."
-	terraform -chdir=$(SHARED_DIR)/$(ENV) validate
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) validate
+	terraform -chdir=$(SHARED_DIR) validate
+	terraform -chdir=$(DATA_INGESTION_DIR) validate
 	@echo "✅ All configurations valid!"
 
 # Plan all changes without applying
 plan-all:
 	@echo "Planning shared infrastructure changes..."
-	terraform -chdir=$(SHARED_DIR)/$(ENV) plan \
+	terraform -chdir=$(SHARED_DIR) plan \
 		-var-file=$(VARIABLES_DIR)/common.tfvars \
 		-var-file=$(VARIABLES_DIR)/$(ENV).tfvars
 	@echo "Planning data ingestion service changes..."
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) plan \
+	terraform -chdir=$(DATA_INGESTION_DIR) plan \
 		-var-file=$(VARIABLES_DIR)/common.tfvars \
 		-var-file=$(VARIABLES_DIR)/$(ENV).tfvars
 
 # Initialize all Terraform directories
 init-all:
 	@echo "Initializing all Terraform directories..."
-	terraform -chdir=$(SHARED_DIR)/$(ENV) init
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) init
+	terraform -chdir=$(SHARED_DIR) init
+	terraform -chdir=$(DATA_INGESTION_DIR) init
 	@echo "✅ All directories initialized!"
 
 # Destroy all infrastructure
 destroy-all: check-aws-credentials
 	@echo "Destroying shared infrastructure in $(ENV) environment..."
-	terraform -chdir=$(SHARED_DIR)/$(ENV) destroy -auto-approve \
-		-var-file=../../../variables/common.tfvars \
-		-var-file=../../../variables/$(ENV).tfvars
+	terraform -chdir=$(SHARED_DIR) destroy -auto-approve \
+		-var-file=../../variables/common.tfvars \
+		-var-file=../../variables/$(ENV).tfvars
 	@echo "Destroying data ingestion infrastructure in $(ENV) environment..."
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) destroy -auto-approve \
-		-var-file=../../../variables/common.tfvars \
-		-var-file=../../../variables/$(ENV).tfvars
+	terraform -chdir=$(DATA_INGESTION_DIR) destroy -auto-approve \
+		-var-file=../../variables/common.tfvars \
+		-var-file=../../variables/$(ENV).tfvars
 	@echo "✅ Teardown complete!"
 
 # Clean up deployment artifacts

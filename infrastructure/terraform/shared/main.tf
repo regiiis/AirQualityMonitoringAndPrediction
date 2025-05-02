@@ -11,10 +11,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = var.tf_state_bucket
-    key            = "${var.environment}/shared/terraform.tfstate"
-    region         = var.aws_region
-    dynamodb_table = var.dynamodb_table
+    bucket         = "airq-terraform-state-bucket"
+    region         = "eu-central-1"
+    dynamodb_table = "airq-terraform-lock-table"
     encrypt        = true
   }
 }
@@ -46,7 +45,7 @@ locals {
 #################################################
 # VPC AND NETWORKING
 module "vpc" {
-  source               = "../../modules/vpc"
+  source               = "./modules/vpc"
   resource_prefix      = local.prefix
   environment          = var.environment
   availability_zones   = var.availability_zones
@@ -57,7 +56,7 @@ module "vpc" {
 
 # SHARED STORAGE
 module "storage" {
-  source          = "../../modules/storage"
+  source          = "./modules/storage"
   resource_prefix = local.prefix
   bucket_name     = "${local.prefix}-${var.bucket_name}"
   environment     = var.environment
@@ -66,9 +65,8 @@ module "storage" {
 
 # API GATEWAY
 module "api_gateway" {
-  source          = "../../modules/api_gateway"
+  source          = "./modules/api_gateway"
   resource_prefix = local.prefix
-  api_name        = "${local.prefix}-${var.api_name}"
   api_key_name    = "${local.prefix}-device-key"
   usage_plan_name = "${var.environment}-device-usage-plan"
   log_group_name  = "/aws/apigateway/${var.environment}-${var.api_name}"
