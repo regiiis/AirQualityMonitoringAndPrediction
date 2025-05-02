@@ -1,4 +1,4 @@
-.PHONY: deploy-all deploy-shared deploy-data-ingestion clean validate-all plan-all package-lambda debug_zip_path check-aws-credentials upload-lambda-zip destroy-all
+.PHONY: deploy-all deploy-shared deploy-data-ingestion clean validate-all plan-all package-lambda check-aws-credentials destroy-all
 
 # Variables
 SHARED_DIR = infrastructure/terraform/shared/environments
@@ -45,22 +45,6 @@ package-lambda:
 	fi
 	@echo "✅ Lambda package created: $(PACKAGE_DIR)/data_ingestion.zip"
 
-# Add this new target to debug path issues
-debug_zip_path:
-	@echo "=== PATH DEBUGGING INFO ==="
-	@echo "Current directory: $$(pwd)"
-	@echo "Checking file existence from current directory:"
-	@ls -la $(PACKAGE_DIR)/data_ingestion.zip || echo "❌ File not found at $(PACKAGE_DIR)/data_ingestion.zip"
-	@echo "Checking from terraform directory:"
-	@cd $(DATA_INGESTION_DIR)/$(ENV) && echo "Now in: $$(pwd)"
-	@cd $(DATA_INGESTION_DIR)/$(ENV) && ls -la ../../../../deployment/deployment_packages/data_ingestion.zip || echo "❌ File not found when checked from Terraform directory"
-	@echo "Creating test path used by Terraform:"
-	@cd $(DATA_INGESTION_DIR)/$(ENV) && echo "Current dir: $$(pwd)"
-	@cd $(DATA_INGESTION_DIR)/$(ENV) && echo "The path '../../../../deployment/deployment_packages/data_ingestion.zip' resolves to: $$(realpath '../../../../deployment/deployment_packages/data_ingestion.zip' 2>/dev/null || echo 'Invalid path')"
-	@echo "Absolute path calculation:"
-	@echo "Calculated absolute path: $$(readlink -f $(PACKAGE_DIR)/data_ingestion.zip)"
-	@ls -la "$$(readlink -f $(PACKAGE_DIR)/data_ingestion.zip)" || echo "❌ File not found at absolute path"
-
 # Deploy data ingestion service only
 deploy-data-ingestion: check-aws-credentials package-lambda
 	@echo "Deploying data ingestion service to $(ENV) environment..."
@@ -69,15 +53,6 @@ deploy-data-ingestion: check-aws-credentials package-lambda
 	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) apply -auto-approve \
 		-var-file=../../../variables/common.tfvars \
 		-var-file=../../../variables/$(ENV).tfvars
-
-# Upload Lambda zip to S3 (only the S3 object resource)
-upload-lambda-zip: check-aws-credentials package-lambda
-	@echo "Uploading Lambda zip to S3..."
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) init
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) validate
-	terraform -chdir=$(DATA_INGESTION_DIR)/$(ENV) apply -target=aws_s3_object.data_ingestion_zip \
-		-var-file=$(VARIABLES_DIR)/common.tfvars \
-		-var-file=$(VARIABLES_DIR)/$(ENV).tfvars
 
 # Validate all Terraform configurations
 validate-all:

@@ -25,6 +25,11 @@ variable "tf_state_bucket" {
   type        = string
 }
 
+variable "dynamodb_table" {
+  description = "DynamoDB table for Terraform state locking"
+  type        = string
+}
+
 #################################################
 # TAG CONFIGURATION
 #################################################
@@ -58,12 +63,4 @@ variable "data_ingestion_function_name" {
 variable "data_ingestion_zip_path" {
   description = "Path to the data ingestion Lambda deployment package"
   type        = string
-}
-
-#################################################
-# VPC CONFIGURATION
-#################################################
-variable "private_subnet_cidrs" {
-  description = "CIDR blocks for private subnets"
-  type        = list(string)
 }

@@ -1,7 +1,8 @@
 # Project-wide settings
 project_prefix  = "airq"
 aws_region      = "eu-central-1"
-tf_state_bucket = "airq-terraform-state"
+tf_state_bucket = "airq-terraform-state-bucket"
+dynamodb_table  = "airq-terraform-lock-table"
 
 # Function names
 data_ingestion_function_name = "air-quality-ingestion"

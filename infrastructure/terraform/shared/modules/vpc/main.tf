@@ -14,7 +14,6 @@ terraform {
 
 # Get current AWS region
 data "aws_region" "current" {}
-data "aws_availability_zones" "available" {}
 
 # Create VPC
 resource "aws_vpc" "main" {

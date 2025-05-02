@@ -13,12 +13,6 @@ variable "data_validator_lambda_invoke_arn" {
   type        = string
 }
 
-variable "tags" {
-  description = "A map of tags to add to all resources"
-  type        = map(string)
-  default     = {}
-}
-
 variable "resource_prefix" {
   description = "Standardized prefix for all resources"
   type        = string

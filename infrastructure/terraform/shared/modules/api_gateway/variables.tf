@@ -1,7 +1,3 @@
-variable "api_name" {
-  description = "Name of the API Gateway"
-  type        = string
-}
 
 variable "api_key_name" {
   description = "Name of the API key for device authentication"

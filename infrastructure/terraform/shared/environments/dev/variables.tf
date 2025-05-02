@@ -20,6 +20,16 @@ variable "project_prefix" {
   type        = string
 }
 
+variable "tf_state_bucket" {
+  description = "S3 bucket for Terraform state files"
+  type        = string
+}
+
+variable "dynamodb_table" {
+  description = "DynamoDB table for Terraform state locking"
+  type        = string
+}
+
 #################################################
 # TAG CONFIGURATION
 #################################################

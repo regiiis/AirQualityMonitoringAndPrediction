@@ -14,7 +14,7 @@ terraform {
     bucket         = var.tf_state_bucket
     key            = "${var.environment}/shared/terraform.tfstate"
     region         = var.aws_region
-    dynamodb_table = "airq-terraform-lock"
+    dynamodb_table = var.dynamodb_table
     encrypt        = true
   }
 }

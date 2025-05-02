@@ -1,4 +1,4 @@
-.PHONY: lint lint_tf type_check validate_api test_logic deploy_dev deploy_prod clean check_all generate_api_docs debug_lambda_paths upload_lambda_zip
+.PHONY: lint lint_tf type_check validate_api test_logic deploy_dev deploy_prod clean generate_api_docs
 
 # Code quality
 lint:
@@ -45,6 +45,3 @@ destroy_dev:
 generate_api_docs:
 	mkdir -p docs/api
 	npx @redocly/cli build-docs api-spec.yaml -o docs/api/index.html
-
-# Mass check
-check_all: lint type_check validate_api test_logic
