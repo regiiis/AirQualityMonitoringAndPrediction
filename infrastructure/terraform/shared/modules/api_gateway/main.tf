@@ -67,7 +67,7 @@ resource "aws_api_gateway_stage" "api_stage" {
   cache_cluster_enabled = false
 
   access_log_settings {
-    destination_arn = data.aws_cloudwatch_log_group.api_gateway_logs.arn
+    destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
     format = jsonencode({
       requestId               = "$context.requestId"
       sourceIp                = "$context.identity.sourceIp"
@@ -178,41 +178,10 @@ resource "aws_api_gateway_usage_plan_key" "device_plan_key" {
   usage_plan_id = aws_api_gateway_usage_plan.device_plan.id
 }
 
-# First, check if log group exists
-data "aws_cloudwatch_log_group" "existing_logs" {
-  name  = var.log_group_name
-  count = 1
-
-  tags = merge(
-    {
-      Name = var.log_group_name
-    },
-    var.tags
-  )
-}
-
-# Attempt to create the log group only if it doesn't exist
-resource "null_resource" "create_log_group_if_needed" {
-  # This will run every time, but the AWS CLI command will fail gracefully if the group exists
-  provisioner "local-exec" {
-    command = "aws logs create-log-group --log-group-name ${var.log_group_name} --region ${data.aws_region.current.name} || true"
-  }
-
-  # Set appropriate tags via AWS CLI
-  provisioner "local-exec" {
-    command = "aws logs tag-log-group --log-group-name ${var.log_group_name} --tags Project=${lookup(var.tags, "Project", "AirQualityMonitoring")} --region ${data.aws_region.current.name} || true"
-  }
-
-  # Ensure retention period is set
-  provisioner "local-exec" {
-    command = "aws logs put-retention-policy --log-group-name ${var.log_group_name} --retention-in-days 365 --region ${data.aws_region.current.name} || true"
-  }
-}
-
-# Reference the log group with a data source for other resources to use
-data "aws_cloudwatch_log_group" "api_gateway_logs" {
-  name       = var.log_group_name
-  depends_on = [null_resource.create_log_group_if_needed]
+resource "aws_cloudwatch_log_group" "api_gateway_logs" {
+  name              = var.log_group_name
+  retention_in_days = 365
+  tags              = var.tags
 }
 
 #################################################

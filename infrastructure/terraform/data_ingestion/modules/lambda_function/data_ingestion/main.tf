@@ -15,7 +15,7 @@ resource "aws_lambda_function" "data_ingestion" {
   role                           = aws_iam_role.data_ingestion_role.arn # Execution role
   timeout                        = 30                                   # Max execution time in seconds
   memory_size                    = 128                                  # Memory allocation in MB
-  reserved_concurrent_executions = 2                                    # Limits concurrent executions
+  # reserved_concurrent_executions = 10                                    # Limits concurrent executions
 
   # Use signed code for enhanced security
   s3_bucket        = aws_signer_signing_job.signing_job.signed_object[0].s3[0].bucket # Bucket with signed code
@@ -37,7 +37,7 @@ resource "aws_lambda_function" "data_ingestion" {
   }
   tags = merge(
     {
-      Name = "${var.resource_prefix}-$var.function_name"
+      Name = "${var.resource_prefix}-${var.function_name}"
     },
     var.tags
   )

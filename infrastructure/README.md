@@ -18,10 +18,10 @@ https://www.terraform.io/docs/cloud/index.html
 - Deployment - Run environment/main.tf
 - State Files - S3 Buckets
 
-## Dev Environment
+## Local Dev Environment
 Terraform commands:
 ```Bash
-# Enaböle autocomplete
+# Enable autocomplete
 terraform -install-autocomplete
 ```
 
@@ -123,10 +123,22 @@ terraform plan
 terraform apply
 ```
 
-### One time setup
+### ```One time setup```
 In order to keep track of the Terraform state files, you need to/should set up a remote backend. This is done by creating an S3 bucket and a DynamoDB table for state locking.
 
 This needs to be done only once for the project. The following file sets up the S3 bucket: `infrastructure/terraform/deployment/s3_backend_one_timer/s3_backend_setup.tf`
+
+### ```Retrieve Endpoint URL and API key```
+```Bash
+aws ssm get-parameter --name "/shared/dev/api-gateway/invoke-url" --region eu-central-1
+
+# First get the key ID
+aws apigateway get-api-keys --region eu-central-1
+
+# Then get the actual key value
+aws apigateway get-api-key --api-key YOUR_KEY_ID --include-value --region eu-central-1
+```
+
 
 
 ## TF Code Quality - .pre-commit-config-terraform.yaml

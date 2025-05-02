@@ -30,6 +30,16 @@ deploy-shared: check-aws-credentials
 		-var-file=./../variables/$(ENV).tfvars
 	@echo "✅ Shared infrastructure deployment complete!"
 
+# Deploy data ingestion service only
+deploy-data-ingestion: check-aws-credentials package-lambda
+	@echo "Deploying data ingestion service to $(ENV) environment..."
+	terraform -chdir=$(DATA_INGESTION_DIR) init -reconfigure\
+	  -backend-config="key=$(ENV)/data_ingestion/terraform.tfstate"
+	terraform -chdir=$(DATA_INGESTION_DIR) validate
+	terraform -chdir=$(DATA_INGESTION_DIR) apply -auto-approve \
+		-var-file=./../variables/common.tfvars \
+		-var-file=./../variables/$(ENV).tfvars
+
 # Package the Lambda function into a zip
 package-lambda:
 	@echo "📦 Packaging Lambda code..."
@@ -44,15 +54,6 @@ package-lambda:
 		exit 1; \
 	fi
 	@echo "✅ Lambda package created: $(PACKAGE_DIR)/data_ingestion.zip"
-
-# Deploy data ingestion service only
-deploy-data-ingestion: check-aws-credentials package-lambda
-	@echo "Deploying data ingestion service to $(ENV) environment..."
-	terraform -chdir=$(DATA_INGESTION_DIR) init -reconfigure
-	terraform -chdir=$(DATA_INGESTION_DIR) validate
-	terraform -chdir=$(DATA_INGESTION_DIR) apply -auto-approve \
-		-var-file=../../variables/common.tfvars \
-		-var-file=../../variables/$(ENV).tfvars
 
 # Validate all Terraform configurations
 validate-all:
@@ -83,12 +84,12 @@ init-all:
 destroy-all: check-aws-credentials
 	@echo "Destroying shared infrastructure in $(ENV) environment..."
 	terraform -chdir=$(SHARED_DIR) destroy -auto-approve \
-		-var-file=../../variables/common.tfvars \
-		-var-file=../../variables/$(ENV).tfvars
+		-var-file=./../variables/common.tfvars \
+		-var-file=./../variables/$(ENV).tfvars
 	@echo "Destroying data ingestion infrastructure in $(ENV) environment..."
 	terraform -chdir=$(DATA_INGESTION_DIR) destroy -auto-approve \
-		-var-file=../../variables/common.tfvars \
-		-var-file=../../variables/$(ENV).tfvars
+		-var-file=./../variables/common.tfvars \
+		-var-file=./../variables/$(ENV).tfvars
 	@echo "✅ Teardown complete!"
 
 # Clean up deployment artifacts

@@ -5,7 +5,7 @@ lint:
 	pre-commit run --all-files
 
 lint_tf:
-	cd infrastructure cd terraform && pre-commit run --config=.pre-commit-config-terraform.yaml --all-files
+	cd infrastructure/terraform && pre-commit run --config=.pre-commit-config-terraform.yaml --all-files
 
 type_check:
 	mypy app/ micropython/ tests/ --exclude 'micropython/libs/' --explicit-package-bases --show-error-codes --show-traceback
@@ -27,6 +27,10 @@ test_logic:
 deploy_dev:
 	@echo "Starting dev deployment process..."
 	$(MAKE) -f infrastructure/deployment/Makefile deploy-all ENV=dev
+
+deploy_data_ingestion_dev:
+	@echo "Starting dev deployment process..."
+	$(MAKE) -f infrastructure/deployment/Makefile deploy-data-ingestion ENV=dev
 
 destroy_dev:
 	@echo "Starting dev destroyment process..."
