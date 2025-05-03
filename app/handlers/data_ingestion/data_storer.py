@@ -1,6 +1,6 @@
 import json
 import logging
-import uuid
+import datetime
 import boto3
 
 # Set up logger
@@ -23,8 +23,8 @@ def store_data(data, bucket_name):
         # Create S3 client
         s3_client = boto3.client("s3")
 
-        # Generate a unique filename
-        filename = f"data/{uuid.uuid4()}.json"
+        current_time = datetime.datetime.now()
+        filename = f"data/{current_time.strftime('%Y%m%d_%H%M%S')}.json"
 
         # Store the data in S3
         s3_client.put_object(

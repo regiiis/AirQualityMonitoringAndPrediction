@@ -48,7 +48,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 
   # This will force a new deployment on any change
   triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.shared_api))
+    redeployment = timestamp()
   }
 
   lifecycle {
