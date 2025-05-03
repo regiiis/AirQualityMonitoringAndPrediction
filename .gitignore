@@ -9,6 +9,7 @@ micropython/*micropython*installer*
 micropython/libs/*
 !micropython/libs/__init__.py
 *.zip
+python_testfile.py
 
 # AWS
 lambda

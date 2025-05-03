@@ -49,7 +49,7 @@ class Main:
             self.storage = SecureStorage()
             self.ssid: str = None
             self.password: str = None
-            self.api_endpoint: str = "https://api.example.com/v1/readings"
+            self.api_endpoint: str = "https://wojr2kkcnf.execute-api.eu-central-1.amazonaws.com/v1/data-ingestion/readings"
             self.api_key: str = None
             # Initialize system parameters
             self.sensors: dict = None
@@ -156,6 +156,15 @@ class Main:
                 name="AirQualityAPI", endpoint=self.api_endpoint, api_key=self.api_key
             )
             print("API client initialized successfully")
+
+            # Test API connection
+            print("Testing API connection...")
+            connection_test_result = self.api_client.test_connection()
+            if connection_test_result:
+                print("✅ API connection test successful!")
+            else:
+                print("❌ API connection test failed. Check endpoint and API key.")
+
         except Exception as e:
             print(f"Error in API setup: {e}")
 

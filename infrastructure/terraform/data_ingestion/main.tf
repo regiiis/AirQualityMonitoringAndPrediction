@@ -95,6 +95,7 @@ module "lambda" {
   security_group_id            = data.aws_ssm_parameter.lambda_security_group_id.value
   environment                  = var.environment
   api_gateway_execution_arn    = data.aws_ssm_parameter.api_execution_arn.value
+  aws_region                   = var.aws_region
   tags                         = local.tags
 }
 

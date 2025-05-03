@@ -4,6 +4,9 @@ data "aws_s3_object" "lambda_zip_metadata" {
   key    = var.zip_s3_key
 }
 
+# You may need to add this data source if not already present
+data "aws_caller_identity" "current" {}
+
 #################################################
 # DATA INGESTION LAMBDA
 #################################################
@@ -132,8 +135,15 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction" # Permission to invoke this function
   function_name = aws_lambda_function.data_ingestion.function_name
-  principal     = "apigateway.amazonaws.com" # API Gateway service can invoke
-  source_arn    = var.api_gateway_arn        # Source API Gateway ARN
+  principal     = "apigateway.amazonaws.com"
+
+  # Use exact ARN format that's working in the console
+  source_arn    = "arn:aws:execute-api:${var.aws_region}:992382742310:wojr2kkcnf/*/*"
+
+  # Add this lifecycle block to prevent Terraform from trying to recreate this resource
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 #################################################

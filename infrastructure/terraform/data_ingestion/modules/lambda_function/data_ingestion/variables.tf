@@ -65,3 +65,8 @@ variable "resource_prefix" {
   description = "Standardized prefix for all resources"
   type        = string
 }
+
+variable "aws_region" {
+  description = "AWS region for the resources"
+  type        = string
+}

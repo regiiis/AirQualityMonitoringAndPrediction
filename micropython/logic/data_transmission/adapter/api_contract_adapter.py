@@ -10,13 +10,11 @@ except ImportError:
     pass
 
 try:
-    from micropython.logic.data_transmission.port.api_contract_port import (  # type: ignore
-        ApiValidationPort,
-    )
+    from data_transmission.port.api_contract_port import ApiValidationPort  # type: ignore
 except ImportError:
-    from micropython.logic.data_transmission.port.api_contract_port import (  # type: ignore
+    from micropython.logic.data_transmission.port.api_contract_port import (
         ApiValidationPort,
-    )
+    )  # type: ignore
 
 
 class ApiContractAdapter(ApiValidationPort):

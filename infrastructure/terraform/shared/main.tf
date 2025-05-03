@@ -58,7 +58,7 @@ module "vpc" {
 module "storage" {
   source          = "./modules/storage"
   resource_prefix = local.prefix
-  bucket_name     = "${local.prefix}-${var.bucket_name}"
+  bucket_name     = var.bucket_name
   environment     = var.environment
   tags            = local.tags
 }

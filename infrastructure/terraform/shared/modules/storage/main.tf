@@ -16,7 +16,7 @@ terraform {
 # S3 BUCKET FOR SENSOR DATA
 #################################################
 resource "aws_s3_bucket" "readings_storage" {
-  bucket = "${var.resource_prefix}-${var.bucket_name}"
+  bucket = var.bucket_name
 
   object_lock_enabled = true
   lifecycle {

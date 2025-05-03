@@ -40,6 +40,7 @@ deploy-data-ingestion: check-aws-credentials package-lambda
 		-var-file=./../variables/common.tfvars \
 		-var-file=./../variables/$(ENV).tfvars
 
+
 # Package the Lambda function into a zip
 package-lambda:
 	@echo "📦 Packaging Lambda code..."

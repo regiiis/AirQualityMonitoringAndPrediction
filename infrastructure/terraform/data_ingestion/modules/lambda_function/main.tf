@@ -30,6 +30,7 @@ module "data_ingestion" {
   bucket_name       = var.data_ingestion_bucket_name
   subnet_ids        = var.subnet_ids
   security_group_id = var.security_group_id
+  aws_region        = var.aws_region
   api_gateway_arn   = var.api_gateway_execution_arn
   environment       = var.environment
 
@@ -41,8 +42,11 @@ module "data_ingestion" {
   signed_code_s3_bucket = aws_s3_bucket.lambda_deployments.id
   signed_code_s3_prefix = "signed"
 
-  # Make this module depend on the S3 object upload
-  depends_on = [aws_s3_object.data_ingestion_zip]
+  # Make this module depend on the S3 object upload and log group creation
+  depends_on = [
+    aws_s3_object.data_ingestion_zip,
+    aws_cloudwatch_log_group.data_ingestion_logs
+  ]
 }
 
 #################################################
@@ -64,7 +68,8 @@ resource "aws_s3_object" "data_ingestion_zip" {
 # LOGGING CONFIGURATION
 #################################################
 resource "aws_cloudwatch_log_group" "data_ingestion_logs" {
-  name              = "/aws/lambda/${var.resource_prefix}-${var.data_ingestion_function_name}"
+  # Update the name to EXACTLY match what Lambda expects
+  name              = "/aws/lambda/${var.resource_prefix}-data-ingestion"
   retention_in_days = 14
 
   tags = merge(
