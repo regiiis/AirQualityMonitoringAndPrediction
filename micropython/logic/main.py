@@ -132,10 +132,10 @@ class Main:
         ########################################################
         if self.wlan.isconnected():
             try:
-                # Try up to 3 times to sync time
                 for _ in range(3):
                     try:
                         ntptime.settime()
+                        print(f"✅ Time synchronized: {time.localtime()}")
                         break
                     except Exception as e:
                         print(f"NTP sync attempt failed: {e}")
@@ -324,7 +324,9 @@ class Main:
                     # Send API POST request
                     print("Build and send API Request")
                     # Get current time with timezone adjustment if needed
-                    current_time = int(time.time())
+                    current_time = int(time.time()) + getattr(
+                        self, "timezone_offset", 0
+                    )
 
                     response = self.api_client.send_data(
                         hyt221=hnt_data,
