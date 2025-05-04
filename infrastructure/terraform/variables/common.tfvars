@@ -2,6 +2,11 @@
 project_prefix = "airq"
 aws_region     = "eu-central-1"
 
+# VPC configuration
+vpc_cidr             = "10.0.0.0/16"
+private_subnet_cidrs = ["10.0.1.0/24"]
+availability_zones   = ["eu-central-1a"]
+
 # Function names
 data_ingestion_function_name = "air-quality-ingestion"
 api_name                     = "air-quality-api"

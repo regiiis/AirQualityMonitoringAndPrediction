@@ -134,6 +134,10 @@ class HYT221Adapter(I2CSensorPort):
             humidity = humidity * 100 / 16383.0
             temperature = temperature * 165 / 16383.0 - 40
 
+            # Round values to 2 decimal places
+            humidity = round(humidity, 2)
+            temperature = round(temperature, 2)
+
             return {
                 "measurements": {
                     "measurement": self._measurement,

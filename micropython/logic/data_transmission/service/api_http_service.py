@@ -50,7 +50,7 @@ class ApiHttpService:
         self._http_adapter = HttpAdapter(name, endpoint, api_key, headers, timeout)
         self._contract_adapter = ApiContractAdapter()
         self._name = name
-        self._readings_endpoint = f"{endpoint.rstrip('/')}/readings"
+        self._readings_endpoint = f"{endpoint.rstrip('/')}"
 
     @property
     def name(self):

@@ -2,7 +2,7 @@
 .SYNOPSIS
     Manages credentials stored in ESP32 secure storage.
 .DESCRIPTION
-    Lists and deletes credentials (WiFi settings, API keys) stored in ESP32's NVS.
+    Lists and deletes credentials (WiFi settings, API credentials) stored in ESP32's NVS.
 #>
 
 # Configuration
@@ -60,33 +60,45 @@ function Get-StoredCredentials {
 
     Write-Host "Checking for stored credentials..." -ForegroundColor Blue
 
-    # Check WiFi credentials
-    $wifiCommand = @"
-ssid, password = storage.get_credentials()
-if ssid and password:
-    print(f"WiFi credentials found:")
-    print(f"SSID: {ssid}")
-    print(f"Password: {'*' * len(password)}")
-else:
-    print("No WiFi credentials found")
-"@
-    $wifiResult = Execute-REPL-Command -Port $Port -Command $wifiCommand
-    Write-Host $wifiResult
+    # Simple Python script to check all credentials with clean error handling
+    $checkCredentialsCommand = @"
+# Check WiFi credentials
+try:
+    ssid, password = storage.get_credentials()
+    if ssid and password:
+        print("WIFI_STATUS:FOUND")
+        print(f"WiFi credentials found:")
+        print(f"SSID: {ssid}")
+        print(f"Password: {'*' * len(password)}")
+    else:
+        print("WIFI_STATUS:NONE")
+        print("No WiFi credentials found")
+except Exception as e:
+    print("WIFI_STATUS:ERROR")
+    print(f"Error checking WiFi credentials: {e}")
 
-    # Check API key
-    $apiKeyCommand = @"
-api_key = storage.get_api_key()
-if api_key:
-    print(f"API Key found: {'*' * 4}{api_key[-4:]}")
-else:
-    print("No API Key found")
+# Check API credentials
+try:
+    api_key, api_endpoint = storage.get_api_info()
+    if api_key and api_endpoint:
+        print("API_STATUS:FOUND")
+        print(f"API credentials found:")
+        print(f"API Key: {'*' * (len(api_key)-4)}{api_key[-4:]}")
+        print(f"API Endpoint: {api_endpoint}")
+    else:
+        print("API_STATUS:NONE")
+        print("No API credentials found")
+except Exception as e:
+    print("API_STATUS:ERROR")
+    print(f"Error checking API credentials: {e}")
 "@
-    $apiKeyResult = Execute-REPL-Command -Port $Port -Command $apiKeyCommand
-    Write-Host $apiKeyResult
 
-    # Return if credentials exist
-    $hasWifi = $wifiResult -match "WiFi credentials found"
-    $hasApiKey = $apiKeyResult -match "API Key found"
+    $result = Execute-REPL-Command -Port $Port -Command $checkCredentialsCommand
+    Write-Host $result
+
+    # Parse results using simple markers
+    $hasWifi = $result -match "WIFI_STATUS:FOUND"
+    $hasApiKey = $result -match "API_STATUS:FOUND"
 
     return @{
         HasWifi = $hasWifi
@@ -102,37 +114,35 @@ function Remove-Credentials {
         [string]$CredentialType
     )
 
-    switch ($CredentialType) {
-        "wifi" {
-            $command = @"
+    $command = switch ($CredentialType) {
+        "wifi" { @"
 if storage.clear_credentials():
     print("WiFi credentials successfully deleted")
 else:
     print("Failed to delete WiFi credentials")
 "@
         }
-        "apikey" {
-            $command = @"
-if storage.clear_api_key():
-    print("API key successfully deleted")
+        "apikey" { @"
+if storage.clear_api_credentials():
+    print("API credentials successfully deleted")
 else:
-    print("Failed to delete API key")
+    print("Failed to delete API credentials")
 "@
         }
-        "all" {
-            $command = @"
+        "all" { @"
 wifi_result = storage.clear_credentials()
-api_result = storage.clear_api_key()
+api_result = storage.clear_api_credentials()
 if wifi_result and api_result:
     print("All credentials successfully deleted")
 elif wifi_result:
-    print("WiFi credentials deleted, but API key deletion failed")
+    print("WiFi credentials deleted, but API credentials deletion failed")
 elif api_result:
-    print("API key deleted, but WiFi credentials deletion failed")
+    print("API credentials deleted, but WiFi credentials deletion failed")
 else:
     print("Failed to delete credentials")
 "@
         }
+        default { "print('Invalid credential type specified')" }
     }
 
     $result = Execute-REPL-Command -Port $Port -Command $command
@@ -153,7 +163,7 @@ try {
     # Prompt for action
     Write-Host "`nSelect credentials to delete:" -ForegroundColor Yellow
     Write-Host "1: WiFi credentials" -ForegroundColor White
-    Write-Host "2: API Key" -ForegroundColor White
+    Write-Host "2: API credentials" -ForegroundColor White
     Write-Host "3: All credentials" -ForegroundColor White
     Write-Host "4: Exit without deleting" -ForegroundColor White
 
@@ -172,12 +182,12 @@ try {
         }
         "2" {
             if ($credentials.HasApiKey) {
-                $confirm = Read-Host "Are you sure you want to delete the API key? (y/n)"
+                $confirm = Read-Host "Are you sure you want to delete the API credentials? (y/n)"
                 if ($confirm -eq "y") {
                     Remove-Credentials -Port $port -CredentialType "apikey"
                 }
             } else {
-                Write-Host "No API key to delete." -ForegroundColor Yellow
+                Write-Host "No API credentials to delete." -ForegroundColor Yellow
             }
         }
         "3" {

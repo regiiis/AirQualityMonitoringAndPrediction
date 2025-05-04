@@ -22,7 +22,7 @@
 # Configuration
 $LOGIC_DIR = "./logic"
 $LIB_DIR = "./libs"
-$AMPY_CMD = "python"
+#$AMPY_CMD = "python"
 
 # Define the libraries and their URLs
 $libraries = @(

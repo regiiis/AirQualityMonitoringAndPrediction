@@ -18,6 +18,7 @@ from modules.wifi import connect_wifi  # type: ignore
 from data_collection.adapter.hyt221 import HYT221Adapter  # type: ignore
 from data_collection.adapter.ina219 import INA219Adapter  # type: ignore
 from data_transmission.service.api_http_service import ApiHttpService  # type: ignore
+import ntptime  # type: ignore - Add NTP time module
 
 
 class Main:
@@ -49,7 +50,7 @@ class Main:
             self.storage = SecureStorage()
             self.ssid: str = None
             self.password: str = None
-            self.api_endpoint: str = "https://wojr2kkcnf.execute-api.eu-central-1.amazonaws.com/v1/data-ingestion/readings"
+            self.api_endpoint: str = None
             self.api_key: str = None
             # Initialize system parameters
             self.sensors: dict = None
@@ -72,7 +73,7 @@ class Main:
             try:
                 try:
                     # Retrieve WiFi credentials from secure storage
-                    self.ssid, self.password = self.storage.get_credentials()
+                    self.ssid, self.password = self.storage.get_wifi_credentials()
                 except Exception as e:
                     print(f"Failed to retrieve WiFi credentials: {e}")
                 if self.ssid and self.password:
@@ -92,11 +93,13 @@ class Main:
                     try:
                         # Prompt user to enter WiFi credentials
                         try:
-                            self.storage.prompt_and_store_credentials()
+                            self.storage.prompt_and_store_wifi_credentials()
                         except Exception as e:
                             print(f"Failed to store WiFi Credentials: {e}")
                         try:
-                            self.ssid, self.password = self.storage.get_credentials()
+                            self.ssid, self.password = (
+                                self.storage.get_wifi_credentials()
+                            )
                         except Exception as e:
                             print(f"Failed to retrieve WiFi credetnials: {e}")
                         if self.ssid and self.password:
@@ -125,30 +128,49 @@ class Main:
                 print(f"Error in the WiFi process: {e}")
 
         ########################################################
+        # Time synchronization
+        ########################################################
+        if self.wlan.isconnected():
+            try:
+                # Try up to 3 times to sync time
+                for _ in range(3):
+                    try:
+                        ntptime.settime()
+                        break
+                    except Exception as e:
+                        print(f"NTP sync attempt failed: {e}")
+                        time.sleep(1)
+            except Exception as e:
+                print(f"Failed to synchronize time: {e}")
+
+        ########################################################
         # API setup
         ########################################################
 
-        if not self.api_key:
+        if not self.api_key or not self.api_endpoint:
+            print("API key or endpoint not found")
             try:
                 # Try to get API key
-                self.api_key = self.storage.get_api_key()
+                self.api_key, self.api_endpoint = self.storage.get_api_credentials()
                 if self.api_key:
                     print(f"API key found: {self.api_key}")
                 else:
                     try:
                         # Try to store API key
                         print("API key not stored")
-                        self.storage.prompt_and_store_api_key()
+                        self.storage.prompt_and_store_api_credentials()
                     except Exception:
                         print("Failed to store API Key")
                     try:
-                        self.api_key = self.storage.get_api_key()
+                        self.api_key, self.api_endpoint = (
+                            self.storage.get_api_credentials()
+                        )
                     except Exception as e:
-                        print(f"Failed to store API key: {e}")
+                        print(f"Failed to store API credentials: {e}")
                     if not self.api_key:
-                        raise Exception("Failed to retrieve API key")
+                        raise Exception("Failed to retrieve API credentials")
             except Exception as e:
-                print(f"Failed to handle API key: {e}")
+                print(f"Error handling API crendials: {e}")
 
         try:
             # Create API service with contract validation
@@ -239,6 +261,29 @@ class Main:
                 # Data collection
                 ########################################################
                 sleep = 0.25
+                list_sensor = [
+                    self.battery,
+                    self.pv,
+                    self.hum_and_temp,
+                ]
+                # Loop through each sensor and read data
+
+                def looper(list_sensor, sleep):
+                    for sensor in list_sensor:
+                        try:
+                            for i in range(3):
+                                if sensor.is_ready():
+                                    data = sensor.read()
+                                    break
+                                time.sleep(sleep)
+                            else:
+                                data = {"measurements": {"error": "sensor_read_failed"}}
+                            print(f"Sensor {sensor.sensor} data: {data}")
+                        except Exception as e:
+                            print(f"Error reading sensor {sensor}: {e}")
+
+                looper(list_sensor, sleep)
+
                 try:
                     for i in range(3):
                         if self.battery.is_ready():
@@ -246,7 +291,7 @@ class Main:
                             break
                         time.sleep(sleep)
                     else:
-                        battery_data = {"measurements": {"error"}}
+                        battery_data = {"measurements": {"error": "sensor_read_failed"}}
                 except Exception:
                     raise
 
@@ -257,7 +302,7 @@ class Main:
                             break
                         time.sleep(sleep)
                     else:
-                        pv_data = {"measurements": {"error"}}
+                        pv_data = {"measurements": {"error": "sensor_read_failed"}}
                 except Exception:
                     raise
 
@@ -268,7 +313,7 @@ class Main:
                             break
                         time.sleep(sleep)
                     else:
-                        hnt_data = {"measurements": {"error"}}
+                        hnt_data = {"measurements": {"error": "sensor_read_failed"}}
                 except Exception:
                     raise
 
@@ -278,13 +323,16 @@ class Main:
                 try:
                     # Send API POST request
                     print("Build and send API Request")
+                    # Get current time with timezone adjustment if needed
+                    current_time = int(time.time())
+
                     response = self.api_client.send_data(
                         hyt221=hnt_data,
                         ina219_1=battery_data,
                         ina219_2=pv_data,
                         metadata={
                             "device_id": self.device_id,
-                            "timestamp": int(time.time()),
+                            "timestamp": current_time,
                             "location": self.location,
                             "version": self.version,
                         },

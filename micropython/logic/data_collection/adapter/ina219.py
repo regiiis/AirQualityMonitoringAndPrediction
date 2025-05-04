@@ -163,13 +163,19 @@ class INA219Adapter(I2CSensorPort):
                 shunt_adc=ina.ADC_128SAMP,
             )
 
+            # Get raw values from the sensor
             voltage = ina.voltage()
             current = ina.current()
             power = ina.power()
 
+            # Round values to 2 decimal places
+            voltage = round(voltage, 2)
+            current = round(current, 2)
+            power = round(power, 2)
+
             return {
                 "measurements": {
-                    "measurement:": self._measurement,
+                    "measurement": self._measurement,
                     "voltage": voltage,
                     "current": current,
                     "power": power,

@@ -70,7 +70,7 @@ class HttpAdapter(TransmissionPort):
 
         # Ensure endpoint doesn't end with a slash
         self._endpoint = endpoint.rstrip("/")
-        self._readings_endpoint = f"{self._endpoint}/readings"
+        self._readings_endpoint = self._endpoint
         self._timeout = timeout
 
         # Initialize headers
@@ -132,8 +132,12 @@ class HttpAdapter(TransmissionPort):
             # Convert payload to JSON
             json_data = json.dumps(payload)
 
+            # Print debug information
+            print(f"Request Headers: {self._headers}")
+            print(f"Payload Preview: {str(json_data)[:100]}...")
+
             # Send POST request to the readings endpoint
-            print(f"Sending data to {self._readings_endpoint}...")
+            print(f"Sending data to {self._readings_endpoint}")
             response = request.post(
                 self._readings_endpoint,
                 headers=self._headers,
@@ -145,19 +149,42 @@ class HttpAdapter(TransmissionPort):
             status_code = response.status_code
             success = 200 <= status_code < 300
 
+            # Get response body
             try:
                 response_data = response.json()
             except ValueError:
-                response_data = {"text": response.text}
+                # If not JSON, get the text content
+                try:
+                    response_text = response.text
+                    response_data = {"text": response_text}
+                    # If we got a 400 error, this is the error message
+                    if status_code == 400 and response_text:
+                        response_data["error"] = response_text
+                except Exception:
+                    response_data = {"error": "Could not read response body"}
 
             response.close()
 
-            # Return result
-            return {
+            # Return result with better error info
+            result = {
                 "success": success,
                 "status_code": status_code,
                 "data": response_data,
             }
+
+            # Add error info for non-success responses
+            if not success:
+                # Try to extract the error message in different ways
+                error_msg = (
+                    response_data.get("error")
+                    or response_data.get("message")
+                    or response_data.get("text")
+                )
+                if not error_msg and isinstance(response_data, dict):
+                    error_msg = str(response_data)
+                result["error"] = error_msg or f"HTTP Error {status_code}"
+
+            return result
 
         except Exception as e:
             print(f"Error sending data: {e}")

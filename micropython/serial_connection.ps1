@@ -121,6 +121,71 @@ function Get-ESP32Port {
     exit 1
 }
 
+function Reset-ESP32 {
+    <#
+    .SYNOPSIS
+        Reboots the ESP32 device programmatically.
+    #>
+    param($port)
+
+    Write-Host "Rebooting ESP32..." -ForegroundColor Blue
+    try {
+        # Use Python for reset
+        $pythonResetScript = @"
+import serial
+import time
+
+try:
+    print('Opening serial connection to $port')
+    ser = serial.Serial('$port', 115200, timeout=1)
+    time.sleep(0.5)
+
+    # Send Ctrl+C to interrupt any running program
+    ser.write(b'\x03')
+    time.sleep(0.5)
+
+    # Clear buffer and send reset command
+    ser.reset_input_buffer()
+    ser.write(b'\r\n\r\n')
+    time.sleep(0.5)
+    ser.write(b'import machine\r\n')
+    time.sleep(0.5)
+    ser.write(b'machine.reset()\r\n')
+    time.sleep(0.2)
+    ser.close()
+
+    print('Reset command sent successfully')
+    exit(0)
+except Exception as e:
+    print(f'Error: {str(e)}')
+    exit(1)
+"@
+
+        # Execute the reset script
+        $tempFile = [System.IO.Path]::GetTempFileName() + ".py"
+        $pythonResetScript | Out-File -FilePath $tempFile -Encoding utf8
+        $result = python $tempFile
+        Remove-Item -Path $tempFile -Force
+
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "ESP32 reboot initiated successfully." -ForegroundColor Green
+            Write-Host "Waiting for reboot to complete..." -ForegroundColor Blue
+            Start-Sleep -Seconds 5  # Wait for reboot
+            return $true
+        } else {
+            Write-Host "Reset failed. Output: $result" -ForegroundColor Red
+            throw "Reset command failed"
+        }
+    }
+    catch {
+        Write-Host "Reset failed: $_" -ForegroundColor Red
+        Write-Host "Please press the RESET button on your ESP32." -ForegroundColor Yellow
+        Read-Host "Press Enter after pressing reset"
+        Start-Sleep -Seconds 3
+        return $true
+    }
+}
+
 function Connect-ESP32REPL {
     <#
     .SYNOPSIS
@@ -150,6 +215,7 @@ Register-EngineEvent PowerShell.Exiting -Action {
 try {
     Initialize-Python
     $port = Get-ESP32Port
+    Reset-ESP32 -port $port
     Connect-ESP32REPL -port $port -baudRate $BAUD_RATE
 }
 catch {

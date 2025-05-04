@@ -24,7 +24,7 @@ def store_data(data, bucket_name):
         s3_client = boto3.client("s3")
 
         current_time = datetime.datetime.now()
-        filename = f"data/{current_time.strftime('%Y%m%d_%H%M%S')}.json"
+        filename = f"data/sensor/airq_{current_time.strftime('%Y%m%d_%H%M%S')}.json"
 
         # Store the data in S3
         s3_client.put_object(
