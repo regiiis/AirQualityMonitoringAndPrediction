@@ -15,6 +15,7 @@ import time
 import network  # type: ignore
 from modules.secure_storage import SecureStorage  # type: ignore
 from modules.wifi import connect_wifi  # type: ignore
+from modules.memory_manager import MemoryManager  # type: ignore
 from data_collection.adapter.hyt221 import HYT221Adapter  # type: ignore
 from data_collection.adapter.ina219 import INA219Adapter  # type: ignore
 from data_transmission.service.api_http_service import ApiHttpService  # type: ignore
@@ -43,7 +44,7 @@ class Main:
             print("Start setup script")
             # Initialize device parameters
             self.device_id: str = "ESP32-001"
-            self.location: str = "living_room"
+            self.location: str = "bed_room"
             self.version: str = "1.0.0"
             # Initialize telecommunication parameters
             self.wlan = network.WLAN(network.STA_IF)
@@ -54,7 +55,7 @@ class Main:
             self.api_key: str = None
             # Initialize system parameters
             self.sensors: dict = None
-            self.collection_interval: int = 60  # seconds
+            self.collection_interval: int = 120  # seconds
             self.scl: int = 11
             self.sda: int = 12
             self.bat_i2c: int = 0x41
@@ -353,7 +354,7 @@ class Main:
                     # Short delay after errors to prevent rapid retries
                     time.sleep(5)
 
-                # Always wait between cycles, regardless of success/failure
+                MemoryManager.show_memory_info()
                 print(
                     f"Waiting {self.collection_interval} seconds before next reading cycle..."
                 )
