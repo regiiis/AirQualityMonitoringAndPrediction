@@ -26,16 +26,17 @@ The goal of this project is to learn and apply MLOps best practices to a fearly 
 ## Solution Design
 
 ### ``` Vision Statement```
-Create an indoor-air monitoring system that helps users maintain optimal CO2 levels through real-time monitoring, predictive analytics and event detection.
+Create an indoor-air monitoring system that helps users maintain optimal air quality levels through real-time monitoring, predictive analytics and event detection.
 
 ### ``` 1. Project Goals```
-- Monitor and predict indoor air quality (CO2, humidity, temperature)
+- Monitor and predict indoor CO2, humidity, temperature
 - Provide real-time insights through visualizations
 - Enable air quality prediction and alerts
 
 #### Core Features
 1. **Real-Time Monitoring**
    - Live CO2, humidity and temperature measurements
+   - Alert management system
 
 2. **Predictive Analytics**
    - 24-hour forecasts for CO2, humidity and temperature
@@ -61,7 +62,6 @@ Create an indoor-air monitoring system that helps users maintain optimal CO2 lev
    - Web-based dashboard
    - Interactive dashboards
    - User authentication and access control
-   - Alert management system
 
 
 
@@ -71,7 +71,7 @@ Create an indoor-air monitoring system that helps users maintain optimal CO2 lev
 
 | Requirements Type | Description | Specifications |
 |-|-|-|
-| **Functional** | Real-time Monitoring | • Sensor data collection every 60s<br>• Live dashboard<br>• Historical data view |
+| **Functional** | Real-time monitoring | • Sensor data collection every 60s<br>• Live dashboard<br>• Historical data view |
 | | Predictions | • 24h forecasting window<br>• Model benchmarking|
 | | Alerts | • Threshold configuration<br>• Email/SMS notifications<br>• Alert history |
 | **Non-Functional** | Performance | • Data latency < 1s<br>• API response < 500ms<br>• 95% uptime |
@@ -93,7 +93,7 @@ Create an indoor-air monitoring system that helps users maintain optimal CO2 lev
 
 ## Project Roadmap
 ### ``` **MVP**```
-A web page with CO2, temperature and humidity TS dashboard, including the following componenets:
+A web page with CO2, temperature and humidity TS dashboard, consisting of the following componenets:
 <br>
 
 | Sensor module| Backend | Frontend |
@@ -106,7 +106,7 @@ A web page with CO2, temperature and humidity TS dashboard, including the follow
 - The **Frontend** is a static webpage with login. A dashboard is loaded with the most recent data on the database.
 
 **Data Pipeline:**<br>
-- Data Collection -> Data Quality Gate -> Data Storage<br>
+- Workflow: Data Collection -> Data Quality Gate -> Data Storage<br>
 - Infrastructure: API Gateway (Data Collection) -> Lambda Function (Data Quality Gate) -> S3 Bucket
 
 **Frontend:**<br>
@@ -132,7 +132,7 @@ Landing page with login and dashboard. The dashboard is a static webpage that di
    - Model 2: Polynomial Regression
    - Model 3: DNN
 - Add model benchmarking
-- Build Sensor module chassis
+- Build sensor module chassis
 
 ### ``` 4th Feature Implementation```
 - Add model with meteo data enrichment
@@ -147,6 +147,15 @@ Landing page with login and dashboard. The dashboard is a static webpage that di
 - Add alert management
 
 <br>
+
+## Project Status
+
+05.05.2025 - The sensor module successfully sends data to the S3 after beeing validated by the Lambda function.
+<br>
+<br>
+To improve:
+- There are occasional uplaod errors, where the connection to the API endpoint is rejected. The error might be due to the http client instaciation as well as a general lack of upload logic reduncancy.
+- The sensor module is not power autark. A battery with higher capacity as well as larger PV panel is needed. Also, the CO2 sensor is yet not implemented and might require, on its own, a higher Ampere supply than the current setup can provide.
 
 ## System Design
 
@@ -173,18 +182,11 @@ The sensor module is composed of the following components:
 <br>
 
 
-## Directory Structure - Cloud-Infrastructure
-```plaintext
-app
-|
-├──
-```
-
 ### Infrastructure System Diagram
 Following the Cloud ressource system diagram  - [Generate System Diagram](#generate-system-diagram):
 
-## Directory Structure - Distibuted Embedded System
-This the repository created on the ESP32.
+## Directory Structure - Sensor Module
+This the repository created on the ESP32. The first two folder levels are removed before upload.
 ```plaintext
 micropython
 ├── libs
@@ -216,6 +218,7 @@ micropython
     |   └── __init__.py
     ├── modules            # Various scripts
     |   ├── __init__.py
+    |   ├── memory_manager.py
     |   ├── mock_abc.py
     |   ├── secure_storage.py
     |   └── wifi.py
@@ -223,6 +226,22 @@ micropython
     └── main.py
 
 ```
+
+
+## Directory Structure - Cloud-Infrastructure
+```plaintext
+app
+|
+├──
+```
+
+### ```Costs```
+The operational costs of the infrastructure are about 30 cents per day for the private VPC endpoint. The rest remains within the AWS free tier.
+
+Cost traps:
+- Avoid public IP
+- Avoid NAT
+- Avoid multiple subnets for VPC
 
 <br>
 
