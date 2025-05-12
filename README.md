@@ -252,7 +252,7 @@ In order to run the CI/CD pipeline, you need to make sure to:
 - Setup Git on WSL
 
 ### ``` Linux Subsystem (WSL)```
-If you are working with Windows, you need to use a Linux subsystem to work in the same env as the CI/CD pipline.
+If you are working with Windows, you need to use a Linux subsystem to work in the same env as the CI/CD pipline. Run VS as admin!
 
 #### Install Debian WSL:
 ```bash
@@ -309,9 +309,6 @@ export AWS_URL="url"
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 
-# Install missing stubs
-mypy --install-types
-
 # Install pre-Commits
 pre-commit install
 ```
@@ -366,7 +363,7 @@ cat ~/.ssh/id_rsa.pub
 ```
 5. Add to GitHub:
 
-- Go to GitHub → Profile Settings → SSH and GPG keys
+- Go to GitHub → Profile "Settings" → SSH and GPG keys
 - Click "New SSH key"
 - Paste your key and save
 ```bash

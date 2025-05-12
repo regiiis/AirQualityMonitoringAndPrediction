@@ -58,10 +58,14 @@ Set up AWS IAM identity center for temporary credentials. You need this in order
 
 **Credentials**: Copy "Option 1" and paste it in your terminal:
 ```Bash
-# Option 1 should look like this:
+# Unset the AWS_PROFILE environment variable
+unset AWS_PROFILE
+# Set your credentials as environment variables
+# Get em from the AWS access portal
 export AWS_ACCESS_KEY_ID="something"
 export AWS_SECRET_ACCESS_KEY="something"
 export AWS_SESSION_TOKEN="something"
+export AWS_REGION="something"  # Hardcode as env var in xdev.sh script
 ```
 
 Your AWS credentials are now set up. You can verify them by running the following command:

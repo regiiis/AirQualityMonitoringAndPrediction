@@ -40,7 +40,7 @@ deploy_prod:
 	@echo "Starting production deployment process..."
 	$(MAKE) -C infrastructure/deployment deploy-all ENV=prod
 
-destroy_dev:
+destroy_prod:
 	@echo "Starting dev destroyment process..."
 	$(MAKE) -f infrastructure/deployment/Makefile destroy-all ENV=prod
 

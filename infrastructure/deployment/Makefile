@@ -1,9 +1,9 @@
 .PHONY: deploy-all deploy-shared deploy-data-ingestion clean validate-all plan-all package-lambda check-aws-credentials destroy-all
 
 # Variables
-SHARED_DIR = infrastructure/terraform/shared
-DATA_INGESTION_DIR = infrastructure/terraform/data_ingestion
-VARIABLES_DIR = infrastructure/terraform/variables
+SHARED_DIR = infrastructure/tf_shared
+DATA_INGESTION_DIR = infrastructure/tf_data_ingestion
+VARIABLES_DIR = infrastructure/variables
 PACKAGE_DIR = infrastructure/deployment/deployment_packages
 
 # Check if AWS credentials are valid
@@ -23,7 +23,7 @@ deploy-all: check-aws-credentials deploy-shared deploy-data-ingestion
 deploy-shared: check-aws-credentials
 	@echo "Deploying shared infrastructure to $(ENV) environment..."
 	terraform -chdir=$(SHARED_DIR) init -reconfigure\
-	  -backend-config="key=$(ENV)/shared/terraform.tfstate"
+	  -backend-config="key=$(ENV)/tf_shared/terraform.tfstate"
 	terraform -chdir=$(SHARED_DIR) validate
 	terraform -chdir=$(SHARED_DIR) apply -auto-approve \
 		-var-file=./../variables/common.tfvars \
@@ -34,7 +34,7 @@ deploy-shared: check-aws-credentials
 deploy-data-ingestion: check-aws-credentials package-lambda
 	@echo "Deploying data ingestion service to $(ENV) environment..."
 	terraform -chdir=$(DATA_INGESTION_DIR) init -reconfigure\
-	  -backend-config="key=$(ENV)/data_ingestion/terraform.tfstate"
+	  -backend-config="key=$(ENV)/tf_data_ingestion/terraform.tfstate"
 	terraform -chdir=$(DATA_INGESTION_DIR) validate
 	terraform -chdir=$(DATA_INGESTION_DIR) apply -auto-approve \
 		-var-file=./../variables/common.tfvars \
