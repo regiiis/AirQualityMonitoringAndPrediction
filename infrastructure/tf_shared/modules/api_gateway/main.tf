@@ -42,13 +42,19 @@ resource "aws_api_gateway_rest_api" "shared_api" {
 # DEPLOYMENT CONFIGURATION
 #################################################
 resource "aws_api_gateway_deployment" "api_deployment" {
-  depends_on = [aws_api_gateway_integration.mock_integration]
+  # Update to only depend on data-ingestion mock
+  depends_on = [
+    aws_api_gateway_integration.mock_integration_ingestion
+  ]
 
   rest_api_id = aws_api_gateway_rest_api.shared_api.id
 
-  # This will force a new deployment on any change
+  # Update trigger to only include data-ingestion mock
   triggers = {
-    redeployment = timestamp()
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_rest_api.shared_api.id,
+      aws_api_gateway_method.mock_method_ingestion.id
+    ]))
   }
 
   lifecycle {
@@ -93,39 +99,28 @@ resource "aws_api_gateway_stage" "api_stage" {
 #################################################
 # MICROSERVICE PATHS
 #################################################
-# Creates a resource for each major microservice
+# Keep only the data-ingestion resource
 resource "aws_api_gateway_resource" "data_ingestion" {
   rest_api_id = aws_api_gateway_rest_api.shared_api.id
   parent_id   = aws_api_gateway_rest_api.shared_api.root_resource_id
   path_part   = "data-ingestion"
 }
 
-resource "aws_api_gateway_resource" "data_processing" {
-  rest_api_id = aws_api_gateway_rest_api.shared_api.id
-  parent_id   = aws_api_gateway_rest_api.shared_api.root_resource_id
-  path_part   = "data-processing"
-}
-
-resource "aws_api_gateway_resource" "visualization" {
-  rest_api_id = aws_api_gateway_rest_api.shared_api.id
-  parent_id   = aws_api_gateway_rest_api.shared_api.root_resource_id
-  path_part   = "visualization"
-}
-
 #################################################
-# MOCK INTEGRATION FOR DEPLOYMENT
+# MOCK INTEGRATIONS FOR DATA-INGESTION PATH
 #################################################
-resource "aws_api_gateway_method" "mock_method" {
+# Keep only the data-ingestion mock
+resource "aws_api_gateway_method" "mock_method_ingestion" {
   rest_api_id   = aws_api_gateway_rest_api.shared_api.id
   resource_id   = aws_api_gateway_resource.data_ingestion.id
   http_method   = "OPTIONS"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "mock_integration" {
+resource "aws_api_gateway_integration" "mock_integration_ingestion" {
   rest_api_id = aws_api_gateway_rest_api.shared_api.id
   resource_id = aws_api_gateway_resource.data_ingestion.id
-  http_method = aws_api_gateway_method.mock_method.http_method
+  http_method = aws_api_gateway_method.mock_method_ingestion.http_method
   type        = "MOCK"
 
   request_templates = {

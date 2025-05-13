@@ -1,10 +1,11 @@
 .PHONY: deploy-all deploy-shared deploy-data-ingestion clean validate-all plan-all package-lambda check-aws-credentials destroy-all
 
 # Variables
-SHARED_DIR = infrastructure/tf_shared
-DATA_INGESTION_DIR = infrastructure/tf_data_ingestion
-VARIABLES_DIR = infrastructure/variables
-PACKAGE_DIR = infrastructure/deployment/deployment_packages
+SHARED_DIR = ../tf_shared
+DATA_INGESTION_DIR = ../tf_data_ingestion
+ML_PIPELINE_DIR = ../tf_ml_pipeline
+VARIABLES_DIR = ../variables
+PACKAGE_DIR = ../deployment/deployment_packages
 
 # Check if AWS credentials are valid
 check-aws-credentials:
@@ -26,8 +27,8 @@ deploy-shared: check-aws-credentials
 	  -backend-config="key=$(ENV)/tf_shared/terraform.tfstate"
 	terraform -chdir=$(SHARED_DIR) validate
 	terraform -chdir=$(SHARED_DIR) apply -auto-approve \
-		-var-file=./../variables/common.tfvars \
-		-var-file=./../variables/$(ENV).tfvars
+		-var-file=../variables/common.tfvars \
+		-var-file=../variables/$(ENV).tfvars
 	@echo "✅ Shared infrastructure deployment complete!"
 
 # Deploy data ingestion service only
@@ -37,16 +38,16 @@ deploy-data-ingestion: check-aws-credentials package-lambda
 	  -backend-config="key=$(ENV)/tf_data_ingestion/terraform.tfstate"
 	terraform -chdir=$(DATA_INGESTION_DIR) validate
 	terraform -chdir=$(DATA_INGESTION_DIR) apply -auto-approve \
-		-var-file=./../variables/common.tfvars \
-		-var-file=./../variables/$(ENV).tfvars
+		-var-file=../variables/common.tfvars \
+		-var-file=../variables/$(ENV).tfvars
 
 
 # Package the Lambda function into a zip
 package-lambda:
 	@echo "📦 Packaging Lambda code..."
 	mkdir -p $(PACKAGE_DIR)/temp_dir
-	pip install -r app/handlers/data_ingestion/requirements.txt -t $(PACKAGE_DIR)/temp_dir
-	cp app/handlers/data_ingestion/*.py $(PACKAGE_DIR)/temp_dir/
+	pip install -r ../../app/handlers/data_ingestion/requirements.txt -t $(PACKAGE_DIR)/temp_dir
+	cp ../../app/handlers/data_ingestion/*.py $(PACKAGE_DIR)/temp_dir/
 	cd $(PACKAGE_DIR)/temp_dir && zip -r ../data_ingestion.zip .
 	@echo "🧹 Cleaning up temp_dir..."
 	rm -rf $(PACKAGE_DIR)/temp_dir/*
@@ -85,12 +86,12 @@ init-all:
 destroy-all: check-aws-credentials
 	@echo "Destroying shared infrastructure in $(ENV) environment..."
 	terraform -chdir=$(SHARED_DIR) destroy -auto-approve \
-		-var-file=./../variables/common.tfvars \
-		-var-file=./../variables/$(ENV).tfvars
+		-var-file=../variables/common.tfvars \
+		-var-file=../variables/$(ENV).tfvars
 	@echo "Destroying data ingestion infrastructure in $(ENV) environment..."
 	terraform -chdir=$(DATA_INGESTION_DIR) destroy -auto-approve \
-		-var-file=./../variables/common.tfvars \
-		-var-file=./../variables/$(ENV).tfvars
+		-var-file=../variables/common.tfvars \
+		-var-file=../variables/$(ENV).tfvars
 	@echo "✅ Teardown complete!"
 
 # Clean up deployment artifacts

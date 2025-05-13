@@ -28,13 +28,3 @@ output "data_ingestion_resource_id" {
   description = "The ID of the data ingestion resource"
   value       = aws_api_gateway_resource.data_ingestion.id
 }
-
-output "data_processing_resource_id" {
-  description = "The ID of the data processing resource"
-  value       = aws_api_gateway_resource.data_processing.id
-}
-
-output "visualization_resource_id" {
-  description = "The ID of the visualization resource"
-  value       = aws_api_gateway_resource.visualization.id
-}
