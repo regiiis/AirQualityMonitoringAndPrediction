@@ -115,7 +115,7 @@ class HttpAdapter(TransmissionPort):
             print(f"Connection test failed: {e}")
             return False
 
-    def send_data(self, payload):
+    def send_data(self, payload) -> dict:
         """
         Send data to server via HTTP POST
 
@@ -145,6 +145,21 @@ class HttpAdapter(TransmissionPort):
                 timeout=self._timeout,
             )
 
+            return response
+
+        except Exception as e:
+            print(f"Error sending data: {e}")
+            return {"success": False, "error": str(e)}
+
+    def validate_response(self, response) -> dict:
+        """
+        Validate the response from the server.
+        Args:
+            response: The HTTP response object
+        Returns:
+            A dictionary with success status, status code, and response data
+        """
+        try:
             # Process response
             status_code = response.status_code
             success = 200 <= status_code < 300
@@ -187,5 +202,5 @@ class HttpAdapter(TransmissionPort):
             return result
 
         except Exception as e:
-            print(f"Error sending data: {e}")
+            print(f"Error processing response: {e}")
             return {"success": False, "error": str(e)}

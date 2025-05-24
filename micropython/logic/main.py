@@ -228,7 +228,7 @@ class Main:
 
     def main(self):
         ########################################################
-        # Main loop
+        # -- MAIN LOOP --
         ########################################################
         while True:
             try:
@@ -259,67 +259,46 @@ class Main:
                         print("Missing WiFi credentials!")
 
                 ########################################################
-                # Data collection
+                # DATA COLLECTION
                 ########################################################
-                sleep = 0.25
-                list_sensor = [
-                    self.battery,
-                    self.pv,
-                    self.hum_and_temp,
-                ]
-                # Loop through each sensor and read data
+                try:
+                    sleep = 0.25
+                    sensor_readings = {}
+                    sensors = {
+                        "battery_data": self.battery,
+                        "pv_data": self.pv,
+                        "hnt_data": self.hum_and_temp,
+                    }
 
-                def looper(list_sensor, sleep):
-                    for sensor in list_sensor:
-                        try:
-                            for i in range(3):
-                                if sensor.is_ready():
-                                    data = sensor.read()
-                                    break
-                                time.sleep(sleep)
-                            else:
+                    # Loop through each sensor and read data
+                    def looper(sensor_dict, sleep):
+                        sensors_dict = sensor_dict
+                        for key, sensor_obj in sensors_dict.items():
+                            try:
                                 data = {"measurements": {"error": "sensor_read_failed"}}
-                            print(f"Sensor {sensor.sensor} data: {data}")
-                        except Exception as e:
-                            print(f"Error reading sensor {sensor}: {e}")
+                                for i in range(3):
+                                    if sensor_obj.is_ready():
+                                        sensor = sensor_obj.read()
+                                        break
+                                    time.sleep(sleep)
+                                sensor_readings[key] = data
+                                print(f"Sensor {sensor.sensor} data: {data}")
 
-                looper(list_sensor, sleep)
+                            except Exception as e:
+                                print(f"Error reading sensor {sensor}: {e}")
 
-                try:
-                    for i in range(3):
-                        if self.battery.is_ready():
-                            battery_data = self.battery.read()
-                            break
-                        time.sleep(sleep)
-                    else:
-                        battery_data = {"measurements": {"error": "sensor_read_failed"}}
-                except Exception:
-                    raise
+                    try:
+                        looper(sensors, sleep)
 
-                try:
-                    for i in range(3):
-                        if self.pv.is_ready():
-                            pv_data = self.pv.read()
-                            break
-                        time.sleep(sleep)
-                    else:
-                        pv_data = {"measurements": {"error": "sensor_read_failed"}}
-                except Exception:
-                    raise
-
-                try:
-                    for i in range(3):
-                        if self.hum_and_temp.is_ready():
-                            hnt_data = self.hum_and_temp.read()
-                            break
-                        time.sleep(sleep)
-                    else:
-                        hnt_data = {"measurements": {"error": "sensor_read_failed"}}
-                except Exception:
-                    raise
-
+                        battery_data = sensor_readings["battery_data"]
+                        pv_data = sensor_readings["pv_data"]
+                        hnt_data = sensor_readings["hnt_data"]
+                    except Exception as e:
+                        print(f"Error in sensor data collection: {e}")
+                except Exception as e:
+                    print(f"Error in 'DATA COLLECTION': {e}")
                 ################################################
-                # Data transmission
+                # DATA TRANSMISSION
                 ################################################
                 try:
                     # Send API POST request
@@ -341,27 +320,37 @@ class Main:
                         },
                     )
 
+                    validate_response = self.api_client.validate_response(response)
+
                     # Process the API response
-                    if response.get("success", False):
-                        print(f"API request successful: {response.get('data', {})}")
+                    if validate_response.get("success", False):
+                        print(
+                            f"API request successful: {validate_response.get('data', {})}"
+                        )
                     else:
-                        error_msg = response.get("error", "Unknown error")
-                        status = response.get("status_code", "n/a")
+                        error_msg = validate_response.get("error", "Unknown error")
+                        status = validate_response.get("status_code", "n/a")
                         print(f"API request failed ({status}): {error_msg}")
 
                 except Exception as e:
-                    print(f"Error in data transmission: {e}")
+                    print(f"Error in 'DATA TRANSMISSION': {e}")
                     # Short delay after errors to prevent rapid retries
                     time.sleep(5)
 
-                MemoryManager.show_memory_info()
-                print(
-                    f"Waiting {self.collection_interval} seconds before next reading cycle..."
-                )
-                time.sleep(self.collection_interval)
+                ################################################
+                # POST PROCESSING
+                ################################################
+                try:
+                    MemoryManager.show_memory_info()
+                    print(
+                        f"Waiting {self.collection_interval} seconds before next reading cycle..."
+                    )
+                    time.sleep(self.collection_interval)
+                except Exception as e:
+                    print(f"Error in 'POST PROCESSING': {e}")
 
             except Exception as e:
-                print(f"Error during main loop: {e}")
+                print(f"Error in --MAIN LOOP--: {e}")
                 time.sleep(5)
 
 

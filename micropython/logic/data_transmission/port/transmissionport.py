@@ -73,3 +73,16 @@ class TransmissionPort(ABC):
             Dict[str, Any]: Response information
         """
         raise NotImplementedError("Abstract method")
+
+    @abstractmethod
+    def validate_response(self, response: Dict[str, Any]) -> dict:
+        """
+        Validate the server response
+
+        Args:
+            response: Dictionary containing the server response
+
+        Returns:
+            dict: Validation result
+        """
+        raise NotImplementedError("Abstract method")
