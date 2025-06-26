@@ -64,29 +64,31 @@ function Get-StoredCredentials {
     $checkCredentialsCommand = @"
 # Check WiFi credentials
 try:
-    ssid, password = storage.get_credentials()
+    ssid, password = storage.get_wifi_credentials()
     if ssid and password:
         print("WIFI_STATUS:FOUND")
-        print(f"WiFi credentials found:")
+        print(f"WiFi credentials found")
         print(f"SSID: {ssid}")
         print(f"Password: {'*' * len(password)}")
     else:
-        print("WIFI_STATUS:NONE")
+        print("WIFI_STATUS:NOT_FOUND")
         print("No WiFi credentials found")
 except Exception as e:
     print("WIFI_STATUS:ERROR")
     print(f"Error checking WiFi credentials: {e}")
 
+print()  # Add separator
+
 # Check API credentials
 try:
-    api_key, api_endpoint = storage.get_api_info()
+    api_key, api_endpoint = storage.get_api_credentials()
     if api_key and api_endpoint:
         print("API_STATUS:FOUND")
-        print(f"API credentials found:")
+        print(f"API credentials found")
         print(f"API Key: {'*' * (len(api_key)-4)}{api_key[-4:]}")
         print(f"API Endpoint: {api_endpoint}")
     else:
-        print("API_STATUS:NONE")
+        print("API_STATUS:NOT_FOUND")
         print("No API credentials found")
 except Exception as e:
     print("API_STATUS:ERROR")
@@ -96,7 +98,7 @@ except Exception as e:
     $result = Execute-REPL-Command -Port $Port -Command $checkCredentialsCommand
     Write-Host $result
 
-    # Parse results using simple markers
+    # Parse results using the status markers
     $hasWifi = $result -match "WIFI_STATUS:FOUND"
     $hasApiKey = $result -match "API_STATUS:FOUND"
 
@@ -116,13 +118,15 @@ function Remove-Credentials {
 
     $command = switch ($CredentialType) {
         "wifi" { @"
-if storage.clear_credentials():
+print("Attempting to clear WiFi credentials...")
+if storage.clear_wifi_credentials():
     print("WiFi credentials successfully deleted")
 else:
     print("Failed to delete WiFi credentials")
 "@
         }
         "apikey" { @"
+print("Attempting to clear API credentials...")
 if storage.clear_api_credentials():
     print("API credentials successfully deleted")
 else:
@@ -130,8 +134,11 @@ else:
 "@
         }
         "all" { @"
-wifi_result = storage.clear_credentials()
+print("Attempting to clear all credentials...")
+wifi_result = storage.clear_wifi_credentials()
+print("---")
 api_result = storage.clear_api_credentials()
+print("---")
 if wifi_result and api_result:
     print("All credentials successfully deleted")
 elif wifi_result:

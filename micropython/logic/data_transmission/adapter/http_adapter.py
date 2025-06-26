@@ -54,7 +54,7 @@ class HttpAdapter(TransmissionPort):
         endpoint: str,
         api_key: str,
         headers: dict,
-        timeout: int = 10,
+        timeout: int = 15,
     ):
         """
         Initialize HTTP adapter with server details.
@@ -78,9 +78,23 @@ class HttpAdapter(TransmissionPort):
         if "Content-Type" not in self._headers:
             self._headers["Content-Type"] = "application/json"
 
+        # Add Connection close header to prevent keep-alive issues
+        if "Connection" not in self._headers:
+            self._headers["Connection"] = "close"
+
         # Add API key to X-API-Key header if provided (ApiKeyAuth scheme)
         if api_key:
             self._headers["X-API-Key"] = api_key
+
+        # Extract host from endpoint for proper Host header
+        try:
+            # Parse the URL to extract host
+            if "://" in self._endpoint:
+                # Extract host from full URL
+                host_part = self._endpoint.split("://")[1].split("/")[0]
+                self._headers["Host"] = host_part
+        except Exception:
+            pass  # If parsing fails, skip adding Host header
 
     @property
     def name(self):
@@ -99,16 +113,29 @@ class HttpAdapter(TransmissionPort):
             return False
 
     def test_connection(self):
-        """Test server connection with a HEAD request to the readings endpoint"""
+        """Test server connection with a simple request to the readings endpoint"""
         if not self.is_ready():
             return False
 
         try:
-            # Test connection to the readings endpoint specifically
-            response = request.head(
+            # For AWS API Gateway, HEAD requests might not be supported or might require different auth
+            # Try a simple GET request instead (should return 405 Method Not Allowed but still indicates connection)
+            print(f"Testing connection to: {self._readings_endpoint}")
+            print(f"Test headers: {self._headers}")
+
+            response = request.get(
                 self._readings_endpoint, headers=self._headers, timeout=self._timeout
             )
-            success = 200 <= response.status_code < 300
+
+            print(f"Test connection response: {response.status_code}")
+
+            # Accept 405 (Method Not Allowed) as a valid response since we're testing connectivity
+            # Accept 401/403 as valid connection but auth issue
+            success = (200 <= response.status_code < 300) or response.status_code in [
+                401,
+                403,
+                405,
+            ]
             response.close()
             return success
         except Exception as e:
@@ -135,9 +162,10 @@ class HttpAdapter(TransmissionPort):
             # Print debug information
             print(f"Request Headers: {self._headers}")
             print(f"Payload Preview: {str(json_data)[:100]}...")
+            print(f"Full endpoint: {self._readings_endpoint}")
 
             # Send POST request to the readings endpoint
-            print(f"Sending data to {self._readings_endpoint}")
+            print(f"Sending POST data to {self._readings_endpoint}")
             response = request.post(
                 self._readings_endpoint,
                 headers=self._headers,
@@ -145,7 +173,8 @@ class HttpAdapter(TransmissionPort):
                 timeout=self._timeout,
             )
 
-            return response
+            # Process and validate the response
+            return self.validate_response(response)
 
         except Exception as e:
             print(f"Error sending data: {e}")

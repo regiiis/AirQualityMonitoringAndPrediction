@@ -13,8 +13,9 @@ terraform {
   backend "s3" {
     bucket         = "airq-terraform-state-bucket"
     region         = "eu-central-1"
-    dynamodb_table = "airq-terraform-lock-table"
+    key            = "data-ingestion/terraform.tfstate"
     encrypt        = true
+    use_lockfile   = true
   }
 }
 
@@ -76,7 +77,6 @@ locals {
     var.environment_tags,
     var.data_ingestion_tags
   )
-
 
   lambda_zip_path = "${path.module}/${var.data_ingestion_zip_path}"
 }

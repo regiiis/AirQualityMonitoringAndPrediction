@@ -12,12 +12,12 @@ data "aws_caller_identity" "current" {}
 #################################################
 resource "aws_lambda_function" "data_ingestion" {
   # Basic Lambda configuration for the main data ingestion function
-  function_name                  = var.function_name
-  handler                        = "data_ingestion.handler"             # Entry point for execution
-  runtime                        = "python3.11"                         # Python runtime version
-  role                           = aws_iam_role.data_ingestion_role.arn # Execution role
-  timeout                        = 30                                   # Max execution time in seconds
-  memory_size                    = 128                                  # Memory allocation in MB
+  function_name = var.function_name
+  handler       = "data_ingestion.handler"             # Entry point for execution
+  runtime       = "python3.11"                         # Python runtime version
+  role          = aws_iam_role.data_ingestion_role.arn # Execution role
+  timeout       = 30                                   # Max execution time in seconds
+  memory_size   = 128                                  # Memory allocation in MB
   # reserved_concurrent_executions = 10                                    # Limits concurrent executions
 
   # Use signed code for enhanced security
@@ -31,6 +31,8 @@ resource "aws_lambda_function" "data_ingestion" {
   environment {
     variables = {
       SENSOR_DATA_STORAGE_S3 = var.bucket_name # S3 bucket where sensor data will be stored
+      LOG_LEVEL              = "INFO"          # Set log level for debugging
+      AWS_LAMBDA_LOG_LEVEL   = "INFO"          # AWS Lambda log level
     }
   }
 
@@ -137,8 +139,8 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
   function_name = aws_lambda_function.data_ingestion.function_name
   principal     = "apigateway.amazonaws.com"
 
-  # Use exact ARN format that's working in the console
-  source_arn    = "arn:aws:execute-api:${var.aws_region}:992382742310:wojr2kkcnf/*/*"
+  # Use dynamic ARN based on the actual API Gateway
+  source_arn = "${var.api_gateway_arn}/*/*"
 
   # Add this lifecycle block to prevent Terraform from trying to recreate this resource
   lifecycle {

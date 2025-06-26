@@ -42,23 +42,28 @@ resource "aws_api_gateway_rest_api" "shared_api" {
 # DEPLOYMENT CONFIGURATION
 #################################################
 resource "aws_api_gateway_deployment" "api_deployment" {
-  # Update to only depend on data-ingestion mock
+  # Depend on mock integration for initial deployment
   depends_on = [
     aws_api_gateway_integration.mock_integration_ingestion
   ]
 
   rest_api_id = aws_api_gateway_rest_api.shared_api.id
 
-  # Update trigger to only include data-ingestion mock
+  # Update trigger to include basic structure only
   triggers = {
     redeployment = sha1(jsonencode([
       aws_api_gateway_rest_api.shared_api.id,
+      aws_api_gateway_resource.data_ingestion.id,
       aws_api_gateway_method.mock_method_ingestion.id
     ]))
   }
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes = [
+      # Allow other modules to update the deployment
+      triggers
+    ]
   }
 }
 

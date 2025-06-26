@@ -5,7 +5,7 @@ lint:
 	pre-commit run --all-files
 
 lint_tf:
-	cd infrastructure/terraform && pre-commit run --config=.pre-commit-config-terraform.yaml --all-files
+	cd infrastructure/ && pre-commit run --config=.pre-commit-config-terraform.yaml --all-files
 
 type_check:
 	mypy app/ micropython/ tests/ --exclude 'micropython/libs/' --explicit-package-bases --show-error-codes --show-traceback

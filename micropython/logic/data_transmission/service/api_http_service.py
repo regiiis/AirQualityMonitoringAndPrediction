@@ -114,7 +114,7 @@ class ApiHttpService:
             if not isinstance(response, dict):
                 return {
                     "success": False,
-                    "error": "Invalid response format - expected dictionary",
+                    "error": f"Invalid response format - expected dictionary, got {type(response).__name__}: {str(response)[:100]}",
                     "status_code": "n/a",
                 }
 

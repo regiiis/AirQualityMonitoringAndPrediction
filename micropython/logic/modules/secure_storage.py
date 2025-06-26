@@ -296,36 +296,93 @@ class SecureStorage:
 
     def clear_wifi_credentials(self):
         """
-        Securely clear stored credentials from NVS.
+        Securely clear stored WiFi credentials from NVS.
 
         Returns:
             bool: True if cleared successfully, False otherwise
         """
+        success_count = 0
+        total_keys = 2
+
+        # Try to clear SSID
         try:
             self._nvs.erase_key("ssid")
+            self._nvs.commit()
+            success_count += 1
+            print("SSID cleared successfully")
+        except OSError as e:
+            # Key doesn't exist - this is okay
+            if "key not found" in str(e).lower() or "not found" in str(e).lower():
+                print("SSID was not found (already cleared)")
+                success_count += 1
+            else:
+                print(f"Error clearing SSID: {e}")
+        except Exception as e:
+            print(f"Unexpected error clearing SSID: {e}")
+
+        # Try to clear password
+        try:
             self._nvs.erase_key("pwd")
             self._nvs.commit()
-            return True
+            success_count += 1
+            print("WiFi password cleared successfully")
+        except OSError as e:
+            # Key doesn't exist - this is okay
+            if "key not found" in str(e).lower() or "not found" in str(e).lower():
+                print("WiFi password was not found (already cleared)")
+                success_count += 1
+            else:
+                print(f"Error clearing WiFi password: {e}")
         except Exception as e:
-            print(f"Error clearing credentials: {e}")
-            return False
+            print(f"Unexpected error clearing WiFi password: {e}")
+
+        # Return True if both operations succeeded (or keys didn't exist)
+        return success_count == total_keys
 
     def clear_api_credentials(self):
         """
-        Securely clear stored API key from NVS.
+        Securely clear stored API credentials from NVS.
 
         Returns:
             bool: True if cleared successfully, False otherwise
         """
+        success_count = 0
+        total_keys = 2
+
+        # Try to clear API key
         try:
             self._nvs.erase_key("api_key")
             self._nvs.commit()
+            success_count += 1
+            print("API key cleared successfully")
+        except OSError as e:
+            # Key doesn't exist - this is okay
+            if "key not found" in str(e).lower() or "not found" in str(e).lower():
+                print("API key was not found (already cleared)")
+                success_count += 1
+            else:
+                print(f"Error clearing API key: {e}")
+        except Exception as e:
+            print(f"Unexpected error clearing API key: {e}")
+
+        # Try to clear API endpoint
+        try:
             self._nvs.erase_key("api_endpoint")
             self._nvs.commit()
-            return True
+            success_count += 1
+            print("API endpoint cleared successfully")
+        except OSError as e:
+            # Key doesn't exist - this is okay
+            if "key not found" in str(e).lower() or "not found" in str(e).lower():
+                print("API endpoint was not found (already cleared)")
+                success_count += 1
+            else:
+                print(f"Error clearing API endpoint: {e}")
         except Exception as e:
-            print(f"Error clearing API key: {e}")
-            return False
+            print(f"Unexpected error clearing API endpoint: {e}")
+
+        # Return True if both operations succeeded (or keys didn't exist)
+        return success_count == total_keys
 
     def prompt_and_store_wifi_credentials(self):
         """

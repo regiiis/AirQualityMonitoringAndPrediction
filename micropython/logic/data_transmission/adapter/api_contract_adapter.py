@@ -166,93 +166,115 @@ class ApiContractAdapter(ApiValidationPort):
             # Extract INA219 data (measurement, voltage, current, power)
             if ina219_1 and "measurements" in ina219_1:
                 ina_measurements = ina219_1.get("measurements", {})
-                measurement_name = ina_measurements.get("measurement", "")
-                if not measurement_name and "measurement" in ina_measurements:
-                    raise ValueError(
-                        "measurement name is missing in ina219_1 measurements"
+
+                # Check if sensor reading failed
+                if "error" in ina_measurements:
+                    print(
+                        f"Warning: INA219_1 sensor error: {ina_measurements['error']}"
                     )
+                    # Set default values for failed sensor
+                    measurements.setdefault("voltage", {})["Battery"] = 0.0
+                    measurements.setdefault("current", {})["Battery"] = 0.0
+                    measurements.setdefault("power", {})["Battery"] = 0.0
+                else:
+                    measurement_name = ina_measurements.get("measurement", "Unknown")
+                    if not measurement_name and "measurement" in ina_measurements:
+                        raise ValueError(
+                            "measurement name is missing in ina219_1 measurements"
+                        )
 
-                # Process voltage
-                if "voltage" in ina_measurements:
-                    try:
-                        # Ensure we're working with a dictionary of the right type
-                        if "voltage" not in measurements:
-                            measurements["voltage"] = {}
+                    # Process voltage
+                    if "voltage" in ina_measurements:
+                        try:
+                            # Ensure we're working with a dictionary of the right type
+                            if "voltage" not in measurements:
+                                measurements["voltage"] = {}
 
-                        # Now we can safely add the value
-                        voltage_value = float(ina_measurements["voltage"])
-                        measurements["voltage"][measurement_name] = voltage_value
-                    except (TypeError, ValueError):
-                        raise ValueError("voltage must be a number")
+                            # Now we can safely add the value
+                            voltage_value = float(ina_measurements["voltage"])
+                            measurements["voltage"][measurement_name] = voltage_value
+                        except (TypeError, ValueError):
+                            raise ValueError("voltage must be a number")
 
-                # Process current
-                if "current" in ina_measurements:
-                    try:
-                        # Ensure we're working with a dictionary of the right type
-                        if "current" not in measurements:
-                            measurements["current"] = {}
+                    # Process current
+                    if "current" in ina_measurements:
+                        try:
+                            # Ensure we're working with a dictionary of the right type
+                            if "current" not in measurements:
+                                measurements["current"] = {}
 
-                        # Now we can safely add the value
-                        current_value = float(ina_measurements["current"])
-                        measurements["current"][measurement_name] = current_value
-                    except (TypeError, ValueError):
-                        raise ValueError("current must be a number")
+                            # Now we can safely add the value
+                            current_value = float(ina_measurements["current"])
+                            measurements["current"][measurement_name] = current_value
+                        except (TypeError, ValueError):
+                            raise ValueError("current must be a number")
 
-                # Process power
-                if "power" in ina_measurements:
-                    try:
-                        # Ensure we're working with a dictionary of the right type
-                        if "power" not in measurements:
-                            measurements["power"] = {}
+                    # Process power
+                    if "power" in ina_measurements:
+                        try:
+                            # Ensure we're working with a dictionary of the right type
+                            if "power" not in measurements:
+                                measurements["power"] = {}
 
-                        power_value = float(ina_measurements["power"])
-                        measurements["power"][measurement_name] = power_value
-                    except (TypeError, ValueError):
-                        raise ValueError("power must be a number")
+                            power_value = float(ina_measurements["power"])
+                            measurements["power"][measurement_name] = power_value
+                        except (TypeError, ValueError):
+                            raise ValueError("power must be a number")
 
             # Extract INA219 data from second sensor
             if ina219_2 and "measurements" in ina219_2:
                 ina_measurements = ina219_2.get("measurements", {})
-                measurement_name = ina_measurements.get("measurement", "")
-                if not measurement_name and "measurement" in ina_measurements:
-                    raise ValueError(
-                        "measurement name is missing in ina219_2 measurements"
+
+                # Check if sensor reading failed
+                if "error" in ina_measurements:
+                    print(
+                        f"Warning: INA219_2 sensor error: {ina_measurements['error']}"
                     )
+                    # Set default values for failed sensor
+                    measurements.setdefault("voltage", {})["PV"] = 0.0
+                    measurements.setdefault("current", {})["PV"] = 0.0
+                    measurements.setdefault("power", {})["PV"] = 0.0
+                else:
+                    measurement_name = ina_measurements.get("measurement", "Unknown")
+                    if not measurement_name and "measurement" in ina_measurements:
+                        raise ValueError(
+                            "measurement name is missing in ina219_2 measurements"
+                        )
 
-                # Process voltage for second sensor
-                if "voltage" in ina_measurements:
-                    try:
-                        if "voltage" not in measurements:
-                            measurements["voltage"] = {}
+                    # Process voltage for second sensor
+                    if "voltage" in ina_measurements:
+                        try:
+                            if "voltage" not in measurements:
+                                measurements["voltage"] = {}
 
-                        voltage_value = float(ina_measurements["voltage"])
-                        measurements["voltage"][measurement_name] = voltage_value
-                    except (TypeError, ValueError):
-                        raise ValueError("voltage must be a number")
+                            voltage_value = float(ina_measurements["voltage"])
+                            measurements["voltage"][measurement_name] = voltage_value
+                        except (TypeError, ValueError):
+                            raise ValueError("voltage must be a number")
 
-                # Process current for second sensor
-                if "current" in ina_measurements:
-                    try:
-                        if "current" not in measurements:
-                            measurements["current"] = {}
+                    # Process current for second sensor
+                    if "current" in ina_measurements:
+                        try:
+                            if "current" not in measurements:
+                                measurements["current"] = {}
 
-                        current_value = float(ina_measurements["current"])
-                        measurements["current"][measurement_name] = current_value
-                    except (TypeError, ValueError):
-                        raise ValueError("current must be a number")
+                            current_value = float(ina_measurements["current"])
+                            measurements["current"][measurement_name] = current_value
+                        except (TypeError, ValueError):
+                            raise ValueError("current must be a number")
 
-                # Process power for second sensor
-                if "power" in ina_measurements:
-                    try:
-                        # Ensure we're working with a dictionary of the right type
-                        if "power" not in measurements:
-                            measurements["power"] = {}
+                    # Process power for second sensor
+                    if "power" in ina_measurements:
+                        try:
+                            # Ensure we're working with a dictionary of the right type
+                            if "power" not in measurements:
+                                measurements["power"] = {}
 
-                        # Now we can safely add the value
-                        power_value = float(ina_measurements["power"])
-                        measurements["power"][measurement_name] = power_value
-                    except (TypeError, ValueError):
-                        raise ValueError("power must be a number")
+                            # Now we can safely add the value
+                            power_value = float(ina_measurements["power"])
+                            measurements["power"][measurement_name] = power_value
+                        except (TypeError, ValueError):
+                            raise ValueError("power must be a number")
 
             # Validate metadata
             if "device_id" not in metadata:

@@ -44,7 +44,7 @@ resource "aws_api_gateway_integration" "validator_integration" {
 }
 
 # Create or update deployment to apply changes
-resource "aws_api_gateway_deployment" "api_deployment" {
+resource "aws_api_gateway_deployment" "data_ingestion_deployment" {
   rest_api_id = var.api_id
 
   triggers = {

@@ -61,7 +61,8 @@ class ApiValidationPort(ABC):
                 "device_id": str,
                 "timestamp": int,
                 "location": str,
-                "version": str
+                "version": str,
+                "http_client_reset": str
             }
         }
 

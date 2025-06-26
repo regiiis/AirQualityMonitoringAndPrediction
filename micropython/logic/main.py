@@ -83,7 +83,7 @@ class Main:
             self.api_key: str = None
             # Initialize system parameters
             self.sensors: dict = None
-            self.collection_interval: int = 120  # seconds
+            self.collection_interval: int = 180  # seconds
             self.scl: int = 11
             self.sda: int = 12
             self.bat_i2c: int = 0x41
@@ -179,12 +179,13 @@ class Main:
         # API setup
         ########################################################
         if not self.api_key or not self.api_endpoint:
-            print("API key or endpoint not found")
+            print("API key and/or endpoint not loaded")
             try:
                 # Try to get API key
                 self.api_key, self.api_endpoint = self.storage.get_api_credentials()
-                if self.api_key:
+                if self.api_key and self.api_endpoint:
                     print(f"API key found: {self.api_key}")
+                    print(f"API endpoint found: {self.api_endpoint}")
                 else:
                     try:
                         # Try to store API key
@@ -314,55 +315,59 @@ class Main:
 
     def _send_sensor_data(self, sensor_data, current_time):
         """Helper method to send sensor data to API with retry logic"""
-        battery_data = sensor_data.get("battery_data", {})
-        pv_data = sensor_data.get("pv_data", {})
-        hnt_data = sensor_data.get("hnt_data", {})
+        try:
+            battery_data = sensor_data.get("battery_data", {})
+            pv_data = sensor_data.get("pv_data", {})
+            hnt_data = sensor_data.get("hnt_data", {})
 
-        metadata = {
-            "device_id": self.device_id,
-            "timestamp": current_time,
-            "location": self.location,
-            "version": self.version,
-            "http_client_reinstanced": "No",
-        }
+            metadata = {
+                "device_id": self.device_id,
+                "timestamp": current_time,
+                "location": self.location,
+                "version": self.version,
+                "http_client_reset": "No",
+            }
 
-        for attempt in range(3):
-            try:
-                response = self.api_client.send_data(
-                    hyt221=hnt_data,
-                    ina219_1=battery_data,
-                    ina219_2=pv_data,
-                    metadata=metadata,
-                )
-                return response
-            except Exception as e:
-                print(f"Error sending data to API (attempt {attempt + 1}): {e}")
-                if attempt < 2:
-                    time.sleep(2)
-                else:
-                    # Last attempt - try reinitializing HTTP client
-                    try:
-                        self.http_client_instance()
-                        print("API client re-initialized for final attempt")
-                        metadata["http_client_reinstanced"] = "Yes"
-                        # Retry sending data after reinitialization
-                        response = self.api_client.send_data(
-                            hyt221=hnt_data,
-                            ina219_1=battery_data,
-                            ina219_2=pv_data,
-                            metadata=metadata,
-                        )
-                        return response
-                    except Exception as reset_error:
-                        print(
-                            f"Final attempt failed after HTTP client reset: {reset_error}"
-                        )
-                        return {
-                            "success": False,
-                            "error": f"All retry attempts failed: {reset_error}",
-                        }
+            for attempt in range(3):
+                try:
+                    response = self.api_client.send_data(
+                        hyt221=hnt_data,
+                        ina219_1=battery_data,
+                        ina219_2=pv_data,
+                        metadata=metadata,
+                    )
+                    return response
+                except Exception as e:
+                    print(f"Error sending data to API (attempt {attempt + 1}): {e}")
+                    if attempt < 2:
+                        time.sleep(5)
+                    else:
+                        # Last attempt - try reinitializing HTTP client
+                        try:
+                            self.http_client_instance()
+                            print("API client re-initialized for final attempt")
+                            metadata["http_client_reset"] = "Yes"
+                            # Retry sending data after reinitialization
+                            response = self.api_client.send_data(
+                                hyt221=hnt_data,
+                                ina219_1=battery_data,
+                                ina219_2=pv_data,
+                                metadata=metadata,
+                            )
+                            return response
+                        except Exception as reset_error:
+                            print(
+                                f"Final attempt failed after HTTP client reset: {reset_error}"
+                            )
+                            return {
+                                "success": False,
+                                "error": f"All retry attempts failed: {reset_error}",
+                            }
 
-        return {"success": False, "error": "Maximum retry attempts reached"}
+            return {"success": False, "error": "Maximum retry attempts reached"}
+        except Exception as e:
+            print(f"Error in _send_sensor_data: {e}")
+            return {"success": False, "error": str(e)}
 
     def main(self):
         ########################################################
@@ -379,7 +384,7 @@ class Main:
                     print("Not connected to any network")
                     if not self._reconnect_wifi():
                         print("WiFi reconnection failed, skipping this cycle")
-                        time.sleep(10)
+                        time.sleep(30)
                         continue
 
                 ########################################################
@@ -390,6 +395,7 @@ class Main:
                 except Exception as e:
                     print(f"Error in sensor data collection: {e}")
                     continue
+
                 ################################################
                 # DATA TRANSMISSION
                 ################################################

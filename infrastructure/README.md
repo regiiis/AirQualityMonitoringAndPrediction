@@ -108,7 +108,7 @@ terraform --version
 ### ```Deploying the infrastructure```
 1. Navigate to the `terraform` environment directory:
 ```Bash
-cd terraform/environments/dev
+cd infrastructure/deployment/dev
 ```
 2. Initialize Terraform:
 ```Bash
