@@ -99,3 +99,44 @@ class ApiHttpService:
 
         except ValueError as e:
             return {"success": False, "error": f"API contract validation error: {e}"}
+
+    def validate_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate the response from the API request
+
+        Args:
+            response: The response dictionary from send_data method
+
+        Returns:
+            Dict with validation results including success status and any error information
+        """
+        try:
+            if not isinstance(response, dict):
+                return {
+                    "success": False,
+                    "error": "Invalid response format - expected dictionary",
+                    "status_code": "n/a",
+                }
+
+            # Check if the response indicates success
+            success = response.get("success", False)
+
+            if success:
+                return {
+                    "success": True,
+                    "data": response.get("data", {}),
+                    "status_code": response.get("status_code", 200),
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": response.get("error", "Unknown API error"),
+                    "status_code": response.get("status_code", "n/a"),
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Response validation error: {e}",
+                "status_code": "n/a",
+            }

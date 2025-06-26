@@ -23,20 +23,48 @@ import ntptime  # type: ignore - Add NTP time module
 
 
 class Main:
+    def __init__(self):
+        """Initialize the Main class with default values"""
+        self.device_id = None
+        self.location = None
+        self.version = None
+        self.wlan = None
+        self.storage = None
+        self.ssid = None
+        self.password = None
+        self.api_endpoint = None
+        self.api_key = None
+        self.sensors = None
+        self.collection_interval = None
+        self.scl = None
+        self.sda = None
+        self.bat_i2c = None
+        self.pv_i2c = None
+        self.hum_and_temp_i2c = None
+        self.battery = None
+        self.pv = None
+        self.hum_and_temp = None
+        self.api_client = None
+        self.timezone_offset = 0  # Default timezone offset
+
     def setup(self):
-        """
-        Main execution function for the ESP32 Air Quality Monitoring System.
+        """Complete setup process for the ESP32 system"""
+        print("Starting ESP32 Air Quality Monitoring System Setup...")
 
-        This function performs the following tasks:
-        1. Initializes the WiFi interface
-        2. Attempts to retrieve stored WiFi credentials
-        3. Connects to WiFi using stored or user-provided credentials
-        4. Monitors the WiFi connection status
+        # Run setup methods in order
+        self.variable_setup()
+        self.wifi_setup()
+        self.time_setup()
+        self.api_setup()
+        self.http_client_instance()
+        self.sensor_setup()
 
-        Raises:
-            Exception: For various WiFi-related errors including connection failures
-                    and credential management issues
-        """
+        print("✅ Setup complete! Starting main monitoring loop...")
+
+    def variable_setup(self):
+        ########################################################
+        # Variable setup
+        ########################################################
         try:
             # Initialize system parameters
             print("GET TO START SETUP")
@@ -44,7 +72,7 @@ class Main:
             print("Start setup script")
             # Initialize device parameters
             self.device_id: str = "ESP32-001"
-            self.location: str = "bed_room"
+            self.location: str = "living_room"
             self.version: str = "1.0.0"
             # Initialize telecommunication parameters
             self.wlan = network.WLAN(network.STA_IF)
@@ -66,6 +94,7 @@ class Main:
             print(f"Error initializing parameters: {e}")
             return
 
+    def wifi_setup(self):
         ########################################################
         # WiFi setup
         ########################################################
@@ -128,6 +157,7 @@ class Main:
             except Exception as e:
                 print(f"Error in the WiFi process: {e}")
 
+    def time_setup(self):
         ########################################################
         # Time synchronization
         ########################################################
@@ -144,10 +174,10 @@ class Main:
             except Exception as e:
                 print(f"Failed to synchronize time: {e}")
 
+    def api_setup(self):
         ########################################################
         # API setup
         ########################################################
-
         if not self.api_key or not self.api_endpoint:
             print("API key or endpoint not found")
             try:
@@ -173,6 +203,10 @@ class Main:
             except Exception as e:
                 print(f"Error handling API crendials: {e}")
 
+    def http_client_instance(self):
+        ########################################################
+        # HTTP client setup
+        ########################################################
         try:
             # Create API service with contract validation
             self.api_client = ApiHttpService(
@@ -188,9 +222,12 @@ class Main:
             else:
                 print("❌ API connection test failed. Check endpoint and API key.")
 
+            return self.api_client
+
         except Exception as e:
             print(f"Error in API setup: {e}")
 
+    def sensor_setup(self):
         ########################################################
         # Sensor setup
         ########################################################
@@ -226,6 +263,107 @@ class Main:
         except Exception as e:
             print(f"Error creating sensors: {e}")
 
+    def _reconnect_wifi(self):
+        """Helper method to reconnect to WiFi"""
+        if self.ssid and self.password:
+            try:
+                print("Trying to reconnect to WiFi")
+                self.wlan, self.ssid = connect_wifi(self.ssid, self.password)
+                time.sleep(3)
+                if self.wlan.isconnected():
+                    print(f"Reconnected to: {self.ssid}")
+                    return True
+                else:
+                    print("Failed to reconnect to WiFi")
+                    return False
+            except Exception as e:
+                print(f"Error reconnecting to WiFi: {e}")
+                return False
+        else:
+            print("Missing WiFi credentials for reconnection!")
+            return False
+
+    def _collect_sensor_data(self):
+        """Helper method to collect data from all sensors"""
+        sleep_time = 0.25
+        sensor_readings = {}
+        sensors = {
+            "battery_data": self.battery,
+            "pv_data": self.pv,
+            "hnt_data": self.hum_and_temp,
+        }
+
+        for key, sensor_obj in sensors.items():
+            try:
+                data = {"measurements": {"error": "sensor_read_failed"}}
+                for i in range(3):
+                    if sensor_obj.is_ready():
+                        data = sensor_obj.read()
+                        break
+                    time.sleep(sleep_time)
+                sensor_readings[key] = data
+                print(f"Sensor {key} data: {data}")
+
+            except Exception as e:
+                print(f"Error reading sensor {key}: {e}")
+                sensor_readings[key] = {
+                    "measurements": {"error": f"sensor_read_failed: {e}"}
+                }
+
+        return sensor_readings
+
+    def _send_sensor_data(self, sensor_data, current_time):
+        """Helper method to send sensor data to API with retry logic"""
+        battery_data = sensor_data.get("battery_data", {})
+        pv_data = sensor_data.get("pv_data", {})
+        hnt_data = sensor_data.get("hnt_data", {})
+
+        metadata = {
+            "device_id": self.device_id,
+            "timestamp": current_time,
+            "location": self.location,
+            "version": self.version,
+            "http_client_reinstanced": "No",
+        }
+
+        for attempt in range(3):
+            try:
+                response = self.api_client.send_data(
+                    hyt221=hnt_data,
+                    ina219_1=battery_data,
+                    ina219_2=pv_data,
+                    metadata=metadata,
+                )
+                return response
+            except Exception as e:
+                print(f"Error sending data to API (attempt {attempt + 1}): {e}")
+                if attempt < 2:
+                    time.sleep(2)
+                else:
+                    # Last attempt - try reinitializing HTTP client
+                    try:
+                        self.http_client_instance()
+                        print("API client re-initialized for final attempt")
+                        metadata["http_client_reinstanced"] = "Yes"
+                        # Retry sending data after reinitialization
+                        response = self.api_client.send_data(
+                            hyt221=hnt_data,
+                            ina219_1=battery_data,
+                            ina219_2=pv_data,
+                            metadata=metadata,
+                        )
+                        return response
+                    except Exception as reset_error:
+                        print(
+                            f"Final attempt failed after HTTP client reset: {reset_error}"
+                        )
+                        return {
+                            "success": False,
+                            "error": f"All retry attempts failed: {reset_error}",
+                        }
+
+        return {"success": False, "error": "Maximum retry attempts reached"}
+
     def main(self):
         ########################################################
         # -- MAIN LOOP --
@@ -239,64 +377,19 @@ class Main:
                     print(f"Connected to: {self.ssid}")
                 else:
                     print("Not connected to any network")
-                    if self.ssid and self.password:
-                        # If credentials are found, try to connect to WiFi
-                        print(f"Credentials found: {self.ssid}")
-                        try:
-                            print("Trying to connect to Wifi")
-                            self.wlan, self.ssid = connect_wifi(
-                                self.ssid, self.password
-                            )
-                            time.sleep(3)
-                            if self.wlan.isconnected():
-                                print(f"Connected to: {self.ssid}")
-                            else:
-                                print("Not connected to any network")
-                                break
-                        except Exception as e:
-                            print(f"Error: {e}")
-                    else:
-                        print("Missing WiFi credentials!")
+                    if not self._reconnect_wifi():
+                        print("WiFi reconnection failed, skipping this cycle")
+                        time.sleep(10)
+                        continue
 
                 ########################################################
                 # DATA COLLECTION
                 ########################################################
                 try:
-                    sleep = 0.25
-                    sensor_readings = {}
-                    sensors = {
-                        "battery_data": self.battery,
-                        "pv_data": self.pv,
-                        "hnt_data": self.hum_and_temp,
-                    }
-
-                    # Loop through each sensor and read data
-                    def looper(sensor_dict, sleep):
-                        sensors_dict = sensor_dict
-                        for key, sensor_obj in sensors_dict.items():
-                            try:
-                                data = {"measurements": {"error": "sensor_read_failed"}}
-                                for i in range(3):
-                                    if sensor_obj.is_ready():
-                                        sensor = sensor_obj.read()
-                                        break
-                                    time.sleep(sleep)
-                                sensor_readings[key] = data
-                                print(f"Sensor {sensor.sensor} data: {data}")
-
-                            except Exception as e:
-                                print(f"Error reading sensor {sensor}: {e}")
-
-                    try:
-                        looper(sensors, sleep)
-
-                        battery_data = sensor_readings["battery_data"]
-                        pv_data = sensor_readings["pv_data"]
-                        hnt_data = sensor_readings["hnt_data"]
-                    except Exception as e:
-                        print(f"Error in sensor data collection: {e}")
+                    sensor_readings = self._collect_sensor_data()
                 except Exception as e:
-                    print(f"Error in 'DATA COLLECTION': {e}")
+                    print(f"Error in sensor data collection: {e}")
+                    continue
                 ################################################
                 # DATA TRANSMISSION
                 ################################################
@@ -308,21 +401,10 @@ class Main:
                         self, "timezone_offset", 0
                     )
 
-                    response = self.api_client.send_data(
-                        hyt221=hnt_data,
-                        ina219_1=battery_data,
-                        ina219_2=pv_data,
-                        metadata={
-                            "device_id": self.device_id,
-                            "timestamp": current_time,
-                            "location": self.location,
-                            "version": self.version,
-                        },
-                    )
+                    response = self._send_sensor_data(sensor_readings, current_time)
 
+                    # validate the response
                     validate_response = self.api_client.validate_response(response)
-
-                    # Process the API response
                     if validate_response.get("success", False):
                         print(
                             f"API request successful: {validate_response.get('data', {})}"
