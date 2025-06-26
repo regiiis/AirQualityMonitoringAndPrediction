@@ -1,5 +1,5 @@
 # Sensor Module
-An embeded MicroPython project for Arduino Nano ESP32-S3.
+An embedded MicroPython project on Arduino Nano ESP32-S3.
 
 The sensor module is designed to be used with the Arduino Nano ESP32-S3 board. It collects data from various sensors and sends it to a cloud-based backend for further processing and analysis.
 
@@ -10,19 +10,20 @@ MicroPython is a lean implementation of Python 3 that is optimized to run on mic
 ### ```Components```
 - **IDE**: VS Code
 - **Scripts**: PowerShell
-- **Hardware**: Arduino Nano ESP32-S3
-- **Sensors**: INA219, HYT221
+- **Hardware**:
+   - Microcontroller: Arduino Nano ESP32-S3
+   - Sensors: INA219, HYT221
 - **Firmware**: MicroPython for ESP32-S3
 - **Language**: Python 3.11.*
-- **Tools**: lab-micropython-installer: https://github.com/arduino/lab-micropython-installer
+- **Additional Tools**: lab-micropython-installer: https://github.com/arduino/lab-micropython-installer
 
-Resources & Knowledge:
+**Resources & Knowledge:**
 - Micropython doc: https://docs.micropython.org/en/latest/index.html
 - Micropython libs: https://github.com/micropython/micropython-lib/tree/master
 - Micropython stubs: https://github.com/Josverl/micropython-stubs
 - CPython libs: https://github.com/python/cpython
 
-Sensor Libs:
+**Sensor Libs:**
 - INA219: https://raw.githubusercontent.com/chrisb2/pyb_ina219/master/ina219.py
 
    The module has four I2C addresses:<br>
@@ -34,15 +35,14 @@ Sensor Libs:
 - HYT221:
    I2C adress: 0X28
 
-You can also use "SoftI2C" feature, which makes it possible to use any GPIO pins as I2C pins. This is useful when you want to use different pins for I2C communication.
+**Arduino Nano ESP32-S3:**
+
+GPIO: In order to add I2C access pins to the arduino, pins can be configured as soft pins - "SoftI2C" feature. This enables for any GPIO pins to be used as I2C pins.
 
 ## Automation Scripts
-In the `micropython` folder, you will find several PowerShell scripts that automate the installation and setup process for MicroPython on your ESP32 board. There is a script to install MicroPython, upload code, connect to the serial monitor, and clean the ESP32 flash memory.
+Inside the `micropython` directory, you will find several PowerShell scripts used to automate the installation and setup process of MicroPython and codes on the ESP32 board. There is a script to install MicroPython, upload codes, connect to the serial monitor, and clean the ESP32 flash memory.
 
-The
-
-
-- Run in PS in order to be able torun scripts:
+You need to run the scritps in PS. Following steps are required to run the scripts:
 
 1. Open PowerShell as Administrator
 2. Set the execution policy to allow script execution:
@@ -51,7 +51,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 3. Navigate to the `micropython` folder
 
-Run one of the following scripts:
+You can now run the following scripts:
 
 ### ```Firmware Installer```
 Install MicroPython on your ESP32 board.
@@ -82,10 +82,10 @@ This script will:
 - Automatically detect your ESP32 port
 - Create the necessary directory structure on the ESP32
 - Upload the required libraries and files to the ESP32
-- Upload all necessary files (secure_storage.py, wifi.py, main.py)
+- Upload all necessary files (secure_storage.py, wifi.py, main.py, etc.)
 - Reboot the ESP32
 - Connect to esp via miniterm
-- Setup the credentials for WiFi connection and API key
+   - Setup the credentials for WiFi connection and API key
 
 ### ```Serial Connector```
 Connect to the ESP32's serial monitor.
