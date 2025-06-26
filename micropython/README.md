@@ -109,3 +109,6 @@ This script provides:
 - Erase the ESP32 flash memory
 - Format the ESP32 filesystem
 - Reboot the ESP32
+
+
+## Software Structure

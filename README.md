@@ -1,5 +1,37 @@
 # Indoor Air Quality Monitoring And Prediction
-An indoor air quality monitoring- and prediction project for learning purposes.
+An indoor air quality monitoring- and prediction project for self-study purposes.
+
+**Table of Content**
+- [Motivation](#motivation)
+- [Technology Stack](#technology-stack)
+- [Solution Design](#solution-design)
+  - [Vision Statement](#vision-statement)
+  - [Project Goals](#1-project-goals)
+  - [Requirements](#2-requirements)
+  - [System Components](#3-system-components)
+- [Project Roadmap](#project-roadmap)
+- [Project Status](#project-status)
+- [System Design](#system-design)
+  - [Sensor Module](#sensor-module)
+    - [Sensor Module Wiring Schema](#sensor-module-wiring-schema)
+  - [Infrastructure System Diagram](#infrastructure-system-diagram)
+- [Directory Structure - Sensor Module](#directory-structure-sensor-module)
+- [Directory Structure - Cloud-Infrastructure](#directory-structure-cloud-infrastructure)
+- [Costs](#costs)
+- [Setup for Development](#setup-for-development)
+  - [Linux Subsystem (WSL)](#linux-subsystem-wsl)
+    - [Install Debian WSL](#install-debian-wsl)
+    - [Setup Debian WSL](#setup-debian-wsl)
+    - [Create Python Virtual Environment](#create-python-virtual-environment)
+    - [Install Node](#install-node)
+  - [Daily Command for Local Dev](#daily-command-for-local-dev)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Project Documentation](#project-documentation)
+- [Version Control](#version-control)
+  - [Link GitHub to WSL](#link-github-to-wsl)
+  - [Commit naming rules](#commit-naming-rules)
+- [Backlog](#backlog)
+
 
 ## Motivation
 This is an end-to-end air quality monitoring and prediction project. A sensor module is installed in an appartment room, which collects and periodically sends measurement data to a server. The server processes the data and provides a web interface for real-time monitoring and prediction of indoor air quality.
@@ -11,10 +43,10 @@ The goal of this project is to learn and apply MLOps best practices to a fearly 
 | **Dev & Ops** | • Version Control & CI/CD<br>• Code Quality & Testing<br>• Infrastructure Automation<br>• Container Orchestration<br>• Security & Monitoring |
 | **Data Pipeline** | • Ingestion & Validation<br>• Feature Engineering<br>• Data Versioning<br>• Feature Store Integration |
 | **ML Lifecycle** | • Training & Experimentation<br>• Model Registry & Versioning<br>• Deployment & Serving<br>• Performance Monitoring<br>
-| **Data Communication** | • Interactive Dashboarding
+| **Data Communication** | • Visualisation<br>• Interactive Dashboarding
 <br><br>
 
-### ```Technology Stack```
+## ```Technology Stack```
 
 | Component | Tools & Technologies |
 |-|-|
@@ -64,9 +96,6 @@ Create an indoor-air monitoring system that helps users maintain optimal air qua
    - User authentication and access control
 
 
-
-
-
 ### ``` 2. Requirements```
 
 | Requirements Type | Description | Specifications |
@@ -83,7 +112,7 @@ Create an indoor-air monitoring system that helps users maintain optimal air qua
 | Component | Description | Key Features |
 |-|-|-|
 | **Sensor Module** | Data collection unit | • CO2/humidity sensors<br>• Batch API<br>• Secure transmission <br>• 72h backend-server independency |
-| **Backend Server** | Computation Backend | • Handles communication to sensor module<br>• Orchestrates **Data Pipeline**, **ML System** and **Web Interface**<br>|
+| **Backend Server** | Computation backend | • Handles communication to sensor module<br>• Orchestrates **Data Pipeline**, **ML System** and **Web Interface**<br>|
 | **Data Pipeline** | Data processing system | • Real-time ingestion<br>• Data validation<br>• Feature engineering |
 | **ML System** | Prediction engine | • Model training<br>• Automated retraining|
 | **Web Interface** | User dashboard | • Live monitoring<br>• Predictions view<br>• Alert management |
@@ -93,12 +122,12 @@ Create an indoor-air monitoring system that helps users maintain optimal air qua
 
 ## Project Roadmap
 ### ``` **MVP**```
-A web page with CO2, temperature and humidity TS dashboard, consisting of the following componenets:
+A web page with CO2, temperature and humidity TS dashboard with the following componenets:
 <br>
 
 | Sensor module| Backend | Frontend |
 |-|-|-|
-| • Sensors<br>• PV & Battery<br>• MC<br>• MC Logic | • Data Pipeline <br>• Database <br>• Frontend Host | • Webpage <br>• Login <br>• Dashboard (static)
+| • Sensors<br>• PV & Battery<br>• MC<br>• MC Logic | • Data Pipeline <br>• Database <br>• Frontend Host | • Webpage (static)<br>• Login <br>• Dashboard (static)
 
 
 - The **Sensor Module** is assembled and runned by software that collects and sends data to the backend.<br>
@@ -107,7 +136,7 @@ A web page with CO2, temperature and humidity TS dashboard, consisting of the fo
 
 **Data Pipeline:**<br>
 - Workflow: Data Collection -> Data Quality Gate -> Data Storage<br>
-- Infrastructure: API Gateway (Data Collection) -> Lambda Function (Data Quality Gate) -> S3 Bucket
+- Infrastructure: API Gateway (Data Collection) -> Lambda Function (Data Quality Gate) -> S3 Bucket (Data Storage)
 
 **Frontend:**<br>
 Landing page with login and dashboard. The dashboard is a static webpage that displays the most recent data from the database.
@@ -150,12 +179,12 @@ Landing page with login and dashboard. The dashboard is a static webpage that di
 
 ## Project Status
 
-05.05.2025 - The sensor module successfully sends data to the S3 after beeing validated by the Lambda function.
+05.05.2025 - The sensor module successfully sends data to the S3. The data is validated by the Lambda function in prior via an JSON Schema.
 <br>
 <br>
 To improve:
 - There are occasional uplaod errors, where the connection to the API endpoint is rejected. The error might be due to the http client instaciation as well as a general lack of upload logic reduncancy.
-- The sensor module is not power autark. A battery with higher capacity as well as larger PV panel is needed. Also, the CO2 sensor is yet not implemented and might require, on its own, a higher Ampere supply than the current setup can provide.
+- The sensor module is not power autark. A battery with higher capacity as well as larger PV panel is needed. Also, the CO2 sensor is yet not implemented and might require a higher current supply than the actual setup can provide.
 
 ## System Design
 
@@ -186,7 +215,7 @@ The sensor module is composed of the following components:
 Following the Cloud ressource system diagram  - [Generate System Diagram](#generate-system-diagram):
 
 ## Directory Structure - Sensor Module
-This the repository created on the ESP32. The first two folder levels are removed before upload.
+The following directory is uploaded on the ESP32. The first two folder levels are removed before upload.
 ```plaintext
 micropython
 ├── libs
@@ -249,7 +278,7 @@ Cost traps:
 In order to run the CI/CD pipeline, you need to make sure to:
 - Run VS as admin.
 - Install Debian on WSL
-- Setup Git on WSL
+- Setup Git on WSL - see [Version Control](#version-control)
 
 ### ``` Linux Subsystem (WSL)```
 If you are working with Windows, you need to use a Linux subsystem to work in the same env as the CI/CD pipline. Run VS as admin!
