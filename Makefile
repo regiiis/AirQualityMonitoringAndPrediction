@@ -28,10 +28,6 @@ deploy_dev:
 	@echo "Starting dev deployment process..."
 	$(MAKE) -f infrastructure/deployment/Makefile deploy-all ENV=dev
 
-deploy_data_ingestion_dev:
-	@echo "Starting dev deployment process..."
-	$(MAKE) -f infrastructure/deployment/Makefile deploy-data-ingestion ENV=dev
-
 destroy_dev:
 	@echo "Starting dev destroyment process..."
 	$(MAKE) -f infrastructure/deployment/Makefile destroy-all ENV=dev

@@ -18,6 +18,14 @@ https://www.terraform.io/docs/cloud/index.html
 - Deployment - Run environment/main.tf
 - State Files - S3 Buckets
 
+## Directory Structure
+```Bash
+infrastructure/
+├── deployment/
+│   ├── deployment_packes/
+
+```
+
 ## Local Dev Environment
 Terraform commands:
 ```Bash
