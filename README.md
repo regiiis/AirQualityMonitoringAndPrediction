@@ -147,7 +147,7 @@ Landing page with login and dashboard. The dashboard is a static webpage that di
 - Data collection and transmission
 <br><br>
 
-### ```1st Feature Implementation```
+### ``` 1st Feature Implementation```
 - Add first model to dashboard
    - Model 1: Time Series
 

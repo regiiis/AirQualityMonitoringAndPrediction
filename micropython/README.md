@@ -39,6 +39,8 @@ MicroPython is a lean implementation of Python 3 that is optimized to run on mic
 
 GPIO: In order to add I2C access pins to the arduino, pins can be configured as soft pins - "SoftI2C" feature. This enables for any GPIO pins to be used as I2C pins.
 
+## Logic Flowchart
+
 ## Automation Scripts
 Inside the `micropython` directory, you will find several PowerShell scripts used to automate the installation and setup process of MicroPython and codes on the ESP32 board. There is a script to install MicroPython, upload codes, connect to the serial monitor, and clean the ESP32 flash memory.
 
