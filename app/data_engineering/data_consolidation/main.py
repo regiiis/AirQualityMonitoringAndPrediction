@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class FilesToCSV:
-    def __init__(self, bucket_name: str, consolidated_file_name: str):
+    def __init__(self, bucket_name: str = False, consolidated_file_name: str = False):
         """
         Initialize FilesToCSV service.
 
@@ -18,8 +18,17 @@ class FilesToCSV:
             bucket_name: S3 bucket name for source files
             consolidated_file_name: Name for the consolidated output file
         """
-        self.bucket_name = bucket_name
-        self.consolidated_file_name = consolidated_file_name
+        if not bucket_name:
+            self.bucket_name = os.getenv("SOURCE_BUCKET_NAME")
+            if not bucket_name:
+                raise ValueError("SOURCE_BUCKET_NAME environment variable is required")
+
+        if not consolidated_file_name:
+            self.consolidated_file_name = os.getenv("CONSOLIDATED_FILE_NAME", False)
+            if not consolidated_file_name:
+                raise ValueError(
+                    "CONSOLIDATED_FILE_NAME environment variable is required"
+                )
         self.adapter = FilesToCSVAdapter(bucket_name, consolidated_file_name)
         logger.info(f"Initialized FilesToCSV with bucket: {bucket_name}")
 

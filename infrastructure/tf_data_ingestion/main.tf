@@ -11,11 +11,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "airq-terraform-state-bucket"
-    region         = "eu-central-1"
-    key            = "data-ingestion/terraform.tfstate"
-    encrypt        = true
-    use_lockfile   = true
+    bucket       = "airq-terraform-state-bucket"
+    region       = "eu-central-1"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 

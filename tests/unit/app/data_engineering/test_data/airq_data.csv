@@ -1,0 +1,4 @@
+#{"date_crated": 804326686, "last_entry": 804291188, "data_description": "The following data set a consolidation of the JSON-file sensor-readins on S3. Units: temperature: 'C, humidity: 1/100, battery_power: mW, pv_power: mW, battery_current: mA,pv_current: mA, battery_voltage: V, pv_voltage: V"}
+timestamp,device_id,location,version,http_client_reset,temperature,humidity,battery_power,pv_power,battery_current,pv_current,battery_voltage,pv_voltage
+804326686,ESP32-001,living_room,1.0.0,No,27.32,52.06,0.0,0.0,0.0,0.0,0.0,2.43
+804291188,ESP32-001,living_room,1.0.0,No,27.77,51.75,0.0,0.0,0.0,0.0,0.0,0.22

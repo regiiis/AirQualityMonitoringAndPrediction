@@ -151,8 +151,6 @@ aws apigateway get-api-keys --region eu-central-1
 aws apigateway get-api-key --api-key YOUR_KEY_ID --include-value --region eu-central-1
 ```
 
-
-
 ## TF Code Quality - .pre-commit-config-terraform.yaml
 TFLint is a Terraform linter for detecting errors in your Terraform code. It helps ensure that your Terraform configurations are clean and follow best practices.
 ```Bash

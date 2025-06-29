@@ -4,6 +4,7 @@
 SHARED_DIR = ../tf_shared
 DATA_INGESTION_DIR = ../tf_data_ingestion
 ML_PIPELINE_DIR = ../tf_ml_pipeline
+DATA_ENGINEERING_DIR = ../tf_data_engineering
 VARIABLES_DIR = ../variables
 PACKAGE_DIR = ../deployment/deployment_packages
 
@@ -18,7 +19,8 @@ check-aws-credentials:
 	@echo "✅ AWS credentials are valid"
 
 # Deploy all infrastructure (in correct order)
-deploy-all: check-aws-credentials deploy-shared deploy-data-ingestion
+deploy-all: check-aws-credentials deploy-shared deploy-data-ingestion deploy-data-engineering
+	@echo "✅ All infrastructure deployed successfully!"
 
 # Deploy shared infrastructure only
 deploy-shared: check-aws-credentials
@@ -41,6 +43,15 @@ deploy-data-ingestion: check-aws-credentials package-lambda
 		-var-file=../variables/common.tfvars \
 		-var-file=../variables/$(ENV).tfvars
 
+# Deploy data engineering service only
+deploy-data-engineering: check-aws-credentials
+	@echo "Deploying data engineering service to $(ENV) environment..."
+	terraform -chdir=$(DATA_ENGINEERING_DIR) init -reconfigure\
+	  -backend-config="key=$(ENV)/tf_data_engineering/terraform.tfstate"
+	terraform -chdir=$(DATA_ENGINEERING_DIR) validate
+	terraform -chdir=$(DATA_ENGINEERING_DIR) apply -auto-approve \
+		-var-file=../variables/common.tfvars \
+		-var-file=../variables/$(ENV).tfvars
 
 # Package the Lambda function into a zip
 package-lambda:

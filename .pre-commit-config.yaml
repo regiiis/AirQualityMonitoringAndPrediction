@@ -11,6 +11,7 @@ repos:
       - id: requirements-txt-fixer
       - id: check-docstring-first
       - id: pretty-format-json
+        args: ['--autofix']
 
   # Python linting and formatting with Ruff (fast alternative to flake8/black)
   - repo: https://github.com/astral-sh/ruff-pre-commit

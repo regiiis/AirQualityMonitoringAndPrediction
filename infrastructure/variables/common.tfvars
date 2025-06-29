@@ -15,6 +15,14 @@ bucket_name                  = "air-quality-readings"
 # Lambda config
 data_ingestion_zip_path = "../deployment/deployment_packages/data_ingestion.zip"
 
+# Data Engineering Configuration
+consolidated_file_name = "consolidated_sensor_data.csv"
+source_prefix          = "raw-data/"
+task_cpu               = "512"
+task_memory            = "1024"
+log_retention_days     = 7
+schedule_expression    = "cron(0 2 */2 * ? *)" # Every 2 days at 2 AM UTC
+
 # Common tags
 common_tags = {
   Project   = "AirQualityMonitoring"
@@ -32,4 +40,8 @@ data_ingestion_tags = {
 
 ml_pipeline_tags = {
   ResourceType = "MLPipeline"
+}
+
+data_engineering_tags = {
+  ResourceType = "DataEngineering"
 }

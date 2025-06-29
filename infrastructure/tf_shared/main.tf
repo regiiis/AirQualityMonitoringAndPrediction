@@ -11,10 +11,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "airq-terraform-state-bucket"
-    region         = "eu-central-1"
-    dynamodb_table = "airq-terraform-lock-table"
-    encrypt        = true
+    bucket       = "airq-terraform-state-bucket"
+    region       = "eu-central-1"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 

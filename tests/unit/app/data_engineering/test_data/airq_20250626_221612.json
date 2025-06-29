@@ -1,0 +1,29 @@
+{
+  "measurements": {
+    "current": {
+      "Battery": 0.0,
+      "PV": 0.0
+    },
+    "humidity": 52.06,
+    "power": {
+      "Battery": 0.0,
+      "PV": 0.0
+    },
+    "temperature": 27.32,
+    "voltage": {
+      "Battery": 0.0,
+      "PV": 2.43
+    }
+  },
+  "metadata": {
+    "device_id": "ESP32-001",
+    "http_client_reset": "No",
+    "location": "living_room",
+    "timestamp": 804326686,
+    "version": "1.0.0"
+  },
+  "units": {
+    "humidity": "1/100",
+    "temperature": "C"
+  }
+}

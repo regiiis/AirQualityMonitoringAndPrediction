@@ -62,6 +62,18 @@ class FilesToCSVPort(ABC):
         pass
 
     @abstractmethod
+    def flatten_json(self, json_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Flatten a nested JSON object into a single-level dictionary.
+
+        Args:
+            json_data: The nested JSON data
+
+        Returns:
+            dict: Flattened dictionary
+        """
+
+    @abstractmethod
     def consolidate_files(self, file_names: List[str]) -> str:
         """
         Consolidate multiple CSV files into a single CSV file.
