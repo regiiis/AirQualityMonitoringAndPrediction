@@ -259,9 +259,68 @@ micropython
 
 ## Directory Structure - Cloud-Infrastructure
 ```plaintext
-app
-|
-├──
+infrastructure
+├── deployment
+│   ├── deployment_packages
+│   │   ├── data_ingestion.zip
+│   │   └── temp_dir
+│   ├── Makefile
+│   └── s3_backend_one_timer
+│       └── s3_backend_setup.tf
+├── README.md
+├── tf_data_engineering
+│   ├── main.tf
+│   ├── modules
+│   │   └── data_consolidation
+│   │       ├── main.tf
+│   │       ├── outputs.tf
+│   │       └── variables.tf
+│   ├── outputs.tf
+│   └── variables.tf
+├── tf_data_ingestion
+│   ├── main.tf
+│   ├── modules
+│   │   ├── api_resources
+│   │   │   ├── main.tf
+│   │   │   ├── outputs.tf
+│   │   │   └── variables.tf
+│   │   └── lambda_function
+│   │       ├── data_ingestion
+│   │       │   ├── main.tf
+│   │       │   ├── outputs.tf
+│   │       │   └── variables.tf
+│   │       ├── deployment_bucket.tf
+│   │       ├── main.tf
+│   │       ├── outputs.tf
+│   │       └── variables.tf
+│   ├── outputs.tf
+│   └── variables.tf
+├── tf_ml_pipeline
+│   ├── main.tf
+│   ├── modules
+│   ├── outputs.tf
+│   └── variables.tf
+├── tf_shared
+│   ├── main.tf
+│   ├── modules
+│   │   ├── api_gateway
+│   │   │   ├── main.tf
+│   │   │   ├── outputs.tf
+│   │   │   └── variables.tf
+│   │   ├── storage
+│   │   │   ├── main.tf
+│   │   │   ├── outputs.tf
+│   │   │   └── variables.tf
+│   │   └── vpc
+│   │       ├── main.tf
+│   │       ├── outputs.tf
+│   │       └── variables.tf
+│   ├── outputs.tf
+│   └── variables.tf
+└── variables
+    ├── common.tfvars
+    ├── dev.tfvars
+    └── prod.tfvars
 ```
 
 ### ```Costs```

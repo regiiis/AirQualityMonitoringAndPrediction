@@ -9,6 +9,20 @@ logger = logging.getLogger(__name__)
 
 
 class FilesToCSVAdapter(FilesToCSVPort):
+    """
+    Adapter for handling files in S3 bucket, specifically for consolidating JSON files into a CSV format.
+    1.  a. Downloads CSV file from S3 bucket.
+    2.  a. Get last entry date from metadata.
+        b. List all JSON file newer than the last entrty date.
+        c. Download all JSON files.
+        d. Flatten JSON data.
+        e. Generate CSV header for flatten data.
+        f. Check if headers match, otherwise update CSV header.
+        g. Append flatten JSON data to CSV file.
+        h. Update metadata with last entry date.
+    3. a. Upload consolidated CSV file to S3 bucket.
+    """
+
     def __init__(self, bucket_name: str, consolidated_file_name: str):
         self.bucket_name = bucket_name
         self.consolidated_file_name = consolidated_file_name

@@ -1,161 +1,117 @@
 import os
 import logging
-from data_consolidation.modules.files_to_csv_adapter import FilesToCSVAdapter
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+from .domain.consolidation_service import ConsolidationService
+from .domain.models.file_metadata import FileMetadata
+from .adapters.s3_storage_adapter import S3StorageAdapter
+from .adapters.json_processor_adapter import AdvancedJsonProcessorAdapter
+
 logger = logging.getLogger(__name__)
 
 
 class FilesToCSV:
-    def __init__(self, bucket_name: str = False, consolidated_file_name: str = False):
+    def __init__(self, bucket_name: str = None, consolidated_file_name: str = None):
         """
-        Initialize FilesToCSV service.
-
-        Args:
-            bucket_name: S3 bucket name for source files
-            consolidated_file_name: Name for the consolidated output file
+        Initialize FilesToCSV service with dependency injection.
         """
-        if not bucket_name:
-            self.bucket_name = os.getenv("SOURCE_BUCKET_NAME")
-            if not bucket_name:
-                raise ValueError("SOURCE_BUCKET_NAME environment variable is required")
+        # Get configuration
+        self.bucket_name = bucket_name or os.getenv("SOURCE_BUCKET_NAME")
+        self.consolidated_file_name = consolidated_file_name or os.getenv(
+            "CONSOLIDATED_FILE_NAME"
+        )
 
-        if not consolidated_file_name:
-            self.consolidated_file_name = os.getenv("CONSOLIDATED_FILE_NAME", False)
-            if not consolidated_file_name:
-                raise ValueError(
-                    "CONSOLIDATED_FILE_NAME environment variable is required"
-                )
-        self.adapter = FilesToCSVAdapter(bucket_name, consolidated_file_name)
-        logger.info(f"Initialized FilesToCSV with bucket: {bucket_name}")
+        if not self.bucket_name:
+            raise ValueError("SOURCE_BUCKET_NAME environment variable is required")
+        if not self.consolidated_file_name:
+            raise ValueError("CONSOLIDATED_FILE_NAME environment variable is required")
 
-    def get_file(self, file_name: str):
-        """Get file from S3 bucket."""
-        try:
-            return self.adapter.get_file(file_name)
-        except Exception as e:
-            logger.error(f"Error getting file {file_name}: {str(e)}")
-            raise
+        # Dependency injection - easy to swap implementations
+        self.storage = S3StorageAdapter(self.bucket_name)
+        self.json_processor = AdvancedJsonProcessorAdapter(
+            preserve_types=True, null_value=""
+        )
 
-    def get_metadata(self, file_name: str):
-        """Get metadata from file."""
-        try:
-            return self.adapter.get_metadata(file_name)
-        except Exception as e:
-            logger.error(f"Error getting metadata for {file_name}: {str(e)}")
-            raise
+        # Core business logic service
+        self.consolidation_service = ConsolidationService(
+            self.storage, self.json_processor
+        )
 
-    def update_metadata(self, file_name: str, metadata: dict):
-        """Update file metadata."""
-        try:
-            return self.adapter.update_metadata(file_name, metadata)
-        except Exception as e:
-            logger.error(f"Error updating metadata for {file_name}: {str(e)}")
-            raise
+        logger.info(f"Initialized FilesToCSV for bucket: {self.bucket_name}")
 
-    def get_new_files(self, prefix: str, metadata: dict):
-        """Get new files since last consolidation."""
-        try:
-            return self.adapter.get_new_files(prefix, metadata)
-        except Exception as e:
-            logger.error(f"Error getting new files with prefix {prefix}: {str(e)}")
-            raise
-
-    def consolidate_files(self, file_names: list):
-        """Consolidate multiple files."""
-        try:
-            return self.adapter.consolidate_files(file_names)
-        except Exception as e:
-            logger.error(f"Error consolidating files: {str(e)}")
-            raise
-
-    def store_consolidated_file(self, file_name: str, bucket_name: str):
-        """Store consolidated file."""
-        try:
-            return self.adapter.store_consolidated_file(file_name, bucket_name)
-        except Exception as e:
-            logger.error(f"Error storing consolidated file {file_name}: {str(e)}")
-            raise
-
-    def run_consolidation(self, source_prefix: str = "raw-data/"):
+    def run_consolidation(self, source_prefix: str = "raw-data/") -> dict:
         """
         Run the complete consolidation process.
-
-        Args:
-            source_prefix: S3 prefix for source files
         """
         try:
-            logger.info("Starting data consolidation process...")
+            logger.info("Starting JSON to CSV consolidation process...")
 
-            # Get current metadata to find new files
-            try:
-                metadata = self.get_metadata(self.consolidated_file_name)
-                logger.info(f"Found existing metadata: {metadata}")
-            except Exception:
-                # No existing consolidated file, start fresh
-                metadata = {"last_entry": "01.01.2020_00:00:00"}
-                logger.info("No existing metadata found, starting fresh consolidation")
+            # Get existing metadata if consolidated file exists
+            existing_metadata = self._get_existing_metadata()
 
-            # Get new files to process
-            new_files = self.get_new_files(source_prefix, metadata)
-
-            if not new_files:
-                logger.info("No new files to consolidate")
-                return {"status": "success", "message": "No new files to process"}
-
-            logger.info(f"Found {len(new_files)} new files to consolidate")
-
-            # Consolidate files
-            # consolidated_data = self.consolidate_files(new_files)
-
-            # Store consolidated file
-            result = self.store_consolidated_file(
-                self.consolidated_file_name, self.bucket_name
+            # Run consolidation
+            result = self.consolidation_service.consolidate_files(
+                source_prefix=source_prefix,
+                consolidated_file_path=self.consolidated_file_name,
+                existing_metadata=existing_metadata,
             )
 
-            logger.info("Data consolidation completed successfully")
-            return {
-                "status": "success",
-                "files_processed": len(new_files),
-                "result": result,
-            }
+            if result.success:
+                logger.info(
+                    f"Consolidation completed: {result.files_processed} files processed"
+                )
+                return {
+                    "status": "success",
+                    "files_processed": result.files_processed,
+                    "total_records": result.metadata.total_records,
+                    "columns": result.metadata.columns,
+                }
+            else:
+                logger.error(f"Consolidation failed: {result.error_message}")
+                return {"status": "error", "error": result.error_message}
 
         except Exception as e:
             logger.error(f"Error in consolidation process: {str(e)}")
-            raise
+            return {"status": "error", "error": str(e)}
+
+    def _get_existing_metadata(self) -> FileMetadata:
+        """Get metadata from existing consolidated file"""
+        try:
+            content = self.storage.get_file_content(self.consolidated_file_name)
+            lines = content.split("\n")
+
+            if lines and lines[0].startswith("#"):
+                import json
+
+                metadata_str = lines[0][1:]  # Remove '#'
+                metadata_dict = json.loads(metadata_str)
+                return FileMetadata.from_dict(metadata_dict)
+
+        except Exception as e:
+            logger.info(f"No existing metadata found: {e}")
+
+        return None
 
 
 def main():
-    """Main entry point for the data consolidation service."""
+    """Entry point for ECS task"""
     try:
-        # Get configuration from environment variables
-        bucket_name = os.getenv("SOURCE_BUCKET_NAME")
-        consolidated_file_name = os.getenv(
-            "CONSOLIDATED_FILE_NAME", "consolidated_data.csv"
-        )
-        source_prefix = os.getenv("SOURCE_PREFIX", "raw-data/")
+        service = FilesToCSV()
+        result = service.run_consolidation()
 
-        if not bucket_name:
-            raise ValueError("SOURCE_BUCKET_NAME environment variable is required")
-
-        logger.info("Starting data consolidation service...")
-        logger.info(f"Source bucket: {bucket_name}")
-        logger.info(f"Consolidated file: {consolidated_file_name}")
-        logger.info(f"Source prefix: {source_prefix}")
-
-        # Initialize and run consolidation
-        consolidator = FilesToCSV(bucket_name, consolidated_file_name)
-        result = consolidator.run_consolidation(source_prefix)
-
-        logger.info(f"Consolidation completed: {result}")
+        if result["status"] == "success":
+            logger.info(f"Consolidation successful: {result}")
+        else:
+            logger.error(f"Consolidation failed: {result}")
+            exit(1)
 
     except Exception as e:
-        logger.error(f"Fatal error in main: {str(e)}")
-        raise
+        logger.error(f"Fatal error: {e}")
+        exit(1)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
     main()
