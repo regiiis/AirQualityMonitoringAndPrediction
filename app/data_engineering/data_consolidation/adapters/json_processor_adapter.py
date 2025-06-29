@@ -8,19 +8,29 @@ logger = logging.getLogger(__name__)
 
 class JsonProcessorAdapter(JsonProcessorPort):
     """
-    Concrete implementation of JSON processing operations.
-    Pure business logic without external dependencies.
+    JSON to CSV conversion adapter for nested sensor data.
+
+    Flattens nested JSON objects into CSV-compatible flat structure.
+    Handles arrays, nested objects, and proper CSV escaping.
     """
 
     def flatten_json(
         self, json_data: Dict[str, Any], parent_key: str = "", separator: str = "_"
     ) -> Dict[str, Any]:
         """
-        Flatten nested JSON structure into a single-level dictionary.
+        Flatten nested JSON into single-level dictionary.
 
-        Example:
-            Input:  {"a": {"b": 1, "c": 2}, "d": 3}
-            Output: {"a_b": 1, "a_c": 2, "d": 3}
+        Args:
+            json_data: Nested JSON object to flatten
+            parent_key: Current parent key for recursion (internal use)
+            separator: Key separator for nested levels
+
+        Returns:
+            Flattened dictionary with concatenated keys
+
+        Examples:
+            {"a": {"b": 1}} → {"a_b": 1}
+            {"a": [1, 2]} → {"a_0": 1, "a_1": 2}
         """
         items = []
 
@@ -46,139 +56,59 @@ class JsonProcessorAdapter(JsonProcessorPort):
 
         return dict(items)
 
+    def get_flattened_headers(self, flattened_data: Dict[str, Any]) -> List[str]:
+        """
+        Extract sorted headers from flattened data.
+
+        Returns:
+            Alphabetically sorted list of column headers
+        """
+        return sorted(flattened_data.keys())
+
     def json_to_csv_row(
         self, flattened_data: Dict[str, Any], headers: List[str]
     ) -> List[str]:
         """
-        Convert flattened JSON data to CSV row values.
+        Convert flattened data to CSV row values.
 
         Args:
-            flattened_data: {"metadata_timestamp": 12345, "measurements_temperature": 27.32}
-            headers: ["metadata_timestamp", "measurements_temperature", "measurements_humidity"]
+            flattened_data: Single-level dictionary with values
+            headers: Ordered list of column headers
 
         Returns:
-            ["12345", "27.32", ""] # Empty string for missing values
+            List of CSV-escaped string values in header order
         """
         row_values = []
 
         for header in headers:
             value = flattened_data.get(header, "")
-            escaped_value = self.escape_csv_value(value)
+            escaped_value = self._escape_csv_value(value)
             row_values.append(escaped_value)
 
         return row_values
 
-    def escape_csv_value(self, value: Any) -> str:
+    def _escape_csv_value(self, value: Any) -> str:
         """
-        Escape a value for safe CSV format.
+        Escape value for RFC 4180 CSV format.
 
-        Rules:
-        - Convert to string
-        - If contains comma, quote, or newline -> wrap in quotes
-        - Escape internal quotes by doubling them
+        Args:
+            value: Any value to escape
+
+        Returns:
+            CSV-safe string with proper quote escaping
         """
         if value is None:
             return ""
 
-        # Convert to string
         str_value = str(value)
 
-        # Check if escaping is needed
+        # Wrap in quotes if contains special characters
         if (
             "," in str_value
             or '"' in str_value
             or "\n" in str_value
             or "\r" in str_value
         ):
-            # Escape internal quotes by doubling them
-            escaped_value = str_value.replace('"', '""')
-            return f'"{escaped_value}"'
-
-        return str_value
-
-
-class AdvancedJsonProcessorAdapter(JsonProcessorPort):
-    """
-    Advanced JSON processor with additional features like type preservation and custom formatting.
-    """
-
-    def __init__(self, preserve_types: bool = False, null_value: str = ""):
-        self.preserve_types = preserve_types
-        self.null_value = null_value
-
-    def flatten_json(
-        self, json_data: Dict[str, Any], parent_key: str = "", separator: str = "_"
-    ) -> Dict[str, Any]:
-        """Enhanced flattening with type preservation option"""
-        items = []
-
-        for key, value in json_data.items():
-            new_key = f"{parent_key}{separator}{key}" if parent_key else key
-
-            if isinstance(value, dict):
-                items.extend(self.flatten_json(value, new_key, separator).items())
-            elif isinstance(value, list):
-                # Enhanced list handling
-                if not value:  # Empty list
-                    items.append((new_key, "[]" if self.preserve_types else ""))
-                else:
-                    for i, item in enumerate(value):
-                        if isinstance(item, dict):
-                            items.extend(
-                                self.flatten_json(
-                                    item, f"{new_key}{separator}{i}", separator
-                                ).items()
-                            )
-                        else:
-                            items.append((f"{new_key}{separator}{i}", item))
-            elif value is None:
-                items.append((new_key, self.null_value))
-            else:
-                items.append((new_key, value))
-
-        return dict(items)
-
-    def json_to_csv_row(
-        self, flattened_data: Dict[str, Any], headers: List[str]
-    ) -> List[str]:
-        """Enhanced CSV row generation with type handling"""
-        row_values = []
-
-        for header in headers:
-            value = flattened_data.get(header, self.null_value)
-
-            # Type-specific formatting
-            if self.preserve_types:
-                if isinstance(value, bool):
-                    value = str(value).lower()  # true/false instead of True/False
-                elif isinstance(value, (int, float)):
-                    value = str(value)
-                elif value is None:
-                    value = self.null_value
-
-            escaped_value = self.escape_csv_value(value)
-            row_values.append(escaped_value)
-
-        return row_values
-
-    def escape_csv_value(self, value: Any) -> str:
-        """Enhanced CSV escaping with better type handling"""
-        if value is None:
-            return self.null_value
-
-        # Handle different types
-        if isinstance(value, bool):
-            str_value = str(value).lower() if self.preserve_types else str(value)
-        elif isinstance(value, (int, float)):
-            str_value = str(value)
-        else:
-            str_value = str(value)
-
-        # Enhanced escaping rules
-        needs_quoting = any(char in str_value for char in [",", '"', "\n", "\r", "\t"])
-
-        if needs_quoting:
-            # Escape quotes and wrap in quotes
             escaped_value = str_value.replace('"', '""')
             return f'"{escaped_value}"'
 

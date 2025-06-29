@@ -4,8 +4,7 @@ from typing import Dict, Any, List
 
 class JsonProcessorPort(ABC):
     """
-    Port for JSON processing operations (pure logic).
-    Technology-agnostic interface for JSON manipulation.
+    Port for JSON processing operations.
     """
 
     @abstractmethod
@@ -26,6 +25,19 @@ class JsonProcessorPort(ABC):
         pass
 
     @abstractmethod
+    def get_flattened_headers(self, flattened_data: Dict[str, Any]) -> List[str]:
+        """
+        Extract headers from flattened JSON data.
+
+        Args:
+            flattened_data: Flattened JSON data dictionary
+
+        Returns:
+            list: List of headers (keys) in the flattened data
+        """
+        pass
+
+    @abstractmethod
     def json_to_csv_row(
         self, flattened_data: Dict[str, Any], headers: List[str]
     ) -> List[str]:
@@ -42,7 +54,7 @@ class JsonProcessorPort(ABC):
         pass
 
     @abstractmethod
-    def escape_csv_value(self, value: Any) -> str:
+    def _escape_csv_value(self, value: Any) -> str:
         """
         Escape a value for safe CSV format.
 
