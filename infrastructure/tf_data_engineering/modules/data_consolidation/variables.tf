@@ -63,13 +63,16 @@ variable "source_bucket_name" {
 variable "consolidated_file_name" {
   description = "Name of the consolidated output file"
   type        = string
-  default     = "consolidated_sensor_data.csv"
 }
 
-variable "source_prefix" {
-  description = "S3 prefix for source data files"
+variable "sensor_data_path" {
+  description = "S3 directory path for source data files"
   type        = string
-  default     = "raw-data/"
+}
+
+variable "consolidated_path" {
+  description = "S3 directory path for consolidated CSV files"
+  type        = string
 }
 
 #################################################

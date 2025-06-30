@@ -31,101 +31,139 @@ class ConsolidationService:
 
     def consolidate_files(
         self,
-        source_prefix: str,
-        consolidated_file_path: str,
-        existing_metadata: FileMetadata = None,
+        consolidated_filename: str,
     ) -> ConsolidationResult:
         """
         Consolidate JSON files into single CSV with metadata tracking.
 
-        Args:
-            source_prefix: S3 prefix for source JSON files
-            consolidated_file_path: Output path for consolidated CSV
-            existing_metadata: Previous consolidation metadata for incremental updates
-
-        Returns:
-            ConsolidationResult with success status, CSV content, and metadata
+        Logic:
+        1. Try to download existing CSV file directly
+        2. If download succeeds -> Extract metadata -> Incremental consolidation
+        3. If download fails (file doesn't exist) -> Initial consolidation (process all files)
         """
         try:
-            logger.info(f"Starting consolidation for prefix: {source_prefix}")
+            logger.info(f"Starting consolidation for file: {consolidated_filename}")
 
-            # 1. Get new files using optimized method
-            new_files = self._get_new_files(source_prefix, existing_metadata)
-
-            if not new_files:
-                logger.info("No new files to process")
-                return ConsolidationResult(
-                    success=True,
-                    csv_content="",
-                    metadata=existing_metadata or self._create_empty_metadata(),
-                    files_processed=0,
-                    error_message="No new files to process",
+            # Try to download the existing CSV file directly
+            try:
+                logger.info(
+                    f"Attempting to download existing CSV: {consolidated_filename}"
                 )
+                content = self.storage.get_file_content(consolidated_filename)
+                logger.info("Existing CSV file found, extracting metadata...")
 
-            logger.info(f"Processing {len(new_files)} new files")
+                # Extract metadata from the downloaded file
+                lines = content.split("\n")
+                if lines and lines[0].startswith("#"):
+                    metadata_str = lines[0][1:]  # Remove '#' prefix
+                    metadata_dict = json.loads(metadata_str)
+                    existing_metadata = FileMetadata.from_dict(metadata_dict)
+                    logger.info(
+                        f"Successfully extracted metadata: {existing_metadata.total_records} records, last entry: {existing_metadata.last_entry}"
+                    )
 
-            # 2. Process files into CSV
-            csv_content, new_metadata = self._process_files(
-                new_files, existing_metadata
-            )
+                    # Incremental consolidation - process only new files
+                    logger.info(
+                        f"Found existing CSV with {existing_metadata.total_records} records"
+                    )
+                    logger.info(f"Last entry: {existing_metadata.last_entry}")
+                    return self._append_new_data(
+                        consolidated_filename, existing_metadata
+                    )
+                else:
+                    logger.warning(
+                        "CSV file exists but has no metadata header - treating as new file"
+                    )
+                    # Fall through to initial consolidation
 
-            # 3. Store consolidated result
-            success = self.storage.store_file(
-                consolidated_file_path, csv_content, "text/csv"
-            )
+            except Exception as e:
+                logger.info(
+                    f"No existing CSV file found ({consolidated_filename}): {e}"
+                )
+                # Fall through to initial consolidation
 
-            return ConsolidationResult(
-                success=success,
-                csv_content=csv_content,
-                metadata=new_metadata,
-                files_processed=len(new_files),
-                error_message=None if success else "Failed to store consolidated file",
-            )
+            # Initial consolidation - process all files
+            logger.info("No existing CSV found - performing initial consolidation")
+            return self._generate_initial_csv(consolidated_filename)
 
         except Exception as e:
             logger.error(f"Consolidation failed: {e}")
             return ConsolidationResult(
                 success=False,
-                csv_content="",
-                metadata=existing_metadata or self._create_empty_metadata(),
-                files_processed=0,
                 error_message=str(e),
             )
 
-    def _get_new_files(
-        self, prefix: str, existing_metadata: FileMetadata = None
-    ) -> List[str]:
-        """
-        Get new files since last consolidation using optimized filtering.
+    def _generate_initial_csv(self, consolidated_filename: str) -> ConsolidationResult:
+        """Simple initial consolidation - process ALL files in sensor data path."""
+        logger.info("Performing initial consolidation of all sensor data")
 
-        Args:
-            prefix: S3 prefix for source files
-            existing_metadata: Previous consolidation metadata
+        all_files = self.storage.list_files()
 
-        Returns:
-            List of file paths to process
-        """
-        if not existing_metadata:
-            # First run - get all JSON files
-            logger.info("First consolidation run: getting all files")
-            all_files = self.storage.list_files(prefix)
-            json_files = [f for f in all_files if f.endswith(".json")]
-            logger.info(f"Found {len(json_files)} JSON files for initial consolidation")
-            return json_files
+        if not all_files:
+            logger.info("No files found in sensor data path")
+            return ConsolidationResult(
+                success=True,
+                csv_content="",
+                metadata=self._create_empty_metadata(),
+                files_processed=0,
+            )
 
-        # Incremental run - use timestamp-based filtering
-        last_entry_timestamp = int(existing_metadata.last_entry.timestamp())
-        logger.info(
-            f"Incremental consolidation: looking for files after timestamp {last_entry_timestamp}"
+        logger.info(f"Processing {len(all_files)} files for initial consolidation")
+        csv_content, metadata = self._process_files(all_files, existing_metadata=None)
+
+        # Use store_file directly - consolidated_filename is already the full path
+        success = self.storage.store_file(
+            consolidated_filename, csv_content, "text/csv"
         )
-        logger.info(f"Last entry date: {existing_metadata.last_entry}")
 
-        new_files = self.storage.list_files_after_timestamp(
-            prefix, last_entry_timestamp
+        return ConsolidationResult(
+            success=success,
+            csv_content=csv_content,
+            metadata=metadata,
+            files_processed=len(all_files),
         )
-        logger.info(f"Found {len(new_files)} new files since last consolidation")
 
-        return new_files
+    def _append_new_data(
+        self, consolidated_filename: str, existing_metadata: FileMetadata
+    ) -> ConsolidationResult:
+        """Incremental consolidation - only process new files."""
+        logger.info("Performing incremental consolidation")
+
+        # Convert MicroPython timestamp to Unix timestamp for S3 comparison
+        micropython_timestamp = int(existing_metadata.last_entry.timestamp())
+        unix_timestamp = self._micropython_to_unix_timestamp(micropython_timestamp)
+
+        logger.info(f"Last entry MicroPython timestamp: {micropython_timestamp}")
+        logger.info(f"Converted to Unix timestamp for S3 comparison: {unix_timestamp}")
+
+        new_files = self.storage.list_files_after_timestamp(unix_timestamp)
+
+        if not new_files:
+            logger.info("No new files to process")
+            return ConsolidationResult(
+                success=True,
+                csv_content="",
+                metadata=existing_metadata,
+                files_processed=0,
+                error_message="No new files to process",
+            )
+
+        logger.info(f"Processing {len(new_files)} new files")
+        csv_content, updated_metadata = self._process_files(
+            new_files, existing_metadata
+        )
+
+        # Use store_file directly - consolidated_filename is already the full path
+        success = self.storage.store_file(
+            consolidated_filename, csv_content, "text/csv"
+        )
+
+        return ConsolidationResult(
+            success=success,
+            csv_content=csv_content,
+            metadata=updated_metadata,
+            files_processed=len(new_files),
+        )
 
     def _process_files(
         self, file_paths: List[str], existing_metadata: FileMetadata = None
@@ -231,3 +269,42 @@ class ConsolidationService:
             columns=0,
             files_processed=0,
         )
+
+    def _micropython_to_unix_timestamp(self, mp_timestamp: int) -> int:
+        """
+        Convert MicroPython timestamp to Unix timestamp.
+
+        MicroPython epoch starts at Jan 1, 2000
+        Unix epoch starts at Jan 1, 1970
+        Difference is 946684800 seconds (30 years)
+
+        Args:
+            mp_timestamp: MicroPython timestamp (seconds since 2000-01-01)
+
+        Returns:
+            Unix timestamp (seconds since 1970-01-01)
+        """
+        return mp_timestamp + 946684800
+
+    def _get_file_timestamp_from_path(self, file_path: str) -> int:
+        """
+        Extract Unix timestamp from sensor data filename.
+
+        Parses the airq_YYYYMMDD_HHMMSS.json filename format to extract timestamp.
+        """
+        try:
+            filename = file_path.split("/")[-1]
+            name_without_ext = filename.replace(".json", "")
+            parts = name_without_ext.split("_")
+
+            if len(parts) >= 3 and parts[0] == "airq":
+                date_str = parts[1]  # "20250629"
+                time_str = parts[2]  # "143022"
+                dt = datetime.strptime(f"{date_str}_{time_str}", "%Y%m%d_%H%M%S")
+                return int(dt.timestamp())
+            else:
+                raise ValueError(
+                    "Filename doesn't match airq_YYYYMMDD_HHMMSS.json format"
+                )
+        except (IndexError, ValueError) as e:
+            raise ValueError(f"Cannot parse timestamp from {file_path}: {e}")

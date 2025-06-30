@@ -1,9 +1,7 @@
 import os
 import logging
-import json
 
 from .domain.consolidation_service import ConsolidationService
-from .domain.models.file_metadata import FileMetadata
 from .adapters.s3_storage_adapter import S3StorageAdapter
 from .adapters.json_processor_adapter import JsonProcessorAdapter
 
@@ -18,43 +16,79 @@ class FilesToCSV:
     and CSV generation. Supports both initial and incremental consolidation.
     """
 
-    def __init__(self, bucket_name: str = None, consolidated_file_name: str = None):
+    def __init__(
+        self,
+        bucket_name: str = None,
+        sensor_data_path: str = None,
+        consolidated_path: str = None,
+        consolidated_filename: str = None,
+    ):
         """
-        Initialize consolidation service with S3 configuration.
+        Initialize consolidation service with complete S3 configuration.
 
         Args:
-            bucket_name: S3 bucket name (defaults to SOURCE_BUCKET_NAME env var)
-            consolidated_file_name: Output CSV path (defaults to CONSOLIDATED_FILE_NAME env var)
+            bucket_name: S3 bucket (or SOURCE_BUCKET_NAME env var)
+            sensor_data_path: Sensor data location (or sensor_data_path env var, default: "raw-data/")
+            consolidated_path: CSV storage path (or CONSOLIDATED_PATH env var, default: "consolidated/")
+            consolidated_filename: CSV filename (or CONSOLIDATED_FILENAME env var, default: "sensor_data.csv")
 
         Raises:
             ValueError: If required configuration is missing
         """
-        # Get configuration from parameters or environment
-        self.bucket_name = bucket_name or os.getenv("SOURCE_BUCKET_NAME")
-        self.consolidated_file_name = consolidated_file_name or os.getenv(
-            "CONSOLIDATED_FILE_NAME"
-        )
+        # Load configuration from parameters or environment
+        try:
+            self.bucket_name = bucket_name or os.getenv("SOURCE_BUCKET_NAME", None)
+            self.sensor_data_path = sensor_data_path or os.getenv(
+                "SENSOR_DATA_PATH", None
+            )
+            self.consolidated_path = consolidated_path or os.getenv(
+                "CONSOLIDATED_PATH", None
+            )
+            self.consolidated_filename = consolidated_filename or os.getenv(
+                "CONSOLIDATED_FILENAME", None
+            )
+        except Exception as e:
+            logger.error(f"Error loading configuration: {e}")
+            raise ValueError(
+                "Failed to load configuration from environment variables or parameters"
+            )
 
+        # Validate required configuration
         if not self.bucket_name:
             raise ValueError("SOURCE_BUCKET_NAME environment variable is required")
-        if not self.consolidated_file_name:
-            raise ValueError("CONSOLIDATED_FILE_NAME environment variable is required")
+        if not self.sensor_data_path:
+            raise ValueError("SENSOR_DATA_PATH environment variable is required")
+        if not self.consolidated_path:
+            raise ValueError("CONSOLIDATED_PATH environment variable is required")
+        if not self.consolidated_filename:
+            raise ValueError("CONSOLIDATED_FILENAME environment variable is required")
 
-        # Initialize dependencies with dependency injection
-        self.storage = S3StorageAdapter(self.bucket_name)
+        # Ensure trailing slash for paths
+        if not self.sensor_data_path.endswith("/"):
+            self.sensor_data_path += "/"
+        if not self.consolidated_path.endswith("/"):
+            self.consolidated_path += "/"
+
+        # Initialize dependencies with complete configuration
+        self.storage = S3StorageAdapter(
+            bucket_name=self.bucket_name,
+            sensor_data_path=self.sensor_data_path,
+            consolidated_path=self.consolidated_path,
+            consolidated_filename=self.consolidated_filename,
+        )
         self.json_processor = JsonProcessorAdapter()
         self.consolidation_service = ConsolidationService(
             self.storage, self.json_processor
         )
 
-        logger.info(f"Initialized FilesToCSV for bucket: {self.bucket_name}")
+        logger.info("Initialized FilesToCSV:")
+        logger.info(f"  Bucket: {self.bucket_name}")
+        logger.info(f"  Source: {self.sensor_data_path}")
+        logger.info(f"  Output: {self.consolidated_path}{self.consolidated_filename}")
 
-    def run_consolidation(self, source_prefix: str = "raw-data/") -> dict:
+    def run_consolidation(self) -> dict:
         """
-        Execute complete consolidation process with optimized file discovery.
-
-        Args:
-            source_prefix: S3 prefix for source JSON files
+        Execute complete consolidation process using pre-configured paths.
 
         Returns:
             Dict with consolidation results:
@@ -68,22 +102,9 @@ class FilesToCSV:
         try:
             logger.info("Starting JSON to CSV consolidation process...")
 
-            # Get existing metadata for incremental processing
-            existing_metadata = self._get_existing_metadata()
-
-            if existing_metadata:
-                logger.info(
-                    f"Found existing consolidation with {existing_metadata.total_records} records"
-                )
-                logger.info(f"Last entry: {existing_metadata.last_entry}")
-            else:
-                logger.info("No existing consolidation found - will process all files")
-
-            # Execute consolidation
+            # Execute consolidation - service will handle file existence check internally
             result = self.consolidation_service.consolidate_files(
-                source_prefix=source_prefix,
-                consolidated_file_path=self.consolidated_file_name,
-                existing_metadata=existing_metadata,
+                consolidated_filename=f"{self.consolidated_path}{self.consolidated_filename}"
             )
 
             if result.success:
@@ -105,31 +126,6 @@ class FilesToCSV:
         except Exception as e:
             logger.error(f"Error in consolidation process: {str(e)}")
             return {"status": "error", "error": str(e)}
-
-    def _get_existing_metadata(self) -> FileMetadata:
-        """
-        Extract metadata from existing consolidated CSV file.
-
-        Reads the first line of the consolidated CSV to get metadata
-        for incremental processing. Handles cases where no previous
-        consolidation exists.
-
-        Returns:
-            FileMetadata object or None if no existing file found
-        """
-        try:
-            content = self.storage.get_file_content(self.consolidated_file_name)
-            lines = content.split("\n")
-
-            if lines and lines[0].startswith("#"):
-                metadata_str = lines[0][1:]  # Remove '#' prefix
-                metadata_dict = json.loads(metadata_str)
-                return FileMetadata.from_dict(metadata_dict)
-
-        except Exception as e:
-            logger.info(f"No existing metadata found: {e}")
-
-        return None
 
 
 def main():

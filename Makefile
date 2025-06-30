@@ -1,4 +1,4 @@
-.PHONY: lint lint_tf type_check validate_api test_logic deploy_dev deploy_prod clean generate_api_docs
+.PHONY: lint lint_tf type_check validate_api test_logic test_data_consolidation deploy_dev deploy_prod clean generate_api_docs
 
 # Code quality
 lint:
@@ -14,6 +14,7 @@ validate_api:
 	npx @stoplight/spectral-cli lint api-spec.yaml -r .spectral.yaml
 
 test_logic:
+	@echo "Running unit tests..."
 	mkdir -p reports
 	python3 -m pytest -s tests \
 		-o asyncio_mode=auto \
@@ -22,6 +23,12 @@ test_logic:
 		--cov=micropython \
 		--cov-report term \
 		--cov-report xml:reports/py-coverage.cobertura.xml
+	@echo "Running data consolidation tests..."
+	$(MAKE) -C app/data_engineering/data_consolidation test
+
+# Data consolidation tests only
+test_data_consolidation:
+	$(MAKE) -C app/data_engineering/data_consolidation test
 
 # Infrastructure Deployments - call into infrastructure Makefile
 deploy_dev:

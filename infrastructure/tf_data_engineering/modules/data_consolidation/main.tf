@@ -98,8 +98,12 @@ resource "aws_ecs_task_definition" "data_consolidation" {
           value = var.consolidated_file_name
         },
         {
-          name  = "SOURCE_PREFIX"
-          value = var.source_prefix
+          name  = "SENSOR_DATA_PATH"
+          value = var.sensor_data_path
+        },
+        {
+          name  = "CONSOLIDATED_PATH"
+          value = var.consolidated_path
         },
         {
           name  = "AWS_DEFAULT_REGION"

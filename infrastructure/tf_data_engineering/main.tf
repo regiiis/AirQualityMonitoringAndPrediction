@@ -94,7 +94,8 @@ module "data_consolidation" {
   # Data consolidation configuration
   source_bucket_name       = data.aws_ssm_parameter.readings_bucket_name.value
   consolidated_file_name   = var.consolidated_file_name
-  source_prefix           = var.source_prefix
+  consolidated_path        = var.consolidated_path
+  sensor_data_path            = var.sensor_data_path
   # ECS Configuration
   task_cpu            = var.task_cpu
   task_memory         = var.task_memory

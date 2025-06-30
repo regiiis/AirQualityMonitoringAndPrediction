@@ -323,6 +323,7 @@ class Main:
             metadata = {
                 "device_id": self.device_id,
                 "timestamp": current_time,
+                "timestamp_epoch": "micropython",  # or "2000-01-01"
                 "location": self.location,
                 "version": self.version,
                 "http_client_reset": "No",

@@ -52,13 +52,16 @@ variable "data_engineering_tags" {
 variable "consolidated_file_name" {
   description = "Name of the consolidated output file"
   type        = string
-  default     = "consolidated_sensor_data.csv"
 }
 
-variable "source_prefix" {
+variable "consolidated_path" {
+  description = "Path of the consolidated output file"
+  type        = string
+}
+
+variable "sensor_data_path" {
   description = "S3 prefix for source data files"
   type        = string
-  default     = "raw-data/"
 }
 
 variable "task_cpu" {

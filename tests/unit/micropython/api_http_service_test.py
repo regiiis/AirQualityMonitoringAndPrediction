@@ -23,7 +23,14 @@ def test_data():
         "ina219_1": {"voltage": 3.3, "current": 0.5, "power": 1.65},
         "ina219_2": {"voltage": 5.0, "current": 0.2, "power": 1.0},
         "hyt221": {"temperature": 25.4, "humidity": 68.7},
-        "metadata": {"device_id": "test-device-01", "timestamp": 1714239072},
+        "metadata": {
+            "device_id": "test-device-01",
+            "version": "1.0.0",
+            "location": "room",
+            "timestamp": 1714239072,
+            "timestamp_epoch": "micropython",
+            "http_client_reset": "No",
+        },
     }
 
 

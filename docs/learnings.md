@@ -13,6 +13,8 @@ A reflection and summary of the key learnings from the project.
 
     - Debugging error message can be done very effectively, but one should stop after three unsuccessfull attempts.
 
+    - Never refactor larger code with GenAI. One will loose the overview and the code can become overengineered.
+
 - Multi Environment Development:
     - Developing, resp. running code in multienvironments, like locally on WSL with normal Python (for testing) and later on ESP32 with MicroPython, can be tricky. A try-except library import and mock libraries can be a simple solution to avoid import errors.
 
