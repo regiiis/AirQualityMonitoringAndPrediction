@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Any, List
 
-from ..ports.json_processor_port import JsonProcessorPort
+from ports.json_processor_port import JsonProcessorPort
 
 logger = logging.getLogger(__name__)
 
@@ -18,20 +18,77 @@ class JsonProcessorAdapter(JsonProcessorPort):
         self, json_data: Dict[str, Any], parent_key: str = "", separator: str = "_"
     ) -> Dict[str, Any]:
         """
-        Flatten nested JSON into single-level dictionary.
+        Flatten nested JSON into CSV-compatible structure matching existing CSV columns.
+
+        Specifically handles sensor data JSON structure:
+        - metadata.* → direct column names (timestamp, device_id, location, version, http_client_reset)
+        - measurements.temperature → temperature
+        - measurements.humidity → humidity
+        - measurements.power.Battery → battery_power
+        - measurements.power.PV → pv_power
+        - measurements.current.Battery → battery_current
+        - measurements.current.PV → pv_current
+        - measurements.voltage.Battery → battery_voltage
+        - measurements.voltage.PV → pv_voltage
 
         Args:
             json_data: Nested JSON object to flatten
-            parent_key: Current parent key for recursion (internal use)
-            separator: Key separator for nested levels
 
         Returns:
-            Flattened dictionary with concatenated keys
-
-        Examples:
-            {"a": {"b": 1}} → {"a_b": 1}
-            {"a": [1, 2]} → {"a_0": 1, "a_1": 2}
+            Flattened dictionary with CSV column names
         """
+        result = {}
+
+        # Handle metadata fields - direct mapping
+        if "metadata" in json_data:
+            metadata = json_data["metadata"]
+            result["timestamp"] = metadata.get("timestamp")
+            result["device_id"] = metadata.get("device_id")
+            result["location"] = metadata.get("location")
+            result["version"] = metadata.get("version")
+            result["http_client_reset"] = metadata.get("http_client_reset")
+
+        # Handle measurements
+        if "measurements" in json_data:
+            measurements = json_data["measurements"]
+
+            # Direct measurements
+            result["temperature"] = measurements.get("temperature")
+            result["humidity"] = measurements.get("humidity")
+
+            # Power measurements
+            if "power" in measurements:
+                power = measurements["power"]
+                result["battery_power"] = power.get("Battery", 0.0)
+                result["pv_power"] = power.get("PV", 0.0)
+            else:
+                result["battery_power"] = 0.0
+                result["pv_power"] = 0.0
+
+            # Current measurements
+            if "current" in measurements:
+                current = measurements["current"]
+                result["battery_current"] = current.get("Battery", 0.0)
+                result["pv_current"] = current.get("PV", 0.0)
+            else:
+                result["battery_current"] = 0.0
+                result["pv_current"] = 0.0
+
+            # Voltage measurements
+            if "voltage" in measurements:
+                voltage = measurements["voltage"]
+                result["battery_voltage"] = voltage.get("Battery", 0.0)
+                result["pv_voltage"] = voltage.get("PV", 0.0)
+            else:
+                result["battery_voltage"] = 0.0
+                result["pv_voltage"] = 0.0
+
+        return result
+
+    def _flatten_recursive(
+        self, json_data: Dict[str, Any], parent_key: str = "", separator: str = "_"
+    ) -> Dict[str, Any]:
+        """Standard recursive flattening logic."""
         items = []
 
         for key, value in json_data.items():
@@ -39,13 +96,13 @@ class JsonProcessorAdapter(JsonProcessorPort):
 
             if isinstance(value, dict):
                 # Recursively flatten nested dictionaries
-                items.extend(self.flatten_json(value, new_key, separator).items())
+                items.extend(self._flatten_recursive(value, new_key, separator).items())
             elif isinstance(value, list):
                 # Handle lists by indexing elements
                 for i, item in enumerate(value):
                     if isinstance(item, dict):
                         items.extend(
-                            self.flatten_json(
+                            self._flatten_recursive(
                                 item, f"{new_key}{separator}{i}", separator
                             ).items()
                         )

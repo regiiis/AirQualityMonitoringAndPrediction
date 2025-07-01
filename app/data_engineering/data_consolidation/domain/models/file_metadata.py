@@ -29,12 +29,12 @@ class FileMetadata:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "FileMetadata":
         return cls(
-            created_at=datetime.fromtimestamp(data.get("date_created", 0)),
-            last_entry=datetime.fromtimestamp(data.get("last_entry", 0)),
-            description=data.get("data_description", ""),
-            total_records=data.get("total_records", 0),
-            columns=data.get("columns", 0),
-            files_processed=data.get("files_processed", 0),
+            created_at=datetime.fromtimestamp(data.get("date_created", None)),
+            last_entry=datetime.fromtimestamp(data.get("last_entry", None)),
+            description=data.get("data_description", None),
+            total_records=data.get("total_records", None),
+            columns=data.get("columns", None),
+            files_processed=data.get("files_processed", None),
             custom_data={
                 k: v
                 for k, v in data.items()

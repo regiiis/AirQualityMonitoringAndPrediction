@@ -6,11 +6,11 @@ This directory contains the data engineering components of the AIRQ project. In 
 ## Data Consolidation - Sensor Readings to CSV File
 This task merges JSON sensor data from the datalake S3 into a consolidation CSV file.
 
-**High-Level Sequence**
-Dependency
+**High-Level Features**
+Adapter
     1.  a. Downloads CSV file from S3 bucket.
 
-Domain Logic
+Domain
     2.  a. Get last entry date from metadata.
         b. List all JSON file newer than the last entrty date.
         c. Download all JSON files.
@@ -20,7 +20,7 @@ Domain Logic
         g. Append flatten JSON data to CSV file.
         h. Update metadata with last entry date.
 
-Dependency
+Adapter
     3. a. Upload consolidated CSV file to S3 bucket.
 
 ### **Environment Variables**

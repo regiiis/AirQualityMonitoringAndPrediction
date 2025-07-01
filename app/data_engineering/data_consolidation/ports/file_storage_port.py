@@ -4,10 +4,10 @@ from typing import List
 
 class FileStoragePort(ABC):
     """
-    Port for file storage operations with optimized filtering capabilities.
+    Port for file storage operations.
 
     Defines the interface for file storage implementations (S3, local, etc.)
-    with focus on efficient timestamp-based file discovery.
+    with focus on simplicity and clean separation of concerns.
     """
 
     @abstractmethod
@@ -41,33 +41,24 @@ class FileStoragePort(ABC):
         pass
 
     @abstractmethod
-    def list_files(self, prefix: str) -> List[str]:
+    def list_files(self) -> List[str]:
         """
-        List all files with given prefix.
-
-        Args:
-            prefix: Path prefix to filter files
+        List all files in the configured source location.
 
         Returns:
-            List of file paths matching prefix
+            List of file paths
         """
         pass
 
     @abstractmethod
-    def list_files_after_timestamp(
-        self, prefix: str, after_timestamp: int
-    ) -> List[str]:
+    def list_files_with_prefix(self, prefix: str) -> List[str]:
         """
-        Efficiently list files created after given timestamp.
-
-        Core optimization method that should minimize data transfer
-        and API calls by leveraging implementation-specific features.
+        List files starting with a specific prefix.
 
         Args:
-            prefix: Path prefix to filter files
-            after_timestamp: Unix timestamp - only return files newer than this
+            prefix: Prefix to filter files (e.g., "airq_20250629")
 
         Returns:
-            List of file paths created after the timestamp
+            List of file paths matching the prefix
         """
         pass

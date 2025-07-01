@@ -1,9 +1,9 @@
 import os
 import logging
 
-from .domain.consolidation_service import ConsolidationService
-from .adapters.s3_storage_adapter import S3StorageAdapter
-from .adapters.json_processor_adapter import JsonProcessorAdapter
+from domain.consolidation_service import ConsolidationService
+from adapters.s3_storage_adapter import S3StorageAdapter
+from adapters.json_processor_adapter import JsonProcessorAdapter
 
 logger = logging.getLogger(__name__)
 

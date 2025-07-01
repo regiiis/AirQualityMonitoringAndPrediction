@@ -2,7 +2,7 @@ import boto3
 import logging
 from typing import List
 
-from ..ports.file_storage_port import FileStoragePort
+from ports.file_storage_port import FileStoragePort
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +15,8 @@ class S3StorageAdapter(FileStoragePort):
     Focus on simplicity and reliability over optimization.
 
     Key Features:
-    - Simple file listing and filtering
+    - Simple file listing
     - Direct S3 operations without complex optimizations
-    - Uses S3 LastModified timestamps for filtering
     - Comprehensive error handling and logging
 
     Methods:
@@ -27,8 +26,6 @@ class S3StorageAdapter(FileStoragePort):
             Upload file content to S3.
         list_files() -> List[str]:
             List all JSON files in the configured source location.
-        list_files_after_timestamp(last_entry: int) -> List[str]:
-            List files newer than the given timestamp using S3 LastModified.
     """
 
     def __init__(
@@ -145,27 +142,24 @@ class S3StorageAdapter(FileStoragePort):
             logger.error(f"Error listing files: {e}")
             return []
 
-    def list_files_after_timestamp(self, last_entry: int) -> List[str]:
+    def list_files_with_prefix(self, prefix: str) -> List[str]:
         """
-        List files newer than the given timestamp.
-        Simple approach - get all files and filter by S3 LastModified.
+        List JSON files starting with a specific prefix.
+        Useful for optimized filtering based on date patterns.
         """
         try:
+            full_prefix = f"{self.sensor_data_path}{prefix}"
             response = self.s3_client.list_objects_v2(
-                Bucket=self.bucket_name, Prefix=self.sensor_data_path
+                Bucket=self.bucket_name, Prefix=full_prefix
             )
 
             files = []
             if "Contents" in response:
                 for obj in response["Contents"]:
-                    # Use S3's LastModified timestamp for filtering
-                    if (
-                        obj["Key"].endswith(".json")
-                        and obj["LastModified"].timestamp() > last_entry
-                    ):
+                    if obj["Key"].endswith(".json"):
                         files.append(obj["Key"])
 
             return files
         except Exception as e:
-            logger.error(f"Error listing files after timestamp: {e}")
+            logger.error(f"Error listing files with prefix {prefix}: {e}")
             return []
