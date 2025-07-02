@@ -24,7 +24,10 @@ test_logic:
 		--cov-report term \
 		--cov-report xml:reports/py-coverage.cobertura.xml
 	@echo "Running data consolidation tests..."
+	@echo "=========================================="
 	$(MAKE) -C app/data_engineering/data_consolidation test
+	@echo "=========================================="
+	@echo "All tests completed!"
 
 # Data consolidation tests only
 test_data_consolidation:

@@ -47,6 +47,7 @@ class TestConsolidation:
     @patch("boto3.client")
     def test_incremental_consolidation_adds_new_data(self, mock_boto_client):
         """Test that new JSON files are correctly added to existing CSV"""
+        print("\nRunning test_incremental_consolidation_adds_new_data...\n")
 
         # Mock S3 client
         mock_s3 = Mock()
@@ -169,6 +170,7 @@ class TestConsolidation:
     @patch("boto3.client")
     def test_initial_consolidation_creates_new_csv(self, mock_boto_client):
         """Test initial consolidation when no CSV exists"""
+        print("\nRunning test_initial_consolidation_creates_new_csv...\n")
 
         # Mock S3 client
         mock_s3 = Mock()
@@ -218,6 +220,7 @@ class TestConsolidation:
 
         # Run consolidation
         result = service.run_consolidation()
+        print(f"\nInitial consolidation result: {result}\n")
 
         # Verify success
         assert result["status"] == "success"
@@ -227,6 +230,8 @@ class TestConsolidation:
         # Get the stored CSV content
         put_call = mock_s3.put_object.call_args
         stored_content = put_call[1]["Body"].decode("utf-8")
+
+        print(f"\nStored content: {stored_content}\n")
 
         # Verify all data is present
         assert "27.32" in stored_content  # From json1
