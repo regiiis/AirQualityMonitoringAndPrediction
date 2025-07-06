@@ -1,0 +1,87 @@
+{
+  "properties": {
+    "measurements": {
+      "properties": {
+        "current": {
+          "properties": {
+            "battery": {
+              "type": "number"
+            },
+            "solar": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "humidity": {
+          "type": "number"
+        },
+        "power": {
+          "properties": {
+            "battery": {
+              "type": "number"
+            },
+            "solar": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "temperature": {
+          "type": "number"
+        },
+        "voltage": {
+          "properties": {
+            "battery": {
+              "type": "number"
+            },
+            "solar": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "temperature",
+        "humidity",
+        "voltage",
+        "current",
+        "power"
+      ],
+      "type": "object"
+    },
+    "metadata": {
+      "properties": {
+        "device_id": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "number"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "device_id",
+        "timestamp",
+        "location",
+        "version"
+      ],
+      "type": "object"
+    },
+    "units": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "measurements",
+    "units",
+    "metadata"
+  ],
+  "type": "object"
+}

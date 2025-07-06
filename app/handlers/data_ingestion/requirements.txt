@@ -1,2 +1,4 @@
 boto3==1.37.*
 jsonschema==4.23.*
+pandas==2.3.*
+pyarrow==20.0.*

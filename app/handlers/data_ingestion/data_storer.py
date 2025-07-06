@@ -1,7 +1,10 @@
-import json
 import logging
 import datetime
 import boto3
+import pyarrow as pa
+import pyarrow.parquet as pq
+import pandas as pd
+import io
 
 # Set up logger
 logger = logging.getLogger()
@@ -10,7 +13,7 @@ logger.setLevel(logging.INFO)
 
 def store_data(data, bucket_name):
     """
-    Store data to S3 bucket
+    Store data to S3 bucket as parquet file
 
     Args:
         data (dict): The data to store
@@ -23,15 +26,30 @@ def store_data(data, bucket_name):
         # Create S3 client
         s3_client = boto3.client("s3")
 
+        # Generate filename
         current_time = datetime.datetime.now()
-        filename = f"data/sensor/airq_{current_time.strftime('%Y%m%d_%H%M%S')}.json"
+        filename = f"data/sensor/airq_{current_time.strftime('%Y%m%d_%H%M%S')}.parquet"
 
-        # Store the data in S3
+        # Convert data to DataFrame
+        df = pd.DataFrame(data)
+        # Convert the DataFrame to an Arrow Table
+        table = pa.Table.from_pandas(df)
+
+        # Create a buffer to hold the parquet data
+        buffer = io.BytesIO()
+
+        # Write the table to parquet format in the buffer
+        pq.write_table(table, buffer)
+
+        # Get the parquet data as bytes
+        parquet_data = buffer.getvalue()
+
+        # Store the data in S3 as parquet
         s3_client.put_object(
             Bucket=bucket_name,
             Key=filename,
-            Body=json.dumps(data),
-            ContentType="application/json",
+            Body=parquet_data,
+            ContentType="application/vnd.apache.parquet",
         )
 
         logger.info(f"Successfully stored data to {bucket_name}/{filename}")

@@ -7,55 +7,8 @@ from jsonschema import validate
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-SENSOR_DATA_SCHEMA = {
-    "type": "object",
-    "required": ["measurements", "units", "metadata"],
-    "properties": {
-        "measurements": {
-            "type": "object",
-            "required": ["temperature", "humidity", "voltage", "current", "power"],
-            "properties": {
-                "temperature": {"type": "number"},
-                "humidity": {"type": "number"},
-                "voltage": {
-                    "type": "object",
-                    "properties": {
-                        "battery": {"type": "number"},
-                        "solar": {"type": "number"},
-                    },
-                },
-                "current": {
-                    "type": "object",
-                    "properties": {
-                        "battery": {"type": "number"},
-                        "solar": {"type": "number"},
-                    },
-                },
-                "power": {
-                    "type": "object",
-                    "properties": {
-                        "battery": {"type": "number"},
-                        "solar": {"type": "number"},
-                    },
-                },
-            },
-        },
-        "units": {"type": "object"},
-        "metadata": {
-            "type": "object",
-            "required": ["device_id", "timestamp", "location", "version"],
-            "properties": {
-                "device_id": {"type": "string"},
-                "timestamp": {"type": "number"},
-                "location": {"type": "string"},
-                "version": {"type": "string"},
-            },
-        },
-    },
-}
 
-
-def data_validator(body, data_schema=SENSOR_DATA_SCHEMA):
+def data_validator(body, data_schema_path: str):
     """
     Validate the incoming payload against the defined schema.
 
@@ -67,6 +20,9 @@ def data_validator(body, data_schema=SENSOR_DATA_SCHEMA):
         dict: Result with validation status and data or error details
     """
     try:
+        # Load the JSON payload from path
+        SENSOR_DATA_SCHEMA = open(data_schema_path, "r")
+        data_schema = json.load(SENSOR_DATA_SCHEMA)
         # Validate the payload against the schema
         validate(instance=body, schema=data_schema)
         return {"valid": True, "data": body}
